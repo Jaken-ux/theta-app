@@ -288,6 +288,39 @@ export default function DreamCalculator({ stakingData, eurRate }: { stakingData:
         </>
       )}
 
+      {/* THETA vs TFUEL explainer */}
+      <div className="grid sm:grid-cols-2 gap-4 mt-6">
+        <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-[#2AB8E6]" />
+            <p className="text-sm font-medium text-[#2AB8E6]">Why THETA?</p>
+          </div>
+          <ul className="space-y-2 text-xs text-[#B0B8C4] leading-relaxed">
+            <li><span className="text-white font-medium">Fixed supply.</span> 1 billion THETA, forever. No inflation. Your share of the total supply never shrinks.</li>
+            <li><span className="text-white font-medium">Dual exposure.</span> THETA stakers earn TFUEL as rewards — so you hold a scarce asset while accumulating the utility token.</li>
+            <li><span className="text-white font-medium">Network security role.</span> Guardian Nodes secure the consensus layer. Validators include Google, Samsung, and Sony.</li>
+            <li><span className="text-white font-medium">Lower yield, different bet.</span> The return is lower because you&apos;re betting on scarcity and price appreciation of THETA itself, not just staking income.</li>
+          </ul>
+        </div>
+
+        <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-[#10B981]" />
+            <p className="text-sm font-medium text-[#10B981]">Why TFUEL?</p>
+          </div>
+          <ul className="space-y-2 text-xs text-[#B0B8C4] leading-relaxed">
+            <li><span className="text-white font-medium">Higher staking yield.</span> TFUEL staking currently returns more per dollar invested than THETA staking.</li>
+            <li><span className="text-white font-medium">Lower entry cost.</span> 10,000 TFUEL costs significantly less than 1,000 THETA, making it more accessible.</li>
+            <li><span className="text-white font-medium">Burn mechanism.</span> A portion of every transaction fee is burned. If network usage grows enough, burns could exceed new supply — making TFUEL deflationary.</li>
+            <li><span className="text-white font-medium">Direct utility.</span> TFUEL is the gas token — every transaction, video relay, and smart contract on Theta uses it. Demand grows with usage.</li>
+          </ul>
+        </div>
+      </div>
+
+      <p className="text-[10px] text-[#7D8694] mt-3">
+        Neither is objectively better — they represent different bets within the same ecosystem. THETA = scarcity + security. TFUEL = yield + utility. Some holders stake both.
+      </p>
+
       {/* Disclaimer */}
       <div className="mt-4 pt-4 border-t border-[#2A3548]">
         <p className="text-[10px] text-[#7D8694] leading-relaxed">
