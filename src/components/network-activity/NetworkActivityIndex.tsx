@@ -187,7 +187,7 @@ export default function NetworkActivityIndex({
                   className="h-full rounded-full"
                   style={{ backgroundColor: tier.color }}
                   initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
+                  animate={{ width: scoreReady ? `${progress}%` : "0%" }}
                   transition={{ duration: 1, ease: "easeOut" }}
                 />
               </div>
