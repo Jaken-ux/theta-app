@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import type { ActivitySnapshot } from "../../lib/theta-api";
-import { getTodaySampleCount, getHistory } from "../../lib/activity-history";
+import { getTodaySampleCount, getHistory, type HistoryEntry } from "../../lib/activity-history";
 import ActivityMetric from "./ActivityMetric";
 import ActivityTrendChart from "./ActivityTrendChart";
 import InfoModal, { InfoButton } from "./InfoModal";
@@ -109,13 +109,16 @@ export default function NetworkActivityIndex({
   const [dailyAvg, setDailyAvg] = useState(rawScore);
 
   useEffect(() => {
-    setTodaySamples(getTodaySampleCount());
-    const history = getHistory();
-    const today = new Date().toISOString().slice(0, 10);
-    const todayEntry = history.find((e) => e.date === today);
-    if (todayEntry) {
-      setDailyAvg(todayEntry.score);
+    async function load() {
+      setTodaySamples(await getTodaySampleCount());
+      const history: HistoryEntry[] = await getHistory();
+      const today = new Date().toISOString().slice(0, 10);
+      const todayEntry = history.find((e) => e.date === today);
+      if (todayEntry) {
+        setDailyAvg(todayEntry.score);
+      }
     }
+    load();
   }, [rawScore]);
 
   const score = dailyAvg;

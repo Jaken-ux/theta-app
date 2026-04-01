@@ -33,10 +33,13 @@ export default function ActivityTrendChart({
   const [todaySamples, setTodaySamples] = useState(0);
 
   useEffect(() => {
-    const updated = saveScore(currentScore);
-    setHistory(updated);
-    setDaysSinceStart(getDaysSinceFirstEntry());
-    setTodaySamples(getTodaySampleCount());
+    async function load() {
+      const updated = await saveScore(currentScore);
+      setHistory(updated);
+      setDaysSinceStart(await getDaysSinceFirstEntry());
+      setTodaySamples(await getTodaySampleCount());
+    }
+    load();
   }, [currentScore]);
 
   const hasEnoughData = history.length >= 2;
