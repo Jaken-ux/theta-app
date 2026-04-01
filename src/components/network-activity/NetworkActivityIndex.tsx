@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import type { ActivitySnapshot } from "../../lib/theta-api";
 import { getTodaySampleCount, getHistory, type HistoryEntry } from "../../lib/activity-history";
-import ActivityMetric from "./ActivityMetric";
+import ActivityMetric, { type MetricHistoryPoint } from "./ActivityMetric";
 import ActivityTrendChart from "./ActivityTrendChart";
 import InfoModal, { InfoButton } from "./InfoModal";
 
@@ -107,6 +107,10 @@ export default function NetworkActivityIndex({
   const [infoOpen, setInfoOpen] = useState(false);
   const [todaySamples, setTodaySamples] = useState(0);
   const [dailyAvg, setDailyAvg] = useState<number | null>(null);
+  const [txHistory, setTxHistory] = useState<MetricHistoryPoint[]>([]);
+  const [volumeHistory, setVolumeHistory] = useState<MetricHistoryPoint[]>([]);
+  const [walletHistory, setWalletHistory] = useState<MetricHistoryPoint[]>([]);
+  const [stakingHistory, setStakingHistory] = useState<MetricHistoryPoint[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -115,6 +119,21 @@ export default function NetworkActivityIndex({
       const today = new Date().toISOString().slice(0, 10);
       const todayEntry = history.find((e) => e.date === today);
       setDailyAvg(todayEntry ? todayEntry.score : rawScore);
+
+      // Extract per-metric histories from API response
+      try {
+        const res = await fetch("/api/activity-history");
+        if (res.ok) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data: any[] = await res.json();
+          setTxHistory(data.filter((d) => d.metrics?.dailyTxs).map((d) => ({ date: d.date, value: d.metrics.dailyTxs })));
+          setVolumeHistory(data.filter((d) => d.metrics?.tfuelVolume).map((d) => ({ date: d.date, value: d.metrics.tfuelVolume })));
+          setWalletHistory(data.filter((d) => d.metrics?.walletActivity).map((d) => ({ date: d.date, value: d.metrics.walletActivity })));
+          setStakingHistory(data.filter((d) => d.metrics?.stakingNodes).map((d) => ({ date: d.date, value: d.metrics.stakingNodes })));
+        }
+      } catch {
+        // History fetch failed — sparklines just won't show
+      }
     }
     load();
   }, [rawScore]);
@@ -308,6 +327,9 @@ export default function NetworkActivityIndex({
           description="On-chain transactions on Theta's main chain in the last 24 hours. The full Metachain (including subchains) processes significantly more — but subchain data is not available via public API."
           weight="30%"
           tooltip="Theta's Metachain processes ~300K+ txs/day across all subchains. This metric only captures the main chain (~14K/day)."
+          history={txHistory}
+          historyColor="#2AB8E6"
+          historyUnit="txs"
         />
         <ActivityMetric
           title="TFUEL Market Activity"
@@ -316,6 +338,9 @@ export default function NetworkActivityIndex({
           description="Total TFUEL trading volume across major exchanges and on-chain transfers. Market activity may indicate interest in the network but does not necessarily reflect real application usage."
           weight="30%"
           tooltip="Market activity can signal ecosystem attention, liquidity and participation, but should be interpreted together with on-chain metrics."
+          history={volumeHistory}
+          historyColor="#10B981"
+          historyUnit="USD"
         />
         <ActivityMetric
           title="Wallet Activity"
@@ -324,6 +349,9 @@ export default function NetworkActivityIndex({
           description="Percentage of blocks that include at least one real user transaction beyond the block proposal. Higher values suggest more independent wallets interacting with the network rather than only validators producing blocks. A healthy network typically shows consistent participation from multiple wallets or applications."
           weight="30%"
           tooltip="Proxy for how often real users or apps interact with the chain."
+          history={walletHistory}
+          historyColor="#F59E0B"
+          historyUnit="%"
         />
         <ActivityMetric
           title="Staking Participants"
@@ -334,6 +362,9 @@ export default function NetworkActivityIndex({
           description="Number of wallets participating in staking (validators, guardians, and edge node operators). Staking shows commitment and network security, but does not directly measure usage. A network can have high staking with low activity."
           weight="10%"
           tooltip="Staking participants ≠ active nodes. The official Theta Explorer shows ~7,200 edge nodes, ~900 guardians, and ~23 validators actively online."
+          history={stakingHistory}
+          historyColor="#8B5CF6"
+          historyUnit="nodes"
         />
       </div>
 

@@ -1,7 +1,21 @@
-/**
- * trend: number | null
- *   positive = up, negative = down, 0 = flat, null = no data yet
- */
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
+
+export interface MetricHistoryPoint {
+  date: string;
+  value: number;
+}
+
 function TrendIndicator({ trend }: { trend: number | null }) {
   if (trend === null) {
     return (
@@ -37,6 +51,117 @@ function TrendIndicator({ trend }: { trend: number | null }) {
   );
 }
 
+function Sparkline({ data, color }: { data: MetricHistoryPoint[]; color: string }) {
+  if (data.length < 2) return null;
+
+  const chartData = data.map((d) => ({ v: d.value }));
+
+  return (
+    <div className="h-10 mt-2">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData}>
+          <defs>
+            <linearGradient id={`spark-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            strokeWidth={1.5}
+            fill={`url(#spark-${color.replace("#", "")})`}
+            dot={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+}
+
+function ExpandedChart({
+  data,
+  color,
+  unit,
+}: {
+  data: MetricHistoryPoint[];
+  color: string;
+  unit?: string;
+}) {
+  const chartData = data.map((d) => ({
+    name: formatDate(d.date),
+    value: d.value,
+  }));
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="overflow-hidden"
+    >
+      <div className="h-44 mt-3 pt-3 border-t border-[#2A3548]">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id={`expanded-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="name"
+              tick={{ fill: "#B0B8C4", fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fill: "#B0B8C4", fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={45}
+              tickFormatter={(v) =>
+                v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K` : String(v)
+              }
+            />
+            <Tooltip
+              contentStyle={{
+                background: "#2A3548",
+                border: "1px solid #445064",
+                borderRadius: "8px",
+                color: "#eaecf0",
+                fontSize: "12px",
+              }}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              formatter={(v: any) => [
+                `${Number(v).toLocaleString()}${unit ? ` ${unit}` : ""}`,
+                "Value",
+              ]}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fill={`url(#expanded-${color.replace("#", "")})`}
+              dot={chartData.length <= 30}
+              activeDot={{ r: 3, fill: color }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function ActivityMetric({
   title,
   value,
@@ -47,6 +172,9 @@ export default function ActivityMetric({
   weight,
   tooltip,
   trend = null,
+  history = [],
+  historyColor = "#2AB8E6",
+  historyUnit,
 }: {
   title: string;
   value: string;
@@ -57,7 +185,13 @@ export default function ActivityMetric({
   weight: string;
   tooltip?: string;
   trend?: number | null;
+  history?: MetricHistoryPoint[];
+  historyColor?: string;
+  historyUnit?: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasHistory = history.length >= 2;
+
   return (
     <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6">
       <div className="flex items-baseline justify-between mb-1">
@@ -82,6 +216,9 @@ export default function ActivityMetric({
         <p className="text-xs text-[#B0B8C4] mt-0.5">{subValue}</p>
       )}
 
+      {/* Sparkline */}
+      <Sparkline data={history} color={historyColor} />
+
       <TrendIndicator trend={trend} />
 
       {secondaryValue && (
@@ -96,6 +233,31 @@ export default function ActivityMetric({
       <p className="text-xs text-[#D1D5DB] leading-relaxed mt-4 border-t border-[#2A3548] pt-3">
         {description}
       </p>
+
+      {/* Expand button */}
+      {hasHistory && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 mt-3 text-[11px] text-[#B0B8C4] hover:text-white transition-colors"
+        >
+          <span>{expanded ? "Hide" : "Show"} history</span>
+          <svg
+            className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      )}
+
+      <AnimatePresence>
+        {expanded && hasHistory && (
+          <ExpandedChart data={history} color={historyColor} unit={historyUnit} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
