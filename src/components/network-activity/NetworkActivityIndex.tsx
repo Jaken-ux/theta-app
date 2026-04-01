@@ -19,17 +19,17 @@ function fmt(n: number): string {
 }
 
 /**
- * Network Activity Index — uncapped composite score.
+ * Main Chain Activity Index — uncapped composite score.
  *
  * Each metric is scored as (value / baseline) * 100 with NO cap.
  * The score can grow beyond 100 as the network grows, unlocking
  * new tiers / milestones.
  *
  * Baselines (= 100 points per metric):
- *   Transactions:  30,000 / day  (main chain)
- *   TFUEL volume:  $10M / 24h
- *   Wallet activity: 30% of blocks with user txs
- *   Staking:       15,000 participants
+ *   Transactions:  30,000 / day  (main chain)  — 30%
+ *   TFUEL volume:  $10M / 24h                 — 30%
+ *   Wallet activity: 30% of blocks with user txs — 30%
+ *   Staking:       15,000 participants          — 10%
  */
 function computeIndex(snap: ActivitySnapshot): number {
   const txScore = (snap.estimatedDailyTxs / 30_000) * 100;
@@ -37,7 +37,7 @@ function computeIndex(snap: ActivitySnapshot): number {
   const walletScore = (snap.userTxRate / 30) * 100;
   const nodeScore = (snap.totalNodes / 15_000) * 100;
 
-  return txScore * 0.3 + volumeScore * 0.3 + walletScore * 0.2 + nodeScore * 0.2;
+  return txScore * 0.3 + volumeScore * 0.3 + walletScore * 0.3 + nodeScore * 0.1;
 }
 
 /**
@@ -147,7 +147,7 @@ export default function NetworkActivityIndex({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <p className="text-xs text-[#9CA3AF] uppercase tracking-wide">
-                Activity Index
+                Main Chain Activity Index
               </p>
               <InfoButton onClick={() => setInfoOpen(true)} />
             </div>
@@ -323,7 +323,7 @@ export default function NetworkActivityIndex({
           value={`${snapshot.userTxRate.toFixed(1)}%`}
           subValue="of blocks contain user txs"
           description="Percentage of blocks that include at least one real user transaction beyond the block proposal. Higher values suggest more independent wallets interacting with the network rather than only validators producing blocks. A healthy network typically shows consistent participation from multiple wallets or applications."
-          weight="20%"
+          weight="30%"
           tooltip="Proxy for how often real users or apps interact with the chain."
         />
         <ActivityMetric
@@ -332,8 +332,8 @@ export default function NetworkActivityIndex({
           subValue="wallets with staked tokens"
           secondaryValue="~8,100 nodes estimated online"
           secondaryNote="Based on Theta Explorer node monitor. No public API available for active node count."
-          description="Number of wallets participating in staking (validators, guardians, and edge node operators). This is higher than active online nodes because some stakers may have their node offline while tokens remain staked."
-          weight="20%"
+          description="Number of wallets participating in staking (validators, guardians, and edge node operators). Staking shows commitment and network security, but does not directly measure usage. A network can have high staking with low activity."
+          weight="10%"
           tooltip="Staking participants ≠ active nodes. The official Theta Explorer shows ~7,200 edge nodes, ~900 guardians, and ~23 validators actively online."
         />
       </div>
@@ -341,7 +341,7 @@ export default function NetworkActivityIndex({
       {/* Why low ≠ dead */}
       <div className="bg-[#0A0F1C] border border-[#1E3A5F] rounded-2xl p-6 sm:p-8">
         <h3 className="text-base font-semibold text-[#2AB8E6] mb-1">
-          Why a low Activity Index does not mean the network is inactive
+          Why a low Main Chain Activity Index does not mean the network is inactive
         </h3>
         <p className="text-xs text-[#9CA3AF] mb-5">
           This index only captures on-chain signals. Much of Theta&apos;s real-world usage is invisible to it.

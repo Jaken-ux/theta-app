@@ -33,6 +33,7 @@ export async function getPool(): Promise<Pool> {
       'theta_price DOUBLE PRECISION', 'tfuel_price DOUBLE PRECISION', 'theta_market_cap DOUBLE PRECISION',
       'tfuel_circulating_supply DOUBLE PRECISION', 'daily_blocks INTEGER',
       'validator_guardian_nodes INTEGER', 'edge_nodes INTEGER',
+      'subchain_api_available BOOLEAN DEFAULT FALSE',
     ];
     for (const col of cols) {
       const name = col.split(' ')[0];

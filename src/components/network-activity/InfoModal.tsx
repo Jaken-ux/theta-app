@@ -60,9 +60,9 @@ function AlgorithmDropdown() {
                   <br />
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ volumeScore &times; 0.30
                   <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ walletScore &times; 0.20
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ walletScore &times; 0.30
                   <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ nodeScore &times; 0.20
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ nodeScore &times; 0.10
                 </p>
               </div>
 
@@ -96,12 +96,12 @@ function AlgorithmDropdown() {
                     <tr className="border-t border-[#1F2937]">
                       <td className="py-1.5">Wallet activity</td>
                       <td className="py-1.5 font-mono">30%</td>
-                      <td className="py-1.5">20%</td>
+                      <td className="py-1.5">30%</td>
                     </tr>
                     <tr className="border-t border-[#1F2937]">
                       <td className="py-1.5">Staking participants</td>
                       <td className="py-1.5 font-mono">15,000</td>
-                      <td className="py-1.5">20%</td>
+                      <td className="py-1.5">10%</td>
                     </tr>
                   </tbody>
                 </table>
@@ -180,7 +180,7 @@ export default function InfoModal({
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <h2 className="text-lg font-semibold text-white">
-                  How the Activity Index works
+                  How the Main Chain Activity Index works
                 </h2>
                 <button
                   onClick={onClose}
@@ -193,7 +193,7 @@ export default function InfoModal({
               {/* Explanation */}
               <div className="space-y-4 text-sm text-[#D1D5DB] leading-relaxed">
                 <p>
-                  The Activity Index is a relative measure of observable on-chain
+                  The Main Chain Activity Index is a relative measure of observable on-chain
                   activity on the Theta main chain. It combines four metrics into
                   a score between 0 and 100.
                 </p>
@@ -206,8 +206,8 @@ export default function InfoModal({
                   <ul className="space-y-1.5 list-disc list-inside text-[#D1D5DB]">
                     <li>Main-chain transactions in the last 24h (30% weight)</li>
                     <li>TFUEL 24h trading volume (30% weight)</li>
-                    <li>Percentage of blocks with user transactions (20% weight)</li>
-                    <li>Number of staking participants (20% weight)</li>
+                    <li>Percentage of blocks with user transactions (30% weight)</li>
+                    <li>Number of staking participants (10% weight)</li>
                   </ul>
                 </div>
 
