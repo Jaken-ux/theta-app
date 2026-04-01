@@ -75,7 +75,7 @@ export default function CalculatorCard({ stakingData }: { stakingData: StakingDa
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             type === "tfuel"
               ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
-              : "bg-[#1F2937] text-[#9CA3AF] border border-[#1F2937] hover:border-[#374151]"
+              : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
           }`}
         >
           TFUEL Staking
@@ -85,7 +85,7 @@ export default function CalculatorCard({ stakingData }: { stakingData: StakingDa
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             type === "theta"
               ? "bg-[#2AB8E6]/15 text-[#2AB8E6] border border-[#2AB8E6]/30"
-              : "bg-[#1F2937] text-[#9CA3AF] border border-[#1F2937] hover:border-[#374151]"
+              : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
           }`}
         >
           THETA Staking
@@ -116,12 +116,12 @@ export default function CalculatorCard({ stakingData }: { stakingData: StakingDa
       <div className="bg-[#0D1117] rounded-xl p-4 mb-4">
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-xs text-[#9CA3AF]">Current Estimated APY</p>
+            <p className="text-xs text-[#B0B8C4]">Current Estimated APY</p>
             <p className="text-2xl font-semibold text-white">{apy.toFixed(2)}%</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[#9CA3AF]">Based on live network data</p>
-            <p className="text-[10px] text-[#9CA3AF]">
+            <p className="text-[10px] text-[#B0B8C4]">Based on live network data</p>
+            <p className="text-[10px] text-[#B0B8C4]">
               {type === "theta"
                 ? `${(stakingData.thetaStaked / 1_000_000).toFixed(1)}M THETA staked`
                 : `${(stakingData.tfuelStaked / 1_000_000).toFixed(0)}M TFUEL staked`}
@@ -139,7 +139,7 @@ export default function CalculatorCard({ stakingData }: { stakingData: StakingDa
               <span className="text-sm text-white">
                 {dailyTfuel.toLocaleString(undefined, { maximumFractionDigits: 2 })} TFUEL
               </span>
-              <span className="text-xs text-[#9CA3AF] ml-2">
+              <span className="text-xs text-[#B0B8C4] ml-2">
                 (${dailyUsd.toFixed(2)})
               </span>
             </div>
@@ -150,7 +150,7 @@ export default function CalculatorCard({ stakingData }: { stakingData: StakingDa
               <span className="text-sm text-white">
                 {monthlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 2 })} TFUEL
               </span>
-              <span className="text-xs text-[#9CA3AF] ml-2">
+              <span className="text-xs text-[#B0B8C4] ml-2">
                 (${monthlyUsd.toFixed(2)})
               </span>
             </div>
@@ -161,7 +161,7 @@ export default function CalculatorCard({ stakingData }: { stakingData: StakingDa
               <span className="text-sm font-semibold text-theta-teal">
                 {yearlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 2 })} TFUEL
               </span>
-              <span className="text-xs text-[#9CA3AF] ml-2">
+              <span className="text-xs text-[#B0B8C4] ml-2">
                 (${yearlyUsd.toFixed(2)})
               </span>
             </div>

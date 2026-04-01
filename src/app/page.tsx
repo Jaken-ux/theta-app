@@ -154,7 +154,7 @@ export default function Home() {
             {steps.map((step) => (
               <div
                 key={step.num}
-                className="bg-[#111827] border border-[#1F2937] rounded-2xl p-8"
+                className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8"
               >
                 <span className="text-[#2AB8E6] text-sm font-mono font-semibold">
                   {step.num}
@@ -162,7 +162,7 @@ export default function Home() {
                 <h3 className="text-white text-xl font-semibold mt-3">
                   {step.title}
                 </h3>
-                <p className="text-[#9CA3AF] text-[15px] mt-2 leading-relaxed">
+                <p className="text-[#B0B8C4] text-[15px] mt-2 leading-relaxed">
                   {step.description}
                 </p>
               </div>
@@ -184,13 +184,13 @@ export default function Home() {
             {useCases.map((uc) => (
               <div
                 key={uc.title}
-                className="bg-[#111827] border border-[#1F2937] rounded-2xl p-8 hover:border-[#2AB8E6]/30 transition-colors"
+                className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 hover:border-[#2AB8E6]/30 transition-colors"
               >
                 <span className="text-3xl">{uc.icon}</span>
                 <h3 className="text-white text-lg font-semibold mt-4">
                   {uc.title}
                 </h3>
-                <p className="text-[#9CA3AF] text-[15px] mt-2 leading-relaxed">
+                <p className="text-[#B0B8C4] text-[15px] mt-2 leading-relaxed">
                   {uc.description}
                 </p>
               </div>
@@ -234,7 +234,7 @@ export default function Home() {
             </a>
             <a
               href="/theta-explained"
-              className="inline-flex items-center justify-center px-8 py-3.5 border border-[#1F2937] text-white font-medium rounded-full hover:border-[#2AB8E6]/40 transition-colors text-[15px]"
+              className="inline-flex items-center justify-center px-8 py-3.5 border border-[#2A3548] text-white font-medium rounded-full hover:border-[#2AB8E6]/40 transition-colors text-[15px]"
             >
               Deep Dive
             </a>

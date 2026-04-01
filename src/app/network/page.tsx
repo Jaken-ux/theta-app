@@ -29,7 +29,7 @@ export default async function NetworkPage() {
       <NetworkActivityIndex snapshot={activity} />
 
       {/* Divider */}
-      <hr className="border-[#1F2937]" />
+      <hr className="border-[#2A3548]" />
 
       {/* Existing Dashboard */}
       <div>

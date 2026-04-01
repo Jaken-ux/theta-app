@@ -9,7 +9,7 @@ export default function NetworkFlow() {
         { x: 525, label: "Viewer", icon: "👁", color: "#F59E0B" },
       ].map((step, i) => (
         <g key={i}>
-          <rect x={step.x + 10} y="20" width="140" height="100" rx="16" fill="#111827" stroke={step.color} strokeWidth="1.5" />
+          <rect x={step.x + 10} y="20" width="140" height="100" rx="16" fill="#151D2E" stroke={step.color} strokeWidth="1.5" />
           <text x={step.x + 80} y="60" textAnchor="middle" fontSize="22">{step.icon}</text>
           {step.label.split("\n").map((line, li) => (
             <text key={li} x={step.x + 80} y={88 + li * 16} textAnchor="middle" fill="white" fontSize="12" fontWeight="500">
@@ -19,8 +19,8 @@ export default function NetworkFlow() {
           {/* Arrow */}
           {i < 3 && (
             <>
-              <line x1={step.x + 155} y1="70" x2={step.x + 180} y2="70" stroke="#374151" strokeWidth="1.5" />
-              <polygon points={`${step.x + 180},65 ${step.x + 188},70 ${step.x + 180},75`} fill="#374151" />
+              <line x1={step.x + 155} y1="70" x2={step.x + 180} y2="70" stroke="#445064" strokeWidth="1.5" />
+              <polygon points={`${step.x + 180},65 ${step.x + 188},70 ${step.x + 180},75`} fill="#445064" />
             </>
           )}
         </g>

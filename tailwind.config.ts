@@ -13,9 +13,9 @@ const config: Config = {
         theta: {
           teal: "#2AB8E6",
           dark: "#0A0F1C",
-          card: "#111827",
-          border: "#1F2937",
-          muted: "#9CA3AF",
+          card: "#151D2E",
+          border: "#2A3548",
+          muted: "#B0B8C4",
         },
       },
     },

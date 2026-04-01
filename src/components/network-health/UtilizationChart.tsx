@@ -29,14 +29,14 @@ export default function UtilizationChart({ currentScore }: { currentScore: numbe
   ];
 
   return (
-    <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+    <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
       <div className="flex items-baseline justify-between mb-1">
         <h3 className="text-base font-semibold text-white">
           Utilization Trend
         </h3>
-        <span className="text-xs text-[#4B5563]">placeholder history + live current</span>
+        <span className="text-xs text-[#5C6675]">placeholder history + live current</span>
       </div>
-      <p className="text-xs text-[#6B7280] mb-6">
+      <p className="text-xs text-[#7D8694] mb-6">
         Weekly composite score. Historical data is illustrative — real
         tracking begins once we start recording snapshots.
       </p>
@@ -52,21 +52,21 @@ export default function UtilizationChart({ currentScore }: { currentScore: numbe
             </defs>
             <XAxis
               dataKey="name"
-              tick={{ fill: "#6B7280", fontSize: 12 }}
+              tick={{ fill: "#7D8694", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               domain={[0, 100]}
-              tick={{ fill: "#6B7280", fontSize: 12 }}
+              tick={{ fill: "#7D8694", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               width={30}
             />
             <Tooltip
               contentStyle={{
-                background: "#1F2937",
-                border: "1px solid #374151",
+                background: "#2A3548",
+                border: "1px solid #445064",
                 borderRadius: "8px",
                 color: "#e5e7eb",
                 fontSize: "13px",

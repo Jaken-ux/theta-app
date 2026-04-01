@@ -15,15 +15,15 @@ export default function UtilizationScoreCard({ score }: { score: number }) {
     statusColor = "#F59E0B";
   } else {
     status = "Low activity";
-    statusColor = "#6B7280";
+    statusColor = "#7D8694";
   }
 
   return (
-    <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-8 sm:p-10">
-      <p className="text-sm text-[#9CA3AF] uppercase tracking-wide">
+    <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 sm:p-10">
+      <p className="text-sm text-[#B0B8C4] uppercase tracking-wide">
         Network Utilization
       </p>
-      <p className="text-xs text-[#6B7280] mt-1 mb-8">
+      <p className="text-xs text-[#7D8694] mt-1 mb-8">
         Proxy indicator of real network usage
       </p>
 
@@ -32,11 +32,11 @@ export default function UtilizationScoreCard({ score }: { score: number }) {
         <span className="text-[72px] sm:text-[88px] leading-none font-semibold text-white tabular-nums">
           {clamped}
         </span>
-        <span className="text-2xl text-[#6B7280] mb-3">/100</span>
+        <span className="text-2xl text-[#7D8694] mb-3">/100</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-3 bg-[#1F2937] rounded-full overflow-hidden mb-4">
+      <div className="h-3 bg-[#2A3548] rounded-full overflow-hidden mb-4">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: statusColor }}
@@ -57,7 +57,7 @@ export default function UtilizationScoreCard({ score }: { score: number }) {
         </span>
       </div>
 
-      <p className="text-sm text-[#6B7280] leading-relaxed">
+      <p className="text-sm text-[#7D8694] leading-relaxed">
         Based on TFUEL trading activity, staking participation, and node count.
         This is a simplified composite — not a definitive measure of adoption.
       </p>

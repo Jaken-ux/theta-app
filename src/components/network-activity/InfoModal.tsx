@@ -21,7 +21,7 @@ function AlgorithmDropdown() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border border-[#1F2937] rounded-xl overflow-hidden">
+    <div className="border border-[#2A3548] rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-[#0D1117] transition-colors"
@@ -42,19 +42,19 @@ function AlgorithmDropdown() {
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-3">
-              <p className="text-xs text-[#9CA3AF]">
+              <p className="text-xs text-[#B0B8C4]">
                 The index is calculated from four on-chain metrics, each scored
                 relative to a baseline and weighted.
               </p>
 
               {/* Formula */}
               <div className="bg-[#0D1117] rounded-lg p-4 font-mono text-xs text-[#D1D5DB] space-y-2">
-                <p className="text-[#9CA3AF]">{/* eslint-disable-next-line */}{'// Step 1: Score each metric'}</p>
+                <p className="text-[#B0B8C4]">{/* eslint-disable-next-line */}{'// Step 1: Score each metric'}</p>
                 <p>txScore = (dailyTxs / 30,000) &times; 100</p>
                 <p>volumeScore = (tfuelVolume24h / $10,000,000) &times; 100</p>
                 <p>walletScore = (userTxRate / 30%) &times; 100</p>
                 <p>nodeScore = (stakingNodes / 15,000) &times; 100</p>
-                <p className="text-[#9CA3AF] pt-2">{'// Step 2: Weighted sum'}</p>
+                <p className="text-[#B0B8C4] pt-2">{'// Step 2: Weighted sum'}</p>
                 <p className="text-white">
                   index = txScore &times; 0.30
                   <br />
@@ -68,7 +68,7 @@ function AlgorithmDropdown() {
 
               {/* Explanation table */}
               <div className="space-y-2">
-                <p className="text-xs text-[#9CA3AF]">
+                <p className="text-xs text-[#B0B8C4]">
                   Baselines represent the value at which each metric contributes
                   exactly 100 points. There is no cap — if a metric exceeds its
                   baseline, it scores above 100.
@@ -76,29 +76,29 @@ function AlgorithmDropdown() {
 
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-[#9CA3AF] text-left">
+                    <tr className="text-[#B0B8C4] text-left">
                       <th className="pb-1.5 font-medium">Metric</th>
                       <th className="pb-1.5 font-medium">Baseline (=100)</th>
                       <th className="pb-1.5 font-medium">Weight</th>
                     </tr>
                   </thead>
                   <tbody className="text-[#D1D5DB]">
-                    <tr className="border-t border-[#1F2937]">
+                    <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Daily transactions</td>
                       <td className="py-1.5 font-mono">30,000</td>
                       <td className="py-1.5">30%</td>
                     </tr>
-                    <tr className="border-t border-[#1F2937]">
+                    <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">TFUEL 24h volume</td>
                       <td className="py-1.5 font-mono">$10,000,000</td>
                       <td className="py-1.5">30%</td>
                     </tr>
-                    <tr className="border-t border-[#1F2937]">
+                    <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Wallet activity</td>
                       <td className="py-1.5 font-mono">30%</td>
                       <td className="py-1.5">30%</td>
                     </tr>
-                    <tr className="border-t border-[#1F2937]">
+                    <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Staking participants</td>
                       <td className="py-1.5 font-mono">15,000</td>
                       <td className="py-1.5">10%</td>
@@ -109,17 +109,17 @@ function AlgorithmDropdown() {
 
               {/* Data sources */}
               <div className="bg-[#0D1117] rounded-lg p-3">
-                <p className="text-[10px] text-[#9CA3AF] font-medium mb-1.5">DATA SOURCES</p>
-                <div className="text-[10px] text-[#9CA3AF] space-y-0.5 font-mono">
+                <p className="text-[10px] text-[#B0B8C4] font-medium mb-1.5">DATA SOURCES</p>
+                <div className="text-[10px] text-[#B0B8C4] space-y-0.5 font-mono">
                   <p>Transactions &rarr; /api/transactions/number/24</p>
                   <p>TFUEL volume &rarr; /api/price/all (volume_24h)</p>
                   <p>Wallet activity &rarr; /api/blocks/top_blocks (1000 blocks sampled)</p>
                   <p>Staking nodes &rarr; /api/stake/totalAmount</p>
-                  <p className="pt-1 text-[#6B7280]">All from explorer-api.thetatoken.org</p>
+                  <p className="pt-1 text-[#7D8694]">All from explorer-api.thetatoken.org</p>
                 </div>
               </div>
 
-              <p className="text-[10px] text-[#6B7280]">
+              <p className="text-[10px] text-[#7D8694]">
                 The daily score shown is the average of all samples collected
                 that day. Each page visit or scheduled cron job adds one sample.
                 Raw metrics are stored alongside scores for potential future
@@ -138,7 +138,7 @@ export function InfoButton({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       title="How this index works"
-      className="w-5 h-5 rounded-full border border-[#6B7280] text-[#9CA3AF] hover:text-white hover:border-[#9CA3AF] transition-colors flex items-center justify-center text-[11px] font-medium leading-none"
+      className="w-5 h-5 rounded-full border border-[#7D8694] text-[#B0B8C4] hover:text-white hover:border-[#B0B8C4] transition-colors flex items-center justify-center text-[11px] font-medium leading-none"
     >
       i
     </button>
@@ -174,7 +174,7 @@ export default function InfoModal({
             transition={{ duration: 0.2 }}
           >
             <div
-              className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto"
+              className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -184,7 +184,7 @@ export default function InfoModal({
                 </h2>
                 <button
                   onClick={onClose}
-                  className="text-[#6B7280] hover:text-white transition-colors text-xl leading-none"
+                  className="text-[#7D8694] hover:text-white transition-colors text-xl leading-none"
                 >
                   &times;
                 </button>
@@ -247,14 +247,14 @@ export default function InfoModal({
                     the ceiling expands. This means the index never caps out — it
                     keeps scaling as Theta grows.
                   </p>
-                  <div className="mt-2 bg-[#0D1117] rounded-lg p-3 text-xs text-[#9CA3AF] space-y-1">
+                  <div className="mt-2 bg-[#0D1117] rounded-lg p-3 text-xs text-[#B0B8C4] space-y-1">
                     <p>Each metric baseline (= score of 100):</p>
                     <p>Transactions: 30,000/day</p>
                     <p>TFUEL volume: $10M/24h</p>
                     <p>Block activity: 30% of blocks with user txs</p>
                     <p>Staking: 15,000 participants</p>
                   </div>
-                  <p className="text-xs text-[#9CA3AF] mt-2">
+                  <p className="text-xs text-[#B0B8C4] mt-2">
                     When the network exceeds these baselines, the score goes above
                     100 and the next milestone unlocks automatically.
                   </p>
@@ -277,7 +277,7 @@ export default function InfoModal({
                         The network is functional with early adopters and stakers. Infrastructure
                         is in place. On-chain activity is growing from a small base.
                       </p>
-                      <div className="text-[10px] text-[#9CA3AF] space-y-0.5">
+                      <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
                         <p>Now (~42): ~14K txs/day, ~$2M volume, ~12K stakers</p>
                         <p>At 60: ~18K txs/day, ~$4M volume — TFUEL burn rate doubles</p>
                         <p>At 80: ~25K txs/day, ~$7M volume — consistent demand for blockspace</p>
@@ -290,14 +290,14 @@ export default function InfoModal({
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-[#2AB8E6]">100 — 500</span>
                         <span className="text-xs text-[#2AB8E6] font-medium">Growth</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#6B7280]">locked</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
                         The network surpasses its initial baselines. Main chain processes 30K+ txs/day.
                         TFUEL burn is continuous and supply reduction becomes visible on-chain.
                         Real applications are driving consistent demand.
                       </p>
-                      <div className="text-[10px] text-[#9CA3AF] space-y-0.5">
+                      <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
                         <p>At 200: ~60K txs/day, ~$20M volume — 2x all baselines</p>
                         <p>At 300: ~90K txs/day — TFUEL burn is a significant economic force</p>
                         <p>At 500: ~150K txs/day — multiple major applications on-chain daily</p>
@@ -309,14 +309,14 @@ export default function InfoModal({
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-[#10B981]">500 — 2,500</span>
                         <span className="text-xs text-[#10B981] font-medium">Scale</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#6B7280]">locked</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
                         Mass adoption territory. High transaction volume, significant TFUEL burn
                         continuously reducing supply. The network is a daily-use platform for
                         many applications and users.
                       </p>
-                      <div className="text-[10px] text-[#9CA3AF] space-y-0.5">
+                      <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
                         <p>At this level, TFUEL burn creates sustained deflationary pressure</p>
                         <p>Fundamental demand for TFUEL is structurally embedded, not speculative</p>
                       </div>
@@ -327,7 +327,7 @@ export default function InfoModal({
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-[#8B5CF6]">2,500 — 10,000</span>
                         <span className="text-xs text-[#8B5CF6] font-medium">Dominance</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#6B7280]">locked</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed">
                         Theta processes volumes comparable to top-tier blockchain networks.
@@ -336,7 +336,7 @@ export default function InfoModal({
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#9CA3AF] mt-3">
+                  <p className="text-xs text-[#B0B8C4] mt-3">
                     These milestones describe what is mechanically happening on the network at each level.
                     They are not predictions or targets — they are what the data would have to look like
                     for the index to reach that score.
@@ -359,7 +359,7 @@ export default function InfoModal({
                   </p>
                 </div>
 
-                <p className="text-xs text-[#9CA3AF] pt-2 border-t border-[#1F2937]">
+                <p className="text-xs text-[#B0B8C4] pt-2 border-t border-[#2A3548]">
                   This index is a transparent, best-effort tool — not a financial
                   indicator. We show exactly what we measure, how we measure it,
                   and what we cannot see. Use it to follow trends, not to make

@@ -52,7 +52,7 @@ export default function NetworkHealthSection({ stats }: { stats: NetworkStats })
       {/* Section header */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-1">Network Health</h2>
-        <p className="text-[#9CA3AF]">
+        <p className="text-[#B0B8C4]">
           A simplified overview of how actively the Theta network is being used.
         </p>
       </div>

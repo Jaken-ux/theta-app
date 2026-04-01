@@ -53,21 +53,21 @@ export default function TfuelSupplyChart() {
   if (data.length < 2) {
     const currentSupply = data.length === 1 ? data[0].supply : null;
     return (
-      <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
         <h3 className="text-base font-semibold text-white mb-1">
           TFUEL Supply Over Time
         </h3>
-        <p className="text-xs text-[#9CA3AF] mb-4">
+        <p className="text-xs text-[#B0B8C4] mb-4">
           Net result of inflation + burn. A downward trend = burn &gt; inflation.
         </p>
         <div className="py-10 text-center">
-          <p className="text-sm text-[#9CA3AF] mb-2">Collecting data...</p>
+          <p className="text-sm text-[#B0B8C4] mb-2">Collecting data...</p>
           {currentSupply && (
-            <p className="text-xs text-[#9CA3AF]">
+            <p className="text-xs text-[#B0B8C4]">
               Current supply: {formatSupply(currentSupply)}
             </p>
           )}
-          <p className="text-xs text-[#9CA3AF] mt-2">
+          <p className="text-xs text-[#B0B8C4] mt-2">
             The trend line will appear after a few days of data collection.
           </p>
         </div>
@@ -91,16 +91,16 @@ export default function TfuelSupplyChart() {
   const padding = (maxSupply - minSupply) * 0.2 || maxSupply * 0.001;
 
   return (
-    <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+    <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
       <div className="flex items-baseline justify-between mb-1">
         <h3 className="text-base font-semibold text-white">
           TFUEL Supply Over Time
         </h3>
-        <span className="text-[10px] px-2 py-0.5 rounded bg-[#1F2937] text-[#9CA3AF]">
+        <span className="text-[10px] px-2 py-0.5 rounded bg-[#2A3548] text-[#B0B8C4]">
           {data.length} days tracked
         </span>
       </div>
-      <p className="text-xs text-[#9CA3AF] mb-1">
+      <p className="text-xs text-[#B0B8C4] mb-1">
         Net result of inflation + burn. A downward trend = burn &gt; inflation.
       </p>
       <p
@@ -131,14 +131,14 @@ export default function TfuelSupplyChart() {
             </defs>
             <XAxis
               dataKey="name"
-              tick={{ fill: "#9CA3AF", fontSize: 10 }}
+              tick={{ fill: "#B0B8C4", fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               interval="preserveStartEnd"
             />
             <YAxis
               domain={[minSupply - padding, maxSupply + padding]}
-              tick={{ fill: "#9CA3AF", fontSize: 10 }}
+              tick={{ fill: "#B0B8C4", fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               width={60}
@@ -146,8 +146,8 @@ export default function TfuelSupplyChart() {
             />
             <Tooltip
               contentStyle={{
-                background: "#1F2937",
-                border: "1px solid #374151",
+                background: "#2A3548",
+                border: "1px solid #445064",
                 borderRadius: "8px",
                 color: "#e5e7eb",
                 fontSize: "12px",
@@ -157,11 +157,11 @@ export default function TfuelSupplyChart() {
             />
             <ReferenceLine
               y={firstSupply}
-              stroke="#4B5563"
+              stroke="#5C6675"
               strokeDasharray="4 4"
               label={{
                 value: "Start",
-                fill: "#6B7280",
+                fill: "#7D8694",
                 fontSize: 10,
                 position: "insideTopRight",
               }}
@@ -179,7 +179,7 @@ export default function TfuelSupplyChart() {
         </ResponsiveContainer>
       </div>
 
-      <p className="text-[10px] text-[#6B7280] mt-3">
+      <p className="text-[10px] text-[#7D8694] mt-3">
         TFUEL has built-in inflation (new tokens minted per block) and burn (5% of every transaction fee is burned). This chart shows the net effect over time.
       </p>
     </div>

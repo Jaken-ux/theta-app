@@ -25,7 +25,7 @@ const MILESTONES: Milestone[] = [
     name: "Today",
     tfuelPrice: 0, // filled dynamically
     description: "Current network state",
-    color: "#9CA3AF",
+    color: "#B0B8C4",
   },
   {
     name: "TFUEL at $0.05",
@@ -91,12 +91,12 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
   const canShow = investmentUsd > 0 && tokensYouGet >= minStake;
 
   return (
-    <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+    <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-white mb-1">
           What if?
         </h3>
-        <p className="text-sm text-[#9CA3AF]">
+        <p className="text-sm text-[#B0B8C4]">
           Nobody knows the future. But you can explore what different outcomes
           would mean — if you were already positioned.
         </p>
@@ -109,7 +109,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             type === "theta"
               ? "bg-[#2AB8E6]/15 text-[#2AB8E6] border border-[#2AB8E6]/30"
-              : "bg-[#1F2937] text-[#9CA3AF] border border-[#1F2937] hover:border-[#374151]"
+              : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
           }`}
         >
           Stake THETA
@@ -119,7 +119,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             type === "tfuel"
               ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
-              : "bg-[#1F2937] text-[#9CA3AF] border border-[#1F2937] hover:border-[#374151]"
+              : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
           }`}
         >
           Stake TFUEL
@@ -128,18 +128,18 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
 
       {/* Dollar input */}
       <div className="mb-4">
-        <label className="block text-sm text-[#9CA3AF] mb-1">
+        <label className="block text-sm text-[#B0B8C4] mb-1">
           How much would you invest? (USD)
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]">$</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D8694]">$</span>
           <input
             type="number"
             min="0"
             value={investmentStr}
             onChange={(e) => setInvestmentStr(e.target.value)}
             placeholder="1000"
-            className="w-full bg-[#0D1117] border border-[#1F2937] rounded-lg pl-8 pr-4 py-2.5 text-white placeholder:text-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2AB8E6]/40"
+            className="w-full bg-[#0D1117] border border-[#2A3548] rounded-lg pl-8 pr-4 py-2.5 text-white placeholder:text-[#5C6675] focus:outline-none focus:ring-2 focus:ring-[#2AB8E6]/40"
           />
         </div>
       </div>
@@ -147,7 +147,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
       {/* What you get */}
       {investmentUsd > 0 && (
         <div className="bg-[#0D1117] rounded-xl p-4 mb-6">
-          <p className="text-xs text-[#9CA3AF] mb-1">
+          <p className="text-xs text-[#B0B8C4] mb-1">
             At today&apos;s price (${tokenPrice.toFixed(4)}) you would get
           </p>
           <p className="text-2xl font-semibold text-white">
@@ -160,7 +160,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
             </p>
           )}
           {canShow && (
-            <p className="text-xs text-[#9CA3AF] mt-1">
+            <p className="text-xs text-[#B0B8C4] mt-1">
               All staked — earning {yearlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 0 })} TFUEL/year at current rates
             </p>
           )}
@@ -170,7 +170,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
       {/* Milestone scenarios */}
       {canShow && (
         <>
-          <p className="text-xs text-[#9CA3AF] mb-3 uppercase tracking-wide font-medium">
+          <p className="text-xs text-[#B0B8C4] mb-3 uppercase tracking-wide font-medium">
             Your yearly passive income if the network reaches...
           </p>
 
@@ -185,8 +185,8 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
                   key={m.name}
                   className={`rounded-xl p-4 ${
                     isToday
-                      ? "bg-[#0D1117] border border-[#1F2937]"
-                      : "bg-[#0D1117]/60 border border-[#1F2937]/50"
+                      ? "bg-[#0D1117] border border-[#2A3548]"
+                      : "bg-[#0D1117]/60 border border-[#2A3548]/50"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -200,25 +200,25 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
                     >
                       {m.name}
                     </span>
-                    <span className="text-xs text-[#6B7280]">
+                    <span className="text-xs text-[#7D8694]">
                       TFUEL @ ${m.tfuelPrice.toFixed(m.tfuelPrice < 0.01 ? 4 : 2)}
                     </span>
                     {isToday && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#9CA3AF] ml-auto">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#B0B8C4] ml-auto">
                         now
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#9CA3AF] mb-3">{m.description}</p>
+                  <p className="text-xs text-[#B0B8C4] mb-3">{m.description}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-[#6B7280] uppercase">Monthly income</p>
+                      <p className="text-[10px] text-[#7D8694] uppercase">Monthly income</p>
                       <p className="text-lg font-semibold text-white">
                         {fmtUsd(monthlyUsd)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-[#6B7280] uppercase">Yearly income</p>
+                      <p className="text-[10px] text-[#7D8694] uppercase">Yearly income</p>
                       <p className="text-lg font-semibold text-white">
                         {fmtUsd(yearlyUsd)}
                       </p>
@@ -234,7 +234,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
             <p className="text-sm text-[#2AB8E6] font-medium mb-2">
               The TFUEL you earn today doesn&apos;t disappear
             </p>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
               Every day you stake, you accumulate TFUEL. If the network grows and
               TFUEL becomes more valuable, all the tokens you earned along the way
               grow in value too — not just today&apos;s rewards, but every reward you
@@ -245,8 +245,8 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
       )}
 
       {/* Disclaimer */}
-      <div className="mt-4 pt-4 border-t border-[#1F2937]">
-        <p className="text-[10px] text-[#6B7280] leading-relaxed">
+      <div className="mt-4 pt-4 border-t border-[#2A3548]">
+        <p className="text-[10px] text-[#7D8694] leading-relaxed">
           These scenarios are entirely hypothetical. Nothing here is financial
           advice, a promise, or a prediction. Token prices can go to zero.
           Past performance of any asset does not predict future results.

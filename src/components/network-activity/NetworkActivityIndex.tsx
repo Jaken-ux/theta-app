@@ -130,22 +130,22 @@ export default function NetworkActivityIndex({
         <h2 className="text-2xl font-bold text-white mb-1">
           Network Activity
         </h2>
-        <p className="text-[#9CA3AF]">
+        <p className="text-[#B0B8C4]">
           Observable signals of blockchain usage.
         </p>
-        <p className="text-xs text-[#9CA3AF] mt-1">
+        <p className="text-xs text-[#B0B8C4] mt-1">
           Some Theta services such as EdgeCloud compute and video delivery may
           occur off-chain and are not fully visible in public blockchain data.
         </p>
       </div>
 
       {/* Box 1: Activity Index score + trend chart side by side */}
-      <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Score */}
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-xs text-[#9CA3AF] uppercase tracking-wide">
+              <p className="text-xs text-[#B0B8C4] uppercase tracking-wide">
                 Main Chain Activity Index
               </p>
               <InfoButton onClick={() => setInfoOpen(true)} />
@@ -158,10 +158,10 @@ export default function NetworkActivityIndex({
               >
                 {score}
               </span>
-              <span className={`text-2xl text-[#9CA3AF] mb-3 transition-opacity duration-300 ${scoreReady ? "opacity-100" : "opacity-0"}`}>/{tier.ceiling.toLocaleString()}</span>
+              <span className={`text-2xl text-[#B0B8C4] mb-3 transition-opacity duration-300 ${scoreReady ? "opacity-100" : "opacity-0"}`}>/{tier.ceiling.toLocaleString()}</span>
             </div>
 
-            <p className="text-xs text-[#9CA3AF] mt-1 mb-1">
+            <p className="text-xs text-[#B0B8C4] mt-1 mb-1">
               {todaySamples > 1
                 ? `Today\u2019s average (${todaySamples} samples)`
                 : tier.label}
@@ -182,7 +182,7 @@ export default function NetworkActivityIndex({
 
             {/* Progress toward next milestone */}
             <div className="mt-4">
-              <div className="h-3 bg-[#1F2937] rounded-full overflow-hidden">
+              <div className="h-3 bg-[#2A3548] rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
                   style={{ backgroundColor: tier.color }}
@@ -192,7 +192,7 @@ export default function NetworkActivityIndex({
                 />
               </div>
               <div className="flex justify-between mt-1.5">
-                <span className="text-[10px] text-[#6B7280]">
+                <span className="text-[10px] text-[#7D8694]">
                   {tierIndex === 0 ? "0" : TIERS[tierIndex - 1].ceiling.toLocaleString()}
                 </span>
                 <span className="text-[10px] font-medium" style={{ color: tier.color }}>
@@ -201,7 +201,7 @@ export default function NetworkActivityIndex({
               </div>
             </div>
 
-            <p className="text-xs text-[#9CA3AF] mt-3 leading-relaxed">
+            <p className="text-xs text-[#B0B8C4] mt-3 leading-relaxed">
               {tier.description}
             </p>
 
@@ -216,14 +216,14 @@ export default function NetworkActivityIndex({
                   <div
                     className="h-1.5 rounded-full"
                     style={{
-                      backgroundColor: i < tierIndex ? t.color : i === tierIndex ? t.color : "#1F2937",
+                      backgroundColor: i < tierIndex ? t.color : i === tierIndex ? t.color : "#2A3548",
                       opacity: i <= tierIndex ? 1 : 0.3,
                     }}
                   />
                   <p
                     className="text-[9px] mt-1 text-center"
                     style={{
-                      color: i <= tierIndex ? t.color : "#4B5563",
+                      color: i <= tierIndex ? t.color : "#5C6675",
                     }}
                   >
                     {i <= tierIndex ? t.name : "?"}
@@ -234,14 +234,14 @@ export default function NetworkActivityIndex({
           </div>
 
           {/* Right: Trend chart (embedded) */}
-          <div className="border-t lg:border-t-0 lg:border-l border-[#1F2937] pt-6 lg:pt-0 lg:pl-8">
+          <div className="border-t lg:border-t-0 lg:border-l border-[#2A3548] pt-6 lg:pt-0 lg:pl-8">
             <ActivityTrendChart currentScore={score} embedded />
           </div>
         </div>
       </div>
 
       {/* Box 2: Confidence level with bar + explanations */}
-      <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
         <div className="flex items-center gap-3 mb-1">
           <h3 className="text-base font-semibold text-white">
             Confidence Level
@@ -250,21 +250,21 @@ export default function NetworkActivityIndex({
             Medium
           </span>
         </div>
-        <p className="text-sm text-[#9CA3AF] mb-4">
+        <p className="text-sm text-[#B0B8C4] mb-4">
           How much of the real network activity does this index capture?
         </p>
 
         {/* Confidence bar */}
         <div className="mb-6">
-          <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
+          <div className="flex justify-between text-[10px] text-[#B0B8C4] mb-1.5">
             <span>Low</span>
             <span>Medium</span>
             <span>High</span>
           </div>
-          <div className="h-2.5 bg-[#1F2937] rounded-full overflow-hidden relative">
+          <div className="h-2.5 bg-[#2A3548] rounded-full overflow-hidden relative">
             <div className="h-full rounded-full bg-gradient-to-r from-[#EF4444] via-[#F59E0B] to-[#10B981] opacity-30 w-full" />
             <motion.div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#F59E0B] rounded-full border-2 border-[#111827] shadow-lg"
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#F59E0B] rounded-full border-2 border-[#151D2E] shadow-lg"
               initial={{ left: "0%" }}
               animate={{ left: "50%" }}
               transition={{ duration: 1, ease: "easeOut" }}
@@ -294,7 +294,7 @@ export default function NetworkActivityIndex({
           </div>
         </div>
 
-        <p className="text-xs text-[#9CA3AF] leading-relaxed">
+        <p className="text-xs text-[#B0B8C4] leading-relaxed">
           Medium confidence means: the data sources are reliable, but they only show part of the picture. Theta&apos;s Metachain processes ~300K+ transactions per day across subchains, but only main-chain data (~14K/day) is available via public API. The real network activity is significantly higher than what this index reflects.
         </p>
       </div>
@@ -342,41 +342,41 @@ export default function NetworkActivityIndex({
         <h3 className="text-base font-semibold text-[#2AB8E6] mb-1">
           Why a low Main Chain Activity Index does not mean the network is inactive
         </h3>
-        <p className="text-xs text-[#9CA3AF] mb-5">
+        <p className="text-xs text-[#B0B8C4] mb-5">
           This index only captures on-chain signals. Much of Theta&apos;s real-world usage is invisible to it.
         </p>
 
         <div className="grid sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-[#111827] rounded-xl p-4">
+          <div className="bg-[#151D2E] rounded-xl p-4">
             <p className="text-sm font-medium text-white mb-1">Video Delivery</p>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
               Theta&apos;s CDN relays video streams peer-to-peer. These transfers happen off-chain and produce no blockchain transactions — but they represent real bandwidth served.
             </p>
           </div>
-          <div className="bg-[#111827] rounded-xl p-4">
+          <div className="bg-[#151D2E] rounded-xl p-4">
             <p className="text-sm font-medium text-white mb-1">EdgeCloud Compute</p>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
               AI and GPU workloads run on edge nodes. Job scheduling and results may settle on-chain only periodically, making daily utilization invisible in block data.
             </p>
           </div>
-          <div className="bg-[#111827] rounded-xl p-4">
+          <div className="bg-[#151D2E] rounded-xl p-4">
             <p className="text-sm font-medium text-white mb-1">Infrastructure Phase</p>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
               Networks like Theta build infrastructure first. High staking participation ({fmt(snapshot.totalNodes)} participants) shows strong commitment even before mass on-chain activity arrives.
             </p>
           </div>
         </div>
 
-        <div className="bg-[#111827] rounded-xl p-4">
+        <div className="bg-[#151D2E] rounded-xl p-4">
           <p className="text-sm font-medium text-white mb-2">Think of it like a highway</p>
-          <p className="text-xs text-[#9CA3AF] leading-relaxed">
+          <p className="text-xs text-[#B0B8C4] leading-relaxed">
             A newly built highway may have low traffic today — but the road is there, the on-ramps work, and tollbooths are staffed. Low traffic now doesn&apos;t mean the highway was a bad investment. It means the city is still growing around it. Theta&apos;s {fmt(snapshot.totalNodes)} staking participants are the infrastructure waiting for traffic to arrive.
           </p>
         </div>
       </div>
 
       {/* How to read this */}
-      <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
         <h3 className="text-base font-semibold text-white mb-4">
           What does this tell you?
         </h3>
@@ -388,7 +388,7 @@ export default function NetworkActivityIndex({
                 If the index rises over time
               </span>
             </div>
-            <ul className="space-y-1.5 text-sm text-[#9CA3AF] leading-relaxed">
+            <ul className="space-y-1.5 text-sm text-[#B0B8C4] leading-relaxed">
               <li>More transactions are happening on-chain</li>
               <li>More wallets may be interacting with the network</li>
               <li>Demand for TFUEL may be increasing</li>
@@ -396,12 +396,12 @@ export default function NetworkActivityIndex({
           </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
-              <span className="text-sm font-medium text-[#6B7280]">
+              <div className="w-2 h-2 rounded-full bg-[#7D8694]" />
+              <span className="text-sm font-medium text-[#7D8694]">
                 If the index stays flat or falls
               </span>
             </div>
-            <ul className="space-y-1.5 text-sm text-[#9CA3AF] leading-relaxed">
+            <ul className="space-y-1.5 text-sm text-[#B0B8C4] leading-relaxed">
               <li>On-chain activity may not be growing visibly</li>
               <li>Usage could be happening off-chain (video delivery, EdgeCloud)</li>
               <li>This index only measures what&apos;s visible on the blockchain</li>
@@ -409,7 +409,7 @@ export default function NetworkActivityIndex({
             </ul>
           </div>
         </div>
-        <p className="text-xs text-[#9CA3AF] mt-6">
+        <p className="text-xs text-[#B0B8C4] mt-6">
           Important: some Theta network activity (video relay, edge compute
           jobs) may not produce visible on-chain transactions. This index
           captures blockchain activity only — it may undercount real usage.

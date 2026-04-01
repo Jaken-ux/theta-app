@@ -29,14 +29,14 @@ export default function ScaleComparison({ totalNodes }: { totalNodes: number }) 
       name: "Akamai CDN",
       value: 365_000,
       label: "365K+ servers",
-      color: "#6B7280",
+      color: "#7D8694",
       note: "largest traditional CDN",
     },
     {
       name: "AWS",
       value: 1_500_000,
       label: "1.5M+ servers (est.)",
-      color: "#6B7280",
+      color: "#7D8694",
       note: "100+ data centers worldwide",
     },
   ];
@@ -45,11 +45,11 @@ export default function ScaleComparison({ totalNodes }: { totalNodes: number }) 
   const maxLog = Math.log10(entries[entries.length - 1].value);
 
   return (
-    <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+    <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
       <h3 className="text-base font-semibold text-white mb-1">
         How big is the network?
       </h3>
-      <p className="text-xs text-[#6B7280] mb-8">
+      <p className="text-xs text-[#7D8694] mb-8">
         Theta is a young, distributed network. Unlike cloud giants with massive
         data centers, Theta relies on thousands of individual computers. The
         growth rate matters more than the current size.
@@ -71,11 +71,11 @@ export default function ScaleComparison({ totalNodes }: { totalNodes: number }) 
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-[#9CA3AF] tabular-nums">
+                <span className="text-sm text-[#B0B8C4] tabular-nums">
                   {entry.label}
                 </span>
               </div>
-              <div className="h-3 bg-[#1F2937] rounded-full overflow-hidden">
+              <div className="h-3 bg-[#2A3548] rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
                   style={{ backgroundColor: entry.color }}
@@ -86,7 +86,7 @@ export default function ScaleComparison({ totalNodes }: { totalNodes: number }) 
                 />
               </div>
               {entry.note && (
-                <p className="text-[11px] text-[#4B5563] mt-1">{entry.note}</p>
+                <p className="text-[11px] text-[#5C6675] mt-1">{entry.note}</p>
               )}
             </div>
           );
@@ -94,7 +94,7 @@ export default function ScaleComparison({ totalNodes }: { totalNodes: number }) 
       </div>
 
       <div className="mt-8 p-4 bg-[#0A0F1C] rounded-xl">
-        <p className="text-sm text-[#9CA3AF] leading-relaxed">
+        <p className="text-sm text-[#B0B8C4] leading-relaxed">
           <span className="text-white font-medium">Important context: </span>
           These are different types of infrastructure. AWS runs enormous
           centralized data centers. Theta is a mesh of small, independent

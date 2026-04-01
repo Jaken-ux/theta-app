@@ -62,7 +62,7 @@ export default function ActivityTrendChart({
           <h3 className="text-sm font-semibold text-white">
             Trend
           </h3>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-[#1F2937] text-[#9CA3AF]">
+          <span className="text-[10px] px-2 py-0.5 rounded bg-[#2A3548] text-[#B0B8C4]">
             {hasEnoughData ? "daily averages" : "collecting data"}
           </span>
         </div>
@@ -70,10 +70,10 @@ export default function ActivityTrendChart({
 
       {!hasEnoughData ? (
         <div className={embedded ? "py-6 text-center" : "py-10 text-center"}>
-          <p className="text-sm text-[#9CA3AF] mb-2">
+          <p className="text-sm text-[#B0B8C4] mb-2">
             Tracking started
           </p>
-          <p className="text-xs text-[#9CA3AF]">
+          <p className="text-xs text-[#B0B8C4]">
             Come back tomorrow to see your first trend line.
             Today&apos;s score is based on {todaySamples} sample{todaySamples !== 1 ? "s" : ""}.
           </p>
@@ -82,18 +82,18 @@ export default function ActivityTrendChart({
               <div
                 key={i}
                 className={`w-1.5 h-1.5 rounded-full ${
-                  i <= daysSinceStart ? "bg-[#2AB8E6]" : "bg-[#1F2937]"
+                  i <= daysSinceStart ? "bg-[#2AB8E6]" : "bg-[#2A3548]"
                 }`}
               />
             ))}
           </div>
-          <p className="text-[10px] text-[#9CA3AF] mt-1">
+          <p className="text-[10px] text-[#B0B8C4] mt-1">
             Day {daysSinceStart + 1} / 14
           </p>
         </div>
       ) : (
         <>
-          <p className="text-xs text-[#9CA3AF] mb-1">
+          <p className="text-xs text-[#B0B8C4] mb-1">
             {daysSinceStart} day{daysSinceStart !== 1 ? "s" : ""} tracked
           </p>
           {trend !== null && (
@@ -102,7 +102,7 @@ export default function ActivityTrendChart({
               style={{
                 color:
                   Math.abs(trend) < 2
-                    ? "#9CA3AF"
+                    ? "#B0B8C4"
                     : trend > 0
                     ? "#10B981"
                     : "#EF4444",
@@ -133,22 +133,22 @@ export default function ActivityTrendChart({
                 </defs>
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: "#9CA3AF", fontSize: 10 }}
+                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   domain={[0, "auto"]}
-                  tick={{ fill: "#9CA3AF", fontSize: 10 }}
+                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   width={30}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#1F2937",
-                    border: "1px solid #374151",
+                    background: "#2A3548",
+                    border: "1px solid #445064",
                     borderRadius: "8px",
                     color: "#e5e7eb",
                     fontSize: "12px",
@@ -177,7 +177,7 @@ export default function ActivityTrendChart({
         </>
       )}
 
-      <p className="text-[10px] text-[#6B7280] mt-2">
+      <p className="text-[10px] text-[#7D8694] mt-2">
         Each day = average of all samples. ~1,000 blocks sampled per visit.
       </p>
     </>
@@ -186,7 +186,7 @@ export default function ActivityTrendChart({
   if (embedded) return content;
 
   return (
-    <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
+    <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
       {content}
     </div>
   );

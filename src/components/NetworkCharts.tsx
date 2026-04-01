@@ -29,13 +29,13 @@ function ProgressBar({
   return (
     <div>
       <div className="flex justify-between text-sm mb-1.5">
-        <span className="text-[#9CA3AF]">{label}</span>
+        <span className="text-[#B0B8C4]">{label}</span>
         <span className="text-white font-medium">
           {value.toLocaleString("en-US", { maximumFractionDigits: 1 })}
           {suffix}
         </span>
       </div>
-      <div className="h-2.5 bg-[#1F2937] rounded-full overflow-hidden">
+      <div className="h-2.5 bg-[#2A3548] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${pct}%`, backgroundColor: color }}
@@ -59,7 +59,7 @@ export default function NetworkCharts({ stats }: { stats: NetworkStats }) {
     <div className="grid lg:grid-cols-2 gap-4">
       {/* Staking ratios as progress bars */}
       <Card>
-        <p className="text-sm text-[#9CA3AF] mb-5">Staking Ratios</p>
+        <p className="text-sm text-[#B0B8C4] mb-5">Staking Ratios</p>
         <div className="space-y-5">
           <ProgressBar
             label="THETA staked"
@@ -80,28 +80,28 @@ export default function NetworkCharts({ stats }: { stats: NetworkStats }) {
 
       {/* Node distribution as bar chart */}
       <Card>
-        <p className="text-sm text-[#9CA3AF] mb-4">Node Distribution</p>
+        <p className="text-sm text-[#B0B8C4] mb-4">Node Distribution</p>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={nodeData} layout="vertical" barSize={28}>
               <XAxis
                 type="number"
-                tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                tick={{ fill: "#B0B8C4", fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 type="category"
                 dataKey="name"
-                tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                tick={{ fill: "#B0B8C4", fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
                 width={140}
               />
               <Tooltip
                 contentStyle={{
-                  background: "#1F2937",
-                  border: "1px solid #374151",
+                  background: "#2A3548",
+                  border: "1px solid #445064",
                   borderRadius: "8px",
                   color: "#e5e7eb",
                 }}
@@ -120,7 +120,7 @@ export default function NetworkCharts({ stats }: { stats: NetworkStats }) {
 
       {/* TFUEL supply breakdown */}
       <Card className="lg:col-span-2">
-        <p className="text-sm text-[#9CA3AF] mb-5">TFUEL Supply Breakdown</p>
+        <p className="text-sm text-[#B0B8C4] mb-5">TFUEL Supply Breakdown</p>
         <div className="space-y-5">
           <ProgressBar
             label="Staked"
@@ -134,7 +134,7 @@ export default function NetworkCharts({ stats }: { stats: NetworkStats }) {
             value={tfuelFreeM}
             max={stats.tfuelSupply.circulatingSupply / 1_000_000}
             suffix="M"
-            color="#6B7280"
+            color="#7D8694"
           />
         </div>
       </Card>

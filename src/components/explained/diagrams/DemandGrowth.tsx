@@ -15,7 +15,7 @@ export default function DemandGrowth() {
     <svg viewBox="0 0 560 240" fill="none" className="w-full max-w-[560px]">
       {/* Grid lines */}
       {[60, 100, 140, 180].map((y) => (
-        <line key={y} x1="40" y1={y} x2="520" y2={y} stroke="#1F2937" strokeWidth="1" />
+        <line key={y} x1="40" y1={y} x2="520" y2={y} stroke="#2A3548" strokeWidth="1" />
       ))}
 
       {/* Area */}
@@ -29,12 +29,12 @@ export default function DemandGrowth() {
       <path d={lineD} stroke="#2AB8E6" strokeWidth="2" fill="none" />
 
       {/* Labels */}
-      <text x="40" y="220" fill="#6B7280" fontSize="11">2020</text>
-      <text x="500" y="220" fill="#6B7280" fontSize="11">2030</text>
-      <text x="280" y="220" textAnchor="middle" fill="#9CA3AF" fontSize="11">Projected global compute demand</text>
+      <text x="40" y="220" fill="#7D8694" fontSize="11">2020</text>
+      <text x="500" y="220" fill="#7D8694" fontSize="11">2030</text>
+      <text x="280" y="220" textAnchor="middle" fill="#B0B8C4" fontSize="11">Projected global compute demand</text>
 
       {/* Y axis label */}
-      <text x="20" y="18" fill="#6B7280" fontSize="10">Demand</text>
+      <text x="20" y="18" fill="#7D8694" fontSize="10">Demand</text>
     </svg>
   );
 }

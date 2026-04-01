@@ -33,20 +33,20 @@ export default function ChartCard({
             </defs>
             <XAxis
               dataKey="name"
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              tick={{ fill: "#B0B8C4", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              tick={{ fill: "#B0B8C4", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               width={40}
             />
             <Tooltip
               contentStyle={{
-                background: "#1F2937",
-                border: "1px solid #374151",
+                background: "#2A3548",
+                border: "1px solid #445064",
                 borderRadius: "8px",
                 color: "#e5e7eb",
               }}
