@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-// Same effective constants as the real calculator
 const THETA_REWARD_PER_BLOCK = 48 * 0.529;
 const TFUEL_REWARD_PER_BLOCK = 38 * 0.529;
 const BLOCKS_PER_YEAR = 5_256_000;
@@ -31,7 +30,7 @@ const MILESTONES: Milestone[] = [
   {
     name: "Early traction",
     tfuelPrice: 0.05,
-    description: "Consistent dApp usage begins, TFUEL burn becomes noticeable",
+    description: "Consistent dApp usage, TFUEL burn becomes noticeable",
     color: "#F59E0B",
   },
   {
@@ -61,28 +60,35 @@ function fmtUsd(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
+function fmtTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 export default function DreamCalculator({ stakingData }: { stakingData: StakingData }) {
-  const [amount, setAmount] = useState("");
+  const [investmentStr, setInvestmentStr] = useState("");
   const [type, setType] = useState<"theta" | "tfuel">("theta");
 
-  const staked = parseFloat(amount) || 0;
+  const investmentUsd = parseFloat(investmentStr) || 0;
+  const tokenPrice = type === "theta" ? stakingData.thetaPrice : stakingData.tfuelPrice;
+  const tokensYouGet = tokenPrice > 0 ? investmentUsd / tokenPrice : 0;
   const minStake = type === "theta" ? 1_000 : 10_000;
+  const minInvestment = minStake * tokenPrice;
+  const belowMin = investmentUsd > 0 && tokensYouGet < minStake;
 
-  // Calculate investment cost at current prices
-  const currentTokenPrice = type === "theta" ? stakingData.thetaPrice : stakingData.tfuelPrice;
-  const investmentUsd = staked * currentTokenPrice;
-
-  // Set "Today" milestone price dynamically
   const milestones = MILESTONES.map((m, i) =>
     i === 0 ? { ...m, tfuelPrice: stakingData.tfuelPrice } : m
   );
 
-  // Calculate yearly TFUEL reward
+  // Yearly TFUEL reward
   const rewardPerBlock = type === "theta" ? THETA_REWARD_PER_BLOCK : TFUEL_REWARD_PER_BLOCK;
   const totalStaked = type === "theta" ? stakingData.thetaStaked : stakingData.tfuelStaked;
-  const userShare = totalStaked > 0 ? staked / totalStaked : 0;
+  const userShare = totalStaked > 0 ? tokensYouGet / totalStaked : 0;
   const yearlyTfuel = userShare * rewardPerBlock * BLOCKS_PER_YEAR;
   const monthlyTfuel = yearlyTfuel / 12;
+
+  const canShow = investmentUsd > 0 && tokensYouGet >= minStake;
 
   return (
     <div className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
@@ -92,64 +98,86 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
         </h3>
         <p className="text-sm text-[#9CA3AF]">
           Nobody knows the future. But you can explore what different outcomes
-          would mean for you — if you were already positioned.
+          would mean — if you were already positioned.
         </p>
       </div>
 
-      {/* Type selector + input */}
+      {/* Type selector */}
       <div className="flex gap-2 mb-4">
         <button
-          onClick={() => { setType("theta"); setAmount(""); }}
+          onClick={() => { setType("theta"); setInvestmentStr(""); }}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             type === "theta"
               ? "bg-[#2AB8E6]/15 text-[#2AB8E6] border border-[#2AB8E6]/30"
               : "bg-[#1F2937] text-[#9CA3AF] border border-[#1F2937] hover:border-[#374151]"
           }`}
         >
-          THETA
+          Stake THETA
         </button>
         <button
-          onClick={() => { setType("tfuel"); setAmount(""); }}
+          onClick={() => { setType("tfuel"); setInvestmentStr(""); }}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
             type === "tfuel"
               ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
               : "bg-[#1F2937] text-[#9CA3AF] border border-[#1F2937] hover:border-[#374151]"
           }`}
         >
-          TFUEL
+          Stake TFUEL
         </button>
       </div>
 
-      <div className="mb-6">
+      {/* Dollar input */}
+      <div className="mb-4">
         <label className="block text-sm text-[#9CA3AF] mb-1">
-          How much {type.toUpperCase()} would you stake?
+          How much would you invest? (USD)
         </label>
-        <input
-          type="number"
-          min="0"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder={`min ${minStake.toLocaleString()}`}
-          className="w-full bg-[#0D1117] border border-[#1F2937] rounded-lg px-4 py-2.5 text-white placeholder:text-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2AB8E6]/40"
-        />
-        {staked > 0 && (
-          <p className="text-xs text-[#9CA3AF] mt-1">
-            That costs ~{fmtUsd(investmentUsd)} at today&apos;s price (${currentTokenPrice.toFixed(4)})
-          </p>
-        )}
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]">$</span>
+          <input
+            type="number"
+            min="0"
+            value={investmentStr}
+            onChange={(e) => setInvestmentStr(e.target.value)}
+            placeholder="1000"
+            className="w-full bg-[#0D1117] border border-[#1F2937] rounded-lg pl-8 pr-4 py-2.5 text-white placeholder:text-[#4B5563] focus:outline-none focus:ring-2 focus:ring-[#2AB8E6]/40"
+          />
+        </div>
       </div>
 
-      {/* Milestone table */}
-      {staked >= minStake && (
+      {/* What you get */}
+      {investmentUsd > 0 && (
+        <div className="bg-[#0D1117] rounded-xl p-4 mb-6">
+          <p className="text-xs text-[#9CA3AF] mb-1">
+            At today&apos;s price (${tokenPrice.toFixed(4)}) you would get
+          </p>
+          <p className="text-2xl font-semibold text-white">
+            {fmtTokens(tokensYouGet)} {type.toUpperCase()}
+          </p>
+          {belowMin && (
+            <p className="text-xs text-[#F59E0B] mt-2">
+              Minimum stake is {minStake.toLocaleString()} {type.toUpperCase()} (~{fmtUsd(minInvestment)}).
+              {type === "theta" ? " Required for a Guardian Node." : " Required for an Elite Edge Node."}
+            </p>
+          )}
+          {canShow && (
+            <p className="text-xs text-[#9CA3AF] mt-1">
+              All staked — earning {yearlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 0 })} TFUEL/year at current rates
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Milestone scenarios */}
+      {canShow && (
         <>
+          <p className="text-xs text-[#9CA3AF] mb-3 uppercase tracking-wide font-medium">
+            Your yearly passive income if the network reaches...
+          </p>
+
           <div className="space-y-3">
             {milestones.map((m, i) => {
               const yearlyUsd = yearlyTfuel * m.tfuelPrice;
               const monthlyUsd = monthlyTfuel * m.tfuelPrice;
-
-              // Portfolio value: TFUEL rewards value + staked token value
-              // For THETA stakers, token value doesn't change with TFUEL price
-              // so we just show the passive income angle
               const isToday = i === 0;
 
               return (
@@ -161,7 +189,7 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
                       : "bg-[#0D1117]/60 border border-[#1F2937]/50"
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <div
                       className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: m.color }}
@@ -184,21 +212,15 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
                   <p className="text-xs text-[#9CA3AF] mb-3">{m.description}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-[#6B7280] uppercase">Monthly passive income</p>
-                      <p className="text-base font-semibold text-white">
+                      <p className="text-[10px] text-[#6B7280] uppercase">Monthly income</p>
+                      <p className="text-lg font-semibold text-white">
                         {fmtUsd(monthlyUsd)}
-                      </p>
-                      <p className="text-[10px] text-[#9CA3AF]">
-                        {monthlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 0 })} TFUEL
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-[#6B7280] uppercase">Yearly passive income</p>
-                      <p className="text-base font-semibold text-white">
+                      <p className="text-[10px] text-[#6B7280] uppercase">Yearly income</p>
+                      <p className="text-lg font-semibold text-white">
                         {fmtUsd(yearlyUsd)}
-                      </p>
-                      <p className="text-[10px] text-[#9CA3AF]">
-                        {yearlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 0 })} TFUEL
                       </p>
                     </div>
                   </div>
