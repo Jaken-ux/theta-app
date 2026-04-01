@@ -58,17 +58,14 @@ type Currency = "usd" | "eur";
 function fmtMoney(n: number, currency: Currency, eurRate: number): string {
   const symbol = currency === "eur" ? "€" : "$";
   const val = currency === "eur" ? n * eurRate : n;
-  if (val >= 1_000_000) return `${symbol}${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `${symbol}${(val / 1_000).toFixed(1)}K`;
-  if (val >= 1) return `${symbol}${val.toFixed(0)}`;
+  if (val >= 1) return `${symbol}${Math.round(val).toLocaleString("en-US")}`;
   return `${symbol}${val.toFixed(2)}`;
 }
 
 function fmtTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  return Math.round(n).toLocaleString("en-US");
 }
+
 
 export default function DreamCalculator({ stakingData, eurRate }: { stakingData: StakingData; eurRate: number }) {
   const [investmentStr, setInvestmentStr] = useState("");
