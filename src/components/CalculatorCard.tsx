@@ -4,11 +4,11 @@ import { useState } from "react";
 import Card from "./Card";
 
 // Protocol constants — set at Theta Mainnet 3.0 level
-// Raw rewards are 48/38 TFUEL per block, but only ~53% of stakers
-// participate in each checkpoint vote. Effective rate matches
-// observed payouts (cross-checked with Thetaboard).
+// THETA: 48 TFUEL/block but only ~53% of guardians participate in each
+// checkpoint vote, so effective rate is ~25.4 (cross-checked with Thetaboard).
+// TFUEL: 38 TFUEL/block distributed directly to edge nodes — no correction needed.
 const THETA_REWARD_PER_BLOCK = 48 * 0.529; // ~25.4 effective TFUEL/block
-const TFUEL_REWARD_PER_BLOCK = 38 * 0.529; // ~20.1 effective TFUEL/block
+const TFUEL_REWARD_PER_BLOCK = 38;          // full 38 TFUEL/block
 const BLOCKS_PER_YEAR = 5_256_000; // ~6 second block time
 
 interface StakingData {

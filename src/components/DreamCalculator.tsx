@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const THETA_REWARD_PER_BLOCK = 48 * 0.529;
-const TFUEL_REWARD_PER_BLOCK = 38 * 0.529;
+const TFUEL_REWARD_PER_BLOCK = 38;
 const BLOCKS_PER_YEAR = 5_256_000;
 
 interface StakingData {
