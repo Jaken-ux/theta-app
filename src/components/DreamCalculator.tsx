@@ -72,16 +72,16 @@ function fmtTokens(n: number): string {
 
 export default function DreamCalculator({ stakingData, eurRate }: { stakingData: StakingData; eurRate: number }) {
   const [investmentStr, setInvestmentStr] = useState("");
-  const [type, setType] = useState<"theta" | "tfuel">("theta");
+  const [type, setType] = useState<"theta" | "tfuel" | null>(null);
   const [currency, setCurrency] = useState<Currency>("usd");
 
   const inputValue = parseFloat(investmentStr) || 0;
   const investmentUsd = currency === "eur" ? inputValue / eurRate : inputValue;
-  const tokenPrice = type === "theta" ? stakingData.thetaPrice : stakingData.tfuelPrice;
+  const tokenPrice = type ? (type === "theta" ? stakingData.thetaPrice : stakingData.tfuelPrice) : 0;
   const tokensYouGet = tokenPrice > 0 ? investmentUsd / tokenPrice : 0;
   const minStake = type === "theta" ? 1_000 : 10_000;
   const minInvestment = minStake * tokenPrice;
-  const belowMin = investmentUsd > 0 && tokensYouGet < minStake;
+  const belowMin = type !== null && investmentUsd > 0 && tokensYouGet < minStake;
 
   const milestones = MILESTONES.map((m, i) =>
     i === 0 ? { ...m, tfuelPrice: stakingData.tfuelPrice } : m
@@ -89,12 +89,12 @@ export default function DreamCalculator({ stakingData, eurRate }: { stakingData:
 
   // Yearly TFUEL reward
   const rewardPerBlock = type === "theta" ? THETA_REWARD_PER_BLOCK : TFUEL_REWARD_PER_BLOCK;
-  const totalStaked = type === "theta" ? stakingData.thetaStaked : stakingData.tfuelStaked;
+  const totalStaked = type ? (type === "theta" ? stakingData.thetaStaked : stakingData.tfuelStaked) : 0;
   const userShare = totalStaked > 0 ? tokensYouGet / totalStaked : 0;
   const yearlyTfuel = userShare * rewardPerBlock * BLOCKS_PER_YEAR;
   const monthlyTfuel = yearlyTfuel / 12;
 
-  const canShow = investmentUsd > 0 && tokensYouGet >= minStake;
+  const canShow = type !== null && investmentUsd > 0 && tokensYouGet >= minStake;
 
   return (
     <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
@@ -164,7 +164,7 @@ export default function DreamCalculator({ stakingData, eurRate }: { stakingData:
                 : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
             }`}
           >
-            THETA
+            THETA (Guardian Node)
           </button>
           <button
             onClick={() => setType("tfuel")}
@@ -174,13 +174,13 @@ export default function DreamCalculator({ stakingData, eurRate }: { stakingData:
                 : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
             }`}
           >
-            TFUEL
+            TFUEL (Edge Node)
           </button>
         </div>
       </div>
 
       {/* What you get */}
-      {investmentUsd > 0 && (
+      {type !== null && investmentUsd > 0 && (
         <div className="bg-[#0D1117] rounded-xl p-4 mb-6">
           <p className="text-xs text-[#B0B8C4] mb-1">
             At today&apos;s price ({fmtMoney(tokenPrice, currency, eurRate)}) you would get
