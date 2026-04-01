@@ -106,7 +106,7 @@ export default function NetworkActivityIndex({
   const rawScore = Math.round(computeIndex(snapshot));
   const [infoOpen, setInfoOpen] = useState(false);
   const [todaySamples, setTodaySamples] = useState(0);
-  const [dailyAvg, setDailyAvg] = useState(rawScore);
+  const [dailyAvg, setDailyAvg] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -114,14 +114,13 @@ export default function NetworkActivityIndex({
       const history: HistoryEntry[] = await getHistory();
       const today = new Date().toISOString().slice(0, 10);
       const todayEntry = history.find((e) => e.date === today);
-      if (todayEntry) {
-        setDailyAvg(todayEntry.score);
-      }
+      setDailyAvg(todayEntry ? todayEntry.score : rawScore);
     }
     load();
   }, [rawScore]);
 
-  const score = dailyAvg;
+  const score = dailyAvg ?? rawScore;
+  const scoreReady = dailyAvg !== null;
   const { tier, progress, tierIndex } = getCurrentTier(score);
 
   return (
@@ -154,12 +153,12 @@ export default function NetworkActivityIndex({
 
             <div className="flex items-end gap-3">
               <span
-                className="text-[64px] sm:text-[80px] leading-none font-semibold text-white tabular-nums cursor-help"
+                className={`text-[64px] sm:text-[80px] leading-none font-semibold tabular-nums cursor-help transition-opacity duration-300 ${scoreReady ? "text-white opacity-100" : "text-white/0"}`}
                 title="Composite proxy based on observable on-chain metrics only"
               >
                 {score}
               </span>
-              <span className="text-2xl text-[#9CA3AF] mb-3">/{tier.ceiling.toLocaleString()}</span>
+              <span className={`text-2xl text-[#9CA3AF] mb-3 transition-opacity duration-300 ${scoreReady ? "opacity-100" : "opacity-0"}`}>/{tier.ceiling.toLocaleString()}</span>
             </div>
 
             <p className="text-xs text-[#9CA3AF] mt-1 mb-1">
