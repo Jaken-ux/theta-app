@@ -1,0 +1,241 @@
+"use client";
+
+import { motion, AnimatePresence } from "framer-motion";
+
+export function InfoButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="How this index works"
+      className="w-5 h-5 rounded-full border border-[#6B7280] text-[#9CA3AF] hover:text-white hover:border-[#9CA3AF] transition-colors flex items-center justify-center text-[11px] font-medium leading-none"
+    >
+      i
+    </button>
+  );
+}
+
+export default function InfoModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+
+          {/* Modal */}
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div
+              className="bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <h2 className="text-lg font-semibold text-white">
+                  How the Activity Index works
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="text-[#6B7280] hover:text-white transition-colors text-xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Explanation */}
+              <div className="space-y-4 text-sm text-[#D1D5DB] leading-relaxed">
+                <p>
+                  The Activity Index is a relative measure of observable on-chain
+                  activity on the Theta main chain. It combines four metrics into
+                  a score between 0 and 100.
+                </p>
+
+                {/* What it measures */}
+                <div>
+                  <p className="text-white font-medium mb-2">
+                    What it measures:
+                  </p>
+                  <ul className="space-y-1.5 list-disc list-inside text-[#D1D5DB]">
+                    <li>Main-chain transactions in the last 24h (30% weight)</li>
+                    <li>TFUEL 24h trading volume (30% weight)</li>
+                    <li>Percentage of blocks with user transactions (20% weight)</li>
+                    <li>Number of staking participants (20% weight)</li>
+                  </ul>
+                </div>
+
+                {/* How to use it */}
+                <div>
+                  <p className="text-white font-medium mb-2">
+                    How to use it:
+                  </p>
+                  <p>
+                    This index is useful for one thing: <span className="text-white">tracking change over time</span>.
+                    If it trends upward, more on-chain activity is happening. If it
+                    trends downward, less is visible on-chain.
+                  </p>
+                </div>
+
+                {/* What it does NOT tell you */}
+                <div className="bg-[#0A0F1C] border border-[#1E3A5F] rounded-xl p-4">
+                  <p className="text-white font-medium mb-2">
+                    What it does NOT tell you:
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
+                    <li>It does not predict token price or investment value</li>
+                    <li>A high score does not mean the project has &quot;succeeded&quot;</li>
+                    <li>A low score does not mean the network is dead or failing</li>
+                    <li>It does not capture off-chain activity (video delivery, AI compute, subchain transactions)</li>
+                  </ul>
+                </div>
+
+                {/* How the scale works */}
+                <div>
+                  <p className="text-white font-medium mb-2">
+                    How the scale works:
+                  </p>
+                  <p>
+                    Unlike a fixed 0-100 scale, this index grows with the network.
+                    When the score reaches a milestone, the next tier unlocks and
+                    the ceiling expands. This means the index never caps out — it
+                    keeps scaling as Theta grows.
+                  </p>
+                  <div className="mt-2 bg-[#0D1117] rounded-lg p-3 text-xs text-[#9CA3AF] space-y-1">
+                    <p>Each metric baseline (= score of 100):</p>
+                    <p>Transactions: 30,000/day</p>
+                    <p>TFUEL volume: $10M/24h</p>
+                    <p>Block activity: 30% of blocks with user txs</p>
+                    <p>Staking: 15,000 participants</p>
+                  </div>
+                  <p className="text-xs text-[#9CA3AF] mt-2">
+                    When the network exceeds these baselines, the score goes above
+                    100 and the next milestone unlocks automatically.
+                  </p>
+                </div>
+
+                {/* Tier milestones */}
+                <div>
+                  <p className="text-white font-medium mb-3">
+                    Milestones — tiers that unlock as the network grows:
+                  </p>
+                  <div className="space-y-3">
+                    {/* Foundation 0-100 */}
+                    <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#F59E0B]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-[#F59E0B]">0 — 100</span>
+                        <span className="text-xs text-[#F59E0B] font-medium">Foundation</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/15 text-[#F59E0B]">current tier</span>
+                      </div>
+                      <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
+                        The network is functional with early adopters and stakers. Infrastructure
+                        is in place. On-chain activity is growing from a small base.
+                      </p>
+                      <div className="text-[10px] text-[#9CA3AF] space-y-0.5">
+                        <p>Now (~42): ~14K txs/day, ~$2M volume, ~12K stakers</p>
+                        <p>At 60: ~18K txs/day, ~$4M volume — TFUEL burn rate doubles</p>
+                        <p>At 80: ~25K txs/day, ~$7M volume — consistent demand for blockspace</p>
+                        <p>At 100: all metrics at baseline — first milestone reached</p>
+                      </div>
+                    </div>
+
+                    {/* Growth 100-500 */}
+                    <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#2AB8E6]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-[#2AB8E6]">100 — 500</span>
+                        <span className="text-xs text-[#2AB8E6] font-medium">Growth</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#6B7280]">locked</span>
+                      </div>
+                      <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
+                        The network surpasses its initial baselines. Main chain processes 30K+ txs/day.
+                        TFUEL burn is continuous and supply reduction becomes visible on-chain.
+                        Real applications are driving consistent demand.
+                      </p>
+                      <div className="text-[10px] text-[#9CA3AF] space-y-0.5">
+                        <p>At 200: ~60K txs/day, ~$20M volume — 2x all baselines</p>
+                        <p>At 300: ~90K txs/day — TFUEL burn is a significant economic force</p>
+                        <p>At 500: ~150K txs/day — multiple major applications on-chain daily</p>
+                      </div>
+                    </div>
+
+                    {/* Scale 500-2500 */}
+                    <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#10B981]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-[#10B981]">500 — 2,500</span>
+                        <span className="text-xs text-[#10B981] font-medium">Scale</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#6B7280]">locked</span>
+                      </div>
+                      <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
+                        Mass adoption territory. High transaction volume, significant TFUEL burn
+                        continuously reducing supply. The network is a daily-use platform for
+                        many applications and users.
+                      </p>
+                      <div className="text-[10px] text-[#9CA3AF] space-y-0.5">
+                        <p>At this level, TFUEL burn creates sustained deflationary pressure</p>
+                        <p>Fundamental demand for TFUEL is structurally embedded, not speculative</p>
+                      </div>
+                    </div>
+
+                    {/* Dominance 2500-10000 */}
+                    <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#8B5CF6]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-[#8B5CF6]">2,500 — 10,000</span>
+                        <span className="text-xs text-[#8B5CF6] font-medium">Dominance</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1F2937] text-[#6B7280]">locked</span>
+                      </div>
+                      <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                        Theta processes volumes comparable to top-tier blockchain networks.
+                        TFUEL demand is structurally embedded in a large, active ecosystem.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-[#9CA3AF] mt-3">
+                    These milestones describe what is mechanically happening on the network at each level.
+                    They are not predictions or targets — they are what the data would have to look like
+                    for the index to reach that score.
+                  </p>
+                </div>
+
+                {/* Data coverage */}
+                <div>
+                  <p className="text-white font-medium mb-2">
+                    Data coverage:
+                  </p>
+                  <p>
+                    This index only sees main-chain data (~14K txs/day).
+                    Theta&apos;s full Metachain processes ~300K+ transactions/day
+                    across subchains, but that data is not available via public API.
+                    The real picture is significantly bigger than what we can show.
+                  </p>
+                </div>
+
+                <p className="text-xs text-[#9CA3AF] pt-2 border-t border-[#1F2937]">
+                  This index is a transparent, best-effort tool — not a financial
+                  indicator. We show exactly what we measure, how we measure it,
+                  and what we cannot see. Use it to follow trends, not to make
+                  absolute judgments.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}

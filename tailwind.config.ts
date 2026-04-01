@@ -6,11 +6,17 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        theta: {
+          teal: "#2AB8E6",
+          dark: "#0A0F1C",
+          card: "#111827",
+          border: "#1F2937",
+          muted: "#9CA3AF",
+        },
       },
     },
   },
