@@ -77,6 +77,13 @@ export interface ActivitySnapshot {
   tfuelVolume24h: number;
   thetaStakingRatio: number;
   tfuelStakingRatio: number;
+  thetaPrice: number;
+  tfuelPrice: number;
+  thetaMarketCap: number;
+  tfuelCirculatingSupply: number;
+  dailyBlocks: number;
+  validatorGuardianNodes: number;
+  edgeNodes: number;
 }
 
 /**
@@ -89,9 +96,10 @@ export interface ActivitySnapshot {
 export async function fetchActivitySnapshot(
   stats: NetworkStats
 ): Promise<ActivitySnapshot> {
-  const [txCountRes, blocksRes] = await Promise.all([
+  const [txCountRes, blocksRes, blockCountRes] = await Promise.all([
     fetch(`${EXPLORER_API}/transactions/number/24`, { next: { revalidate: 60 } }),
     fetch(`${EXPLORER_API}/blocks/top_blocks?pageNumber=1&limit=1000`, { next: { revalidate: 60 } }),
+    fetch(`${EXPLORER_API}/blocks/number/24`, { next: { revalidate: 60 } }),
   ]);
 
   const txCountJson = await txCountRes.json();
@@ -103,6 +111,9 @@ export async function fetchActivitySnapshot(
   const withUserTx = blocks.filter((b) => b.num_txs > 1).length;
   const userTxRate = (withUserTx / total) * 100;
 
+  const blockCountJson = await blockCountRes.json();
+  const dailyBlocks = blockCountJson?.body?.total_num_block ?? 0;
+
   return {
     estimatedDailyTxs: dailyTxs,
     userTxRate,
@@ -110,6 +121,13 @@ export async function fetchActivitySnapshot(
     tfuelVolume24h: stats.tfuelPrice.volume24h,
     thetaStakingRatio: stats.thetaStakingRatio,
     tfuelStakingRatio: stats.tfuelStakingRatio,
+    thetaPrice: stats.thetaPrice.price,
+    tfuelPrice: stats.tfuelPrice.price,
+    thetaMarketCap: stats.thetaPrice.marketCap,
+    tfuelCirculatingSupply: stats.tfuelSupply.circulatingSupply,
+    dailyBlocks,
+    validatorGuardianNodes: stats.thetaStake.totalNodes,
+    edgeNodes: stats.tfuelStake.totalNodes,
   };
 }
 
