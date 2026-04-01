@@ -1,34 +1,46 @@
 import Card from "../../components/Card";
 import CalculatorCard from "../../components/CalculatorCard";
+import { fetchNetworkStats } from "../../lib/theta-api";
+
+export const revalidate = 60;
 
 const ways = [
   {
     title: "Run an Edge Node",
     description:
-      "Share your computer's spare bandwidth and storage. You'll earn TFUEL for every video chunk you help deliver.",
+      "Stake TFUEL (min 10,000) and share compute resources. Earn TFUEL rewards from block production and EdgeCloud jobs.",
     difficulty: "Easy",
   },
   {
     title: "Stake TFUEL",
     description:
-      "Lock up TFUEL to help secure the network. You earn staking rewards — similar to earning interest.",
+      "Lock TFUEL in an Elite Edge Node to earn staking rewards. Higher stakes and longer lock periods increase returns.",
     difficulty: "Easy",
   },
   {
     title: "Run a Guardian Node",
     description:
-      "Stake THETA tokens to validate transactions. Requires 1,000 THETA minimum.",
+      "Stake THETA (min 1,000) to validate blocks and earn TFUEL rewards. Higher security role in the network.",
     difficulty: "Advanced",
   },
 ];
 
-export default function EarnPage() {
+export default async function EarnPage() {
+  const stats = await fetchNetworkStats();
+
+  const stakingData = {
+    thetaStaked: stats.thetaStake.totalAmount,
+    tfuelStaked: stats.tfuelStake.totalAmount,
+    tfuelPrice: stats.tfuelPrice.price,
+    thetaPrice: stats.thetaPrice.price,
+  };
+
   return (
     <div className="space-y-10">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Earn with Theta</h1>
         <p className="text-theta-muted">
-          Estimate your rewards and learn how to participate in the network.
+          Calculate your staking rewards based on live network data.
         </p>
       </div>
 
@@ -37,7 +49,7 @@ export default function EarnPage() {
         <h2 className="text-xl font-semibold text-white mb-4">
           Reward Calculator
         </h2>
-        <CalculatorCard />
+        <CalculatorCard stakingData={stakingData} />
       </section>
 
       {/* Ways to earn */}
