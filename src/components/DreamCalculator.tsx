@@ -102,30 +102,6 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
         </p>
       </div>
 
-      {/* Type selector */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => { setType("theta"); setInvestmentStr(""); }}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            type === "theta"
-              ? "bg-[#2AB8E6]/15 text-[#2AB8E6] border border-[#2AB8E6]/30"
-              : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
-          }`}
-        >
-          Stake THETA
-        </button>
-        <button
-          onClick={() => { setType("tfuel"); setInvestmentStr(""); }}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            type === "tfuel"
-              ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
-              : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
-          }`}
-        >
-          Stake TFUEL
-        </button>
-      </div>
-
       {/* Dollar input */}
       <div className="mb-4">
         <label className="block text-sm text-[#B0B8C4] mb-1">
@@ -141,6 +117,35 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
             placeholder="1000"
             className="w-full bg-[#0D1117] border border-[#2A3548] rounded-lg pl-8 pr-4 py-2.5 text-white placeholder:text-[#5C6675] focus:outline-none focus:ring-2 focus:ring-[#2AB8E6]/40"
           />
+        </div>
+      </div>
+
+      {/* Type selector */}
+      <div className="mb-4">
+        <label className="block text-sm text-[#B0B8C4] mb-1">
+          What would you stake?
+        </label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setType("theta")}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              type === "theta"
+                ? "bg-[#2AB8E6]/15 text-[#2AB8E6] border border-[#2AB8E6]/30"
+                : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
+            }`}
+          >
+            THETA
+          </button>
+          <button
+            onClick={() => setType("tfuel")}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              type === "tfuel"
+                ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30"
+                : "bg-[#2A3548] text-[#B0B8C4] border border-[#2A3548] hover:border-[#445064]"
+            }`}
+          >
+            TFUEL
+          </button>
         </div>
       </div>
 
