@@ -5,7 +5,10 @@ export async function GET() {
   try {
     const pool = await getPool();
     const result = await pool.query(
-      `SELECT date, samples, average, daily_txs, tfuel_volume, wallet_activity, staking_nodes, theta_staking_ratio, tfuel_staking_ratio
+      `SELECT date, samples, average, daily_txs, tfuel_volume, wallet_activity, staking_nodes,
+              theta_staking_ratio, tfuel_staking_ratio, theta_price, tfuel_price,
+              theta_market_cap, tfuel_circulating_supply, daily_blocks,
+              validator_guardian_nodes, edge_nodes
        FROM theta_activity_history
        ORDER BY date ASC
        LIMIT 90`
@@ -22,6 +25,13 @@ export async function GET() {
         stakingNodes: row.staking_nodes,
         thetaStakingRatio: row.theta_staking_ratio,
         tfuelStakingRatio: row.tfuel_staking_ratio,
+        thetaPrice: row.theta_price,
+        tfuelPrice: row.tfuel_price,
+        thetaMarketCap: row.theta_market_cap,
+        tfuelCirculatingSupply: row.tfuel_circulating_supply,
+        dailyBlocks: row.daily_blocks,
+        validatorGuardianNodes: row.validator_guardian_nodes,
+        edgeNodes: row.edge_nodes,
       },
     }));
 

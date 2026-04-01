@@ -2,6 +2,7 @@ import { fetchNetworkStats, fetchActivitySnapshot } from "../../lib/theta-api";
 import MetricCard from "../../components/MetricCard";
 import NetworkCharts from "../../components/NetworkCharts";
 import NetworkActivityIndex from "../../components/network-activity/NetworkActivityIndex";
+import TfuelSupplyChart from "../../components/TfuelSupplyChart";
 
 function fmt(n: number, decimals = 0): string {
   return n.toLocaleString("en-US", {
@@ -88,6 +89,9 @@ export default async function NetworkPage() {
 
       {/* Charts — client component for Recharts */}
       <NetworkCharts stats={stats} />
+
+      {/* TFUEL Supply over time — tracks inflation vs burn */}
+      <TfuelSupplyChart />
 
       {/* Data source note */}
       <p className="text-xs text-theta-muted/50 text-center pt-4">
