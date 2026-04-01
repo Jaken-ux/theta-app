@@ -1,5 +1,6 @@
 import Card from "../../components/Card";
 import CalculatorCard from "../../components/CalculatorCard";
+import DreamCalculator from "../../components/DreamCalculator";
 import { fetchNetworkStats } from "../../lib/theta-api";
 
 export const revalidate = 60;
@@ -50,6 +51,11 @@ export default async function EarnPage() {
           Reward Calculator
         </h2>
         <CalculatorCard stakingData={stakingData} />
+      </section>
+
+      {/* What if calculator */}
+      <section>
+        <DreamCalculator stakingData={stakingData} />
       </section>
 
       {/* Ways to earn */}
