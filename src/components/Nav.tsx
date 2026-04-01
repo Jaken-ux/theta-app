@@ -7,6 +7,7 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/network", label: "Network" },
   { href: "/earn", label: "Earn" },
+  { href: "/get-started", label: "Get Started" },
   { href: "/theta-explained", label: "Deep Dive" },
 ];
 
