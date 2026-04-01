@@ -131,6 +131,19 @@ export async function fetchActivitySnapshot(
   };
 }
 
+export async function fetchEurRate(): Promise<number> {
+  try {
+    const res = await fetch(
+      "https://open.er-api.com/v6/latest/USD",
+      { next: { revalidate: 3600 } } // cache 1 hour
+    );
+    const data = await res.json();
+    return data.rates?.EUR ?? 0.92;
+  } catch {
+    return 0.92; // fallback
+  }
+}
+
 export async function fetchNetworkStats(): Promise<NetworkStats> {
   const [prices, thetaStake, tfuelStake, tfuelSupply] = await Promise.all([
     fetchPrices(),

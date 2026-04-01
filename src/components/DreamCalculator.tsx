@@ -53,11 +53,15 @@ const MILESTONES: Milestone[] = [
   },
 ];
 
-function fmtUsd(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
-  if (n >= 1) return `$${n.toFixed(0)}`;
-  return `$${n.toFixed(2)}`;
+type Currency = "usd" | "eur";
+
+function fmtMoney(n: number, currency: Currency, eurRate: number): string {
+  const symbol = currency === "eur" ? "€" : "$";
+  const val = currency === "eur" ? n * eurRate : n;
+  if (val >= 1_000_000) return `${symbol}${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${symbol}${(val / 1_000).toFixed(1)}K`;
+  if (val >= 1) return `${symbol}${val.toFixed(0)}`;
+  return `${symbol}${val.toFixed(2)}`;
 }
 
 function fmtTokens(n: number): string {
@@ -66,11 +70,13 @@ function fmtTokens(n: number): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
-export default function DreamCalculator({ stakingData }: { stakingData: StakingData }) {
+export default function DreamCalculator({ stakingData, eurRate }: { stakingData: StakingData; eurRate: number }) {
   const [investmentStr, setInvestmentStr] = useState("");
   const [type, setType] = useState<"theta" | "tfuel">("theta");
+  const [currency, setCurrency] = useState<Currency>("usd");
 
-  const investmentUsd = parseFloat(investmentStr) || 0;
+  const inputValue = parseFloat(investmentStr) || 0;
+  const investmentUsd = currency === "eur" ? inputValue / eurRate : inputValue;
   const tokenPrice = type === "theta" ? stakingData.thetaPrice : stakingData.tfuelPrice;
   const tokensYouGet = tokenPrice > 0 ? investmentUsd / tokenPrice : 0;
   const minStake = type === "theta" ? 1_000 : 10_000;
@@ -102,13 +108,37 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
         </p>
       </div>
 
-      {/* Dollar input */}
+      {/* Currency + input */}
       <div className="mb-4">
-        <label className="block text-sm text-[#B0B8C4] mb-1">
-          How much would you invest? (USD)
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-sm text-[#B0B8C4]">
+            How much would you invest?
+          </label>
+          <div className="flex bg-[#0D1117] rounded-lg p-0.5 border border-[#2A3548]">
+            <button
+              onClick={() => setCurrency("usd")}
+              className={`px-2.5 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                currency === "usd"
+                  ? "bg-[#151D2E] text-white"
+                  : "text-[#7D8694] hover:text-[#B0B8C4]"
+              }`}
+            >
+              USD
+            </button>
+            <button
+              onClick={() => setCurrency("eur")}
+              className={`px-2.5 py-0.5 rounded-md text-[10px] font-medium transition-colors ${
+                currency === "eur"
+                  ? "bg-[#151D2E] text-white"
+                  : "text-[#7D8694] hover:text-[#B0B8C4]"
+              }`}
+            >
+              EUR
+            </button>
+          </div>
+        </div>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D8694]">$</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D8694]">{currency === "eur" ? "€" : "$"}</span>
           <input
             type="number"
             min="0"
@@ -153,14 +183,14 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
       {investmentUsd > 0 && (
         <div className="bg-[#0D1117] rounded-xl p-4 mb-6">
           <p className="text-xs text-[#B0B8C4] mb-1">
-            At today&apos;s price (${tokenPrice.toFixed(4)}) you would get
+            At today&apos;s price ({fmtMoney(tokenPrice, currency, eurRate)}) you would get
           </p>
           <p className="text-2xl font-semibold text-white">
             {fmtTokens(tokensYouGet)} {type.toUpperCase()}
           </p>
           {belowMin && (
             <p className="text-xs text-[#F59E0B] mt-2">
-              Minimum stake is {minStake.toLocaleString()} {type.toUpperCase()} (~{fmtUsd(minInvestment)}).
+              Minimum stake is {minStake.toLocaleString()} {type.toUpperCase()} (~{fmtMoney(minInvestment, currency, eurRate)}).
               {type === "theta" ? " Required for a Guardian Node." : " Required for an Elite Edge Node."}
             </p>
           )}
@@ -219,13 +249,13 @@ export default function DreamCalculator({ stakingData }: { stakingData: StakingD
                     <div>
                       <p className="text-[10px] text-[#7D8694] uppercase">Monthly income</p>
                       <p className="text-lg font-semibold text-white">
-                        {fmtUsd(monthlyUsd)}
+                        {fmtMoney(monthlyUsd, currency, eurRate)}
                       </p>
                     </div>
                     <div>
                       <p className="text-[10px] text-[#7D8694] uppercase">Yearly income</p>
                       <p className="text-lg font-semibold text-white">
-                        {fmtUsd(yearlyUsd)}
+                        {fmtMoney(yearlyUsd, currency, eurRate)}
                       </p>
                     </div>
                   </div>

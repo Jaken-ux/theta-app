@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-// Protocol constants — set at Theta Mainnet 3.0 level
-const THETA_REWARD_PER_BLOCK = 48 * 0.529; // ~25.4 effective TFUEL/block
-const TFUEL_REWARD_PER_BLOCK = 38;          // full 38 TFUEL/block
+const THETA_REWARD_PER_BLOCK = 48 * 0.529;
+const TFUEL_REWARD_PER_BLOCK = 38;
 const BLOCKS_PER_YEAR = 5_256_000;
+
+type Currency = "usd" | "eur";
 
 interface StakingData {
   thetaStaked: number;
@@ -39,12 +40,22 @@ function calculateRewards(
   return { apy, yearlyTfuel, monthlyTfuel, dailyTfuel };
 }
 
+function fmtCurrency(value: number, currency: Currency, eurRate: number): string {
+  const symbol = currency === "eur" ? "€" : "$";
+  const converted = currency === "eur" ? value * eurRate : value;
+  return `${symbol}${converted.toFixed(2)}`;
+}
+
 function SingleCalculator({
   type,
   stakingData,
+  currency,
+  eurRate,
 }: {
   type: "theta" | "tfuel";
   stakingData: StakingData;
+  currency: Currency;
+  eurRate: number;
 }) {
   const [amount, setAmount] = useState("");
   const staked = parseFloat(amount) || 0;
@@ -70,7 +81,6 @@ function SingleCalculator({
         <p className="text-sm font-medium" style={{ color }}>{nodeType}</p>
       </div>
 
-      {/* Amount input */}
       <label className="block text-xs text-theta-muted mb-1">
         {label} Amount
       </label>
@@ -90,7 +100,6 @@ function SingleCalculator({
       )}
       {!belowMin && <div className="mb-3" />}
 
-      {/* Live APY */}
       <div className="bg-[#0D1117] rounded-lg p-3 mb-4">
         <p className="text-[10px] text-[#B0B8C4]">Estimated APY</p>
         <p className="text-xl font-semibold text-white">{apy.toFixed(2)}%</p>
@@ -99,7 +108,6 @@ function SingleCalculator({
         </p>
       </div>
 
-      {/* Reward estimates */}
       {staked >= minStake && (
         <div className="space-y-2">
           <div className="flex justify-between">
@@ -109,7 +117,7 @@ function SingleCalculator({
                 {dailyTfuel.toLocaleString(undefined, { maximumFractionDigits: 2 })} TFUEL
               </span>
               <span className="text-[10px] text-[#7D8694] ml-1.5">
-                ${dailyUsd.toFixed(2)}
+                {fmtCurrency(dailyUsd, currency, eurRate)}
               </span>
             </div>
           </div>
@@ -120,7 +128,7 @@ function SingleCalculator({
                 {monthlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 2 })} TFUEL
               </span>
               <span className="text-[10px] text-[#7D8694] ml-1.5">
-                ${monthlyUsd.toFixed(2)}
+                {fmtCurrency(monthlyUsd, currency, eurRate)}
               </span>
             </div>
           </div>
@@ -131,14 +139,13 @@ function SingleCalculator({
                 {yearlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 2 })} TFUEL
               </span>
               <span className="text-[10px] text-[#7D8694] ml-1.5">
-                ${yearlyUsd.toFixed(2)}
+                {fmtCurrency(yearlyUsd, currency, eurRate)}
               </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Info */}
       <p className="text-[10px] text-theta-muted/50 mt-3 leading-relaxed">
         {type === "theta"
           ? "Shares 48 TFUEL/block (~6 sec). Rewards paid in TFUEL."
@@ -148,11 +155,47 @@ function SingleCalculator({
   );
 }
 
-export default function CalculatorCard({ stakingData }: { stakingData: StakingData }) {
+export default function CalculatorCard({
+  stakingData,
+  eurRate,
+}: {
+  stakingData: StakingData;
+  eurRate: number;
+}) {
+  const [currency, setCurrency] = useState<Currency>("usd");
+
   return (
-    <div className="grid sm:grid-cols-2 gap-4">
-      <SingleCalculator type="theta" stakingData={stakingData} />
-      <SingleCalculator type="tfuel" stakingData={stakingData} />
+    <div>
+      {/* Currency toggle */}
+      <div className="flex justify-end mb-3">
+        <div className="flex bg-[#0D1117] rounded-lg p-0.5 border border-theta-border">
+          <button
+            onClick={() => setCurrency("usd")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              currency === "usd"
+                ? "bg-theta-card text-white"
+                : "text-[#7D8694] hover:text-[#B0B8C4]"
+            }`}
+          >
+            USD
+          </button>
+          <button
+            onClick={() => setCurrency("eur")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              currency === "eur"
+                ? "bg-theta-card text-white"
+                : "text-[#7D8694] hover:text-[#B0B8C4]"
+            }`}
+          >
+            EUR
+          </button>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <SingleCalculator type="theta" stakingData={stakingData} currency={currency} eurRate={eurRate} />
+        <SingleCalculator type="tfuel" stakingData={stakingData} currency={currency} eurRate={eurRate} />
+      </div>
     </div>
   );
 }

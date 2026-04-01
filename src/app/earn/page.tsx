@@ -1,7 +1,7 @@
 import Card from "../../components/Card";
 import CalculatorCard from "../../components/CalculatorCard";
 import DreamCalculator from "../../components/DreamCalculator";
-import { fetchNetworkStats } from "../../lib/theta-api";
+import { fetchNetworkStats, fetchEurRate } from "../../lib/theta-api";
 
 export const revalidate = 60;
 
@@ -27,7 +27,10 @@ const ways = [
 ];
 
 export default async function EarnPage() {
-  const stats = await fetchNetworkStats();
+  const [stats, eurRate] = await Promise.all([
+    fetchNetworkStats(),
+    fetchEurRate(),
+  ]);
 
   const stakingData = {
     thetaStaked: stats.thetaStake.totalAmount,
@@ -50,12 +53,12 @@ export default async function EarnPage() {
         <h2 className="text-xl font-semibold text-white mb-4">
           Reward Calculator
         </h2>
-        <CalculatorCard stakingData={stakingData} />
+        <CalculatorCard stakingData={stakingData} eurRate={eurRate} />
       </section>
 
       {/* What if calculator */}
       <section>
-        <DreamCalculator stakingData={stakingData} />
+        <DreamCalculator stakingData={stakingData} eurRate={eurRate} />
       </section>
 
       {/* Ways to earn */}
