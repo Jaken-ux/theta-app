@@ -153,7 +153,7 @@ export default function DreamCalculator({ stakingData, eurRate }: { stakingData:
       {/* Type selector */}
       <div className="mb-4">
         <label className="block text-sm text-[#B0B8C4] mb-1">
-          What would you stake?
+          In what would you invest?
         </label>
         <div className="flex gap-2">
           <button
@@ -199,6 +199,15 @@ export default function DreamCalculator({ stakingData, eurRate }: { stakingData:
               All staked — earning {yearlyTfuel.toLocaleString(undefined, { maximumFractionDigits: 0 })} TFUEL/year at current rates
             </p>
           )}
+        </div>
+      )}
+
+      {/* Staking info */}
+      {canShow && (
+        <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg p-3 mb-6">
+          <p className="text-xs text-[#B0B8C4] leading-relaxed">
+            To earn these rewards, you need to <span className="text-white font-medium">stake</span> your tokens by running a {type === "theta" ? "Guardian" : "Elite Edge"} Node or delegating to one. Staking locks your tokens to help secure the network — in return, you earn TFUEL rewards daily.
+          </p>
         </div>
       )}
 
