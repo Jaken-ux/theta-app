@@ -280,9 +280,15 @@ export default function NetworkActivityIndex({
             Medium
           </span>
         </div>
-        <p className="text-sm text-[#B0B8C4] mb-4">
+        <p className="text-sm text-[#B0B8C4] mb-1">
           How much of the real network activity does this index capture?
         </p>
+        <SimplifyThis>
+          <p className="mb-2">Imagine a big company with many departments. You only have access to the sales reports from one department. You can&apos;t see what the other departments are doing.</p>
+          <p className="mb-2">That&apos;s roughly where we are. We can see the main blockchain (one department), but Theta also runs video delivery, AI computing, and subchain transactions that we simply can&apos;t measure with public data.</p>
+          <p className="mb-2">So why is it still useful? Because the department we <em>can</em> see is still a real part of the business. If its numbers go up, something is growing. If they go down, something is slowing. It&apos;s not the full picture — but it&apos;s a genuine signal, not a guess.</p>
+          <p><strong className="text-white">Medium confidence</strong> means: the data is real and reliable, but it only covers part of what the network actually does.</p>
+        </SimplifyThis>
 
         {/* Confidence bar */}
         <div className="mb-6">
