@@ -247,7 +247,11 @@ export default function Home() {
               and computing power going completely to waste.
             </p>
             <SimplifyThis>
-              When you watch a YouTube video, it comes from a huge building full of computers far away. That building costs a fortune to run, and if it goes down — everyone loses their stream. Meanwhile, your own computer is just sitting there doing nothing. What if your computer could help send that video to your neighbor instead? That&apos;s the basic idea behind Theta.
+              <p className="mb-2">When you watch a YouTube video today, it usually comes from a few very large data centers owned by big companies.</p>
+              <p className="mb-2">These data centers are expensive to build and maintain. If one has problems, millions of people can be affected.</p>
+              <p className="mb-2">At the same time, billions of devices around the world sit idle most of the day — laptops, gaming PCs, even smart TVs.</p>
+              <p className="mb-2">Theta&apos;s idea is simple: what if those devices could help deliver video and run AI jobs when they are not being fully used?</p>
+              <p>Instead of relying only on a few giant buildings, the network becomes powered by thousands of everyday machines.</p>
             </SimplifyThis>
           </motion.div>
 
