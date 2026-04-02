@@ -492,6 +492,58 @@ export default function NetworkActivityIndex({
         </div>
       </div>
 
+      {/* How to interpret trends */}
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
+        <h3 className="text-base font-semibold text-white mb-4">
+          How to interpret trend changes
+        </h3>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
+            <span className="text-[#10B981] text-lg mt-0.5">↑</span>
+            <div>
+              <p className="text-sm font-medium text-white mb-0.5">Increases steadily over months</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Likely increasing ecosystem activity</p>
+            </div>
+          </div>
+          <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
+            <span className="text-[#2AB8E6] text-lg mt-0.5">↑</span>
+            <div>
+              <p className="text-sm font-medium text-white mb-0.5">Increases suddenly</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Possible new application, partner launch or usage spike</p>
+            </div>
+          </div>
+          <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
+            <span className="text-[#F59E0B] text-lg mt-0.5">→</span>
+            <div>
+              <p className="text-sm font-medium text-white mb-0.5">Remains stable</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Steady baseline usage</p>
+            </div>
+          </div>
+          <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
+            <span className="text-[#EF4444] text-lg mt-0.5">↓</span>
+            <div>
+              <p className="text-sm font-medium text-white mb-0.5">Declines gradually</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Reduced visible on-chain activity</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-6 mt-4 pt-4 border-t border-[#2A3548]">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#10B981]">↑</span>
+            <span className="text-[10px] text-[#B0B8C4]">Improving signal confidence</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#F59E0B]">→</span>
+            <span className="text-[10px] text-[#B0B8C4]">Stable signal</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[#EF4444]">↓</span>
+            <span className="text-[10px] text-[#B0B8C4]">Weakening signal</span>
+          </div>
+        </div>
+      </div>
+
       {/* Four metric cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <ActivityMetric
