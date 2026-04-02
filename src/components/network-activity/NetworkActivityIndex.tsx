@@ -371,6 +371,45 @@ export default function NetworkActivityIndex({
         </SimplifyThis>
       </div>
 
+      {/* What we CAN measure */}
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
+        <h3 className="text-base font-semibold text-white mb-4">
+          What we CAN measure reliably
+        </h3>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-white mb-1">Main-chain transactions</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              Payments, smart contract interactions and token transfers recorded publicly on the blockchain.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-white mb-1">Wallet activity</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              How many addresses actively interact with the network over time.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-white mb-1">TFUEL usage on-chain</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              How often the network&apos;s utility token is used in measurable transactions.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-white mb-1">Staking participation</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              How many participants help secure the network by locking tokens.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-white mb-1">Exchange activity</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              How actively TFUEL is traded on public markets.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Why still useful */}
       <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
         <h3 className="text-base font-semibold text-white mb-2">
