@@ -1,246 +1,523 @@
 "use client";
 
-import Section from "../components/explained/Section";
-import Container from "../components/explained/Container";
-import Heading from "../components/explained/Heading";
-import Paragraph from "../components/explained/Paragraph";
-import ThetaVsTfuel from "../components/explained/diagrams/ThetaVsTfuel";
-import CentralizedVsDecentralized from "../components/explained/diagrams/CentralizedVsDecentralized";
-import NetworkFlow from "../components/explained/diagrams/NetworkFlow";
-import EdgeNodeConcept from "../components/explained/diagrams/EdgeNodeConcept";
-import DemandGrowth from "../components/explained/diagrams/DemandGrowth";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
-/* ───────────────────── Use cases data ───────────────────── */
-const useCases = [
-  {
-    title: "Video Streaming",
-    description: "Deliver live and on-demand video without massive CDN costs.",
-    icon: "📹",
-  },
-  {
-    title: "AI & Compute",
-    description: "Distribute GPU workloads across idle machines worldwide.",
-    icon: "🧠",
-  },
-  {
-    title: "Gaming",
-    description: "Low-latency game streaming powered by edge nodes near players.",
-    icon: "🎮",
-  },
-  {
-    title: "NFT & Media",
-    description: "Decentralized storage and delivery for digital collectibles.",
-    icon: "🖼",
-  },
-  {
-    title: "Live Events",
-    description: "Scale to millions of concurrent viewers without infrastructure limits.",
-    icon: "🎙",
-  },
-  {
-    title: "Enterprise CDN",
-    description: "Cost-effective content delivery for businesses of any size.",
-    icon: "🏢",
-  },
-];
+/* ─── Animation helpers ─── */
+const fadeUp = {
+  initial: { opacity: 0, y: 40 } as const,
+  whileInView: { opacity: 1, y: 0 } as const,
+  viewport: { once: true, margin: "-60px" as const },
+  transition: { duration: 0.8, ease: "easeOut" as const },
+};
 
-/* ───────────────────── How it works steps ───────────────────── */
-const steps = [
-  { num: "01", title: "Stake", description: "Lock tokens to secure the network." },
-  { num: "02", title: "Share", description: "Edge nodes contribute bandwidth and compute." },
-  { num: "03", title: "Deliver", description: "Content streams from the nearest node." },
-  { num: "04", title: "Earn", description: "Node operators receive TFUEL rewards." },
-];
+const stagger = {
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+};
 
+/* ─── Glowing orb background ─── */
+function GlowOrb({ className }: { className?: string }) {
+  return (
+    <div
+      className={`absolute rounded-full blur-[120px] opacity-20 pointer-events-none ${className}`}
+    />
+  );
+}
+
+/* ─── Animated node mesh ─── */
+function NodeMesh({ count = 6, color = "#2AB8E6" }: { count?: number; color?: string }) {
+  const nodes = Array.from({ length: count }, (_, i) => {
+    const angle = (i / count) * Math.PI * 2;
+    const r = 42;
+    return {
+      x: 50 + Math.cos(angle) * r,
+      y: 50 + Math.sin(angle) * r,
+    };
+  });
+
+  return (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      {/* Lines */}
+      {nodes.map((a, i) =>
+        nodes.map((b, j) =>
+          j > i ? (
+            <motion.line
+              key={`${i}-${j}`}
+              x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+              stroke={color} strokeOpacity={0.15} strokeWidth={0.3}
+              initial={{ pathLength: 0 }}
+              whileInView={{ pathLength: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.5, delay: i * 0.1 }}
+            />
+          ) : null
+        )
+      )}
+      {/* Nodes */}
+      {nodes.map((n, i) => (
+        <motion.circle
+          key={i}
+          cx={n.x} cy={n.y} r={3}
+          fill="#0A0F1C" stroke={color} strokeWidth={0.8}
+          initial={{ scale: 0 }}
+          whileInView={{ scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
+        />
+      ))}
+      {/* Center pulse */}
+      <motion.circle
+        cx={50} cy={50} r={4}
+        fill={color} fillOpacity={0.3}
+        initial={{ scale: 0 }}
+        whileInView={{ scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+      />
+      <motion.circle
+        cx={50} cy={50} r={2}
+        fill={color}
+        initial={{ scale: 0 }}
+        whileInView={{ scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.3, delay: 1 }}
+      />
+    </svg>
+  );
+}
+
+/* ─── Stat counter ─── */
+function Stat({ value, label, delay = 0 }: { value: string; label: string; delay?: number }) {
+  return (
+    <motion.div
+      className="text-center"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay }}
+    >
+      <p className="text-4xl sm:text-5xl font-bold text-white tracking-tight">{value}</p>
+      <p className="text-sm text-[#B0B8C4] mt-2">{label}</p>
+    </motion.div>
+  );
+}
+
+/* ─── Feature card ─── */
+function FeatureCard({
+  title,
+  description,
+  gradient,
+  delay = 0,
+}: {
+  title: string;
+  description: string;
+  gradient: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      className="relative group rounded-2xl border border-[#2A3548] bg-[#151D2E] p-8 overflow-hidden hover:border-[#2AB8E6]/30 transition-all duration-500"
+      {...stagger}
+      transition={{ duration: 0.6, delay }}
+    >
+      <div
+        className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${gradient}`}
+      />
+      <div className="relative z-10">
+        <h3 className="text-xl font-semibold text-white mb-3">{title}</h3>
+        <p className="text-[#B0B8C4] leading-relaxed">{description}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════ PAGE ═══════════════════════════ */
 export default function Home() {
   return (
-    <div className="overflow-hidden">
-      {/* ─── Hero ─── */}
-      <Section className="pt-40 pb-32">
-        <Container narrow className="text-center">
-          <Heading as="h1" size="hero">
-            The internet was built to connect.
+    <div className="overflow-hidden -mt-8">
+      {/* ━━━ HERO ━━━ */}
+      <section className="relative min-h-[90vh] flex items-center justify-center px-6">
+        <GlowOrb className="w-[600px] h-[600px] bg-[#2AB8E6] -top-40 left-1/2 -translate-x-1/2" />
+        <GlowOrb className="w-[400px] h-[400px] bg-[#8B5CF6] top-20 -right-20" />
+        <GlowOrb className="w-[300px] h-[300px] bg-[#10B981] bottom-20 -left-20" />
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <motion.p
+            className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            Decentralized infrastructure for the AI era
+          </motion.p>
+
+          <motion.h1
+            className="text-5xl sm:text-7xl lg:text-8xl font-bold text-white tracking-tight leading-[1.05]"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            The world&apos;s bandwidth,
             <br />
-            <span className="text-[#2AB8E6]">Theta makes it deliver.</span>
-          </Heading>
-          <Paragraph className="mt-6 max-w-[640px] mx-auto">
-            A decentralized network where everyday people power video streaming,
-            AI, and cloud computing — and get rewarded for it.
-          </Paragraph>
-        </Container>
-      </Section>
+            <span className="bg-gradient-to-r from-[#2AB8E6] to-[#8B5CF6] bg-clip-text text-transparent">
+              working for you.
+            </span>
+          </motion.h1>
 
-      {/* ─── Problem ─── */}
-      <Section>
-        <Container narrow>
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
-              <Heading size="section">
-                Streaming is broken.
-              </Heading>
-              <Paragraph className="mt-4">
-                Today, video travels from a handful of data centers to billions of
-                viewers. That&apos;s expensive, slow, and fragile.
-              </Paragraph>
-              <Paragraph className="mt-4">
-                What if the viewers themselves could help deliver it?
-              </Paragraph>
-            </div>
-            <div className="flex justify-center">
-              <CentralizedVsDecentralized />
-            </div>
-          </div>
-        </Container>
-      </Section>
+          <motion.p
+            className="text-lg sm:text-xl text-[#B0B8C4] mt-8 max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            Theta turns idle computers into a global network for video, AI, and
+            cloud computing. Stake your tokens. Earn rewards. Power the next
+            generation of the internet.
+          </motion.p>
 
-      {/* ─── Insight ─── */}
-      <Section>
-        <Container narrow className="text-center">
-          <Heading size="section">
-            Your computer has power to spare.
-          </Heading>
-          <Paragraph className="mt-4 max-w-[540px] mx-auto">
-            Most PCs sit idle 80% of the time. Theta turns that wasted capacity
-            into a global resource — bandwidth, storage, and compute — shared
-            across the network.
-          </Paragraph>
-          <div className="mt-12 flex justify-center">
-            <EdgeNodeConcept />
-          </div>
-        </Container>
-      </Section>
-
-      {/* ─── What is Theta ─── */}
-      <Section>
-        <Container narrow className="text-center">
-          <Heading size="section">
-            So what is Theta, exactly?
-          </Heading>
-          <Paragraph className="mt-4 max-w-[600px] mx-auto">
-            Theta is a blockchain-powered network that coordinates thousands of
-            edge nodes to deliver content faster, cheaper, and more reliably
-            than traditional cloud infrastructure.
-          </Paragraph>
-          <div className="mt-12 flex justify-center">
-            <NetworkFlow />
-          </div>
-        </Container>
-      </Section>
-
-      {/* ─── THETA vs TFUEL ─── */}
-      <Section>
-        <Container narrow className="text-center">
-          <Heading size="section">
-            Two tokens. Two jobs.
-          </Heading>
-          <Paragraph className="mt-4 max-w-[540px] mx-auto">
-            THETA secures the network. TFUEL powers the day-to-day operations.
-            Think of THETA as equity and TFUEL as the currency.
-          </Paragraph>
-          <div className="mt-12 flex justify-center">
-            <ThetaVsTfuel />
-          </div>
-        </Container>
-      </Section>
-
-      {/* ─── How it works ─── */}
-      <Section>
-        <Container>
-          <div className="text-center mb-16">
-            <Heading size="section">How it works</Heading>
-            <Paragraph className="mt-4">Four steps. No jargon.</Paragraph>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((step) => (
-              <div
-                key={step.num}
-                className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8"
-              >
-                <span className="text-[#2AB8E6] text-sm font-mono font-semibold">
-                  {step.num}
-                </span>
-                <h3 className="text-white text-xl font-semibold mt-3">
-                  {step.title}
-                </h3>
-                <p className="text-[#B0B8C4] text-[15px] mt-2 leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* ─── Use Cases ─── */}
-      <Section>
-        <Container>
-          <div className="text-center mb-16">
-            <Heading size="section">Built for real use cases</Heading>
-            <Paragraph className="mt-4">
-              From live sports to AI inference — Theta&apos;s network handles it.
-            </Paragraph>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {useCases.map((uc) => (
-              <div
-                key={uc.title}
-                className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 hover:border-[#2AB8E6]/30 transition-colors"
-              >
-                <span className="text-3xl">{uc.icon}</span>
-                <h3 className="text-white text-lg font-semibold mt-4">
-                  {uc.title}
-                </h3>
-                <p className="text-[#B0B8C4] text-[15px] mt-2 leading-relaxed">
-                  {uc.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* ─── Vision / Demand ─── */}
-      <Section>
-        <Container narrow className="text-center">
-          <Heading size="hero">
-            Compute demand is exploding.
-            <br />
-            <span className="text-[#2AB8E6]">Theta is the answer.</span>
-          </Heading>
-          <Paragraph className="mt-6 max-w-[540px] mx-auto">
-            AI, 4K streaming, and cloud gaming are pushing infrastructure to its
-            limits. Theta unlocks millions of idle machines to meet that demand.
-          </Paragraph>
-          <div className="mt-12 flex justify-center">
-            <DemandGrowth />
-          </div>
-        </Container>
-      </Section>
-
-      {/* ─── CTA Footer ─── */}
-      <Section className="pb-40">
-        <Container narrow className="text-center">
-          <Heading size="section">Ready to explore?</Heading>
-          <Paragraph className="mt-4 max-w-[480px] mx-auto">
-            Run an edge node, stake your tokens, or dive deeper into how
-            Theta is reshaping the internet.
-          </Paragraph>
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <a
+          <motion.div
+            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <Link
+              href="/network"
+              className="px-8 py-4 bg-[#2AB8E6] text-white font-semibold rounded-full hover:bg-[#2AB8E6]/90 transition-all text-base hover:scale-105"
+            >
+              Explore the Network
+            </Link>
+            <Link
               href="/earn"
-              className="inline-flex items-center justify-center px-8 py-3.5 bg-[#2AB8E6] text-white font-medium rounded-full hover:bg-[#2AB8E6]/90 transition-colors text-[15px]"
+              className="px-8 py-4 border border-[#2A3548] text-white font-semibold rounded-full hover:border-[#2AB8E6]/50 transition-all text-base hover:scale-105"
             >
               Start Earning
-            </a>
-            <a
-              href="/theta-explained"
-              className="inline-flex items-center justify-center px-8 py-3.5 border border-[#2A3548] text-white font-medium rounded-full hover:border-[#2AB8E6]/40 transition-colors text-[15px]"
-            >
-              Deep Dive
-            </a>
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ opacity: { delay: 1.5 }, y: { repeat: Infinity, duration: 2 } }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7D8694" strokeWidth="1.5">
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </svg>
+        </motion.div>
+      </section>
+
+      {/* ━━━ SOCIAL PROOF BAR ━━━ */}
+      <motion.section
+        className="py-20 border-y border-[#2A3548]"
+        {...fadeUp}
+      >
+        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-4 gap-8">
+          <Stat value="11,000+" label="Staking participants" delay={0} />
+          <Stat value="$300M+" label="Total value staked" delay={0.1} />
+          <Stat value="14,000+" label="Daily transactions" delay={0.2} />
+          <Stat value="300K+" label="Metachain txs/day" delay={0.3} />
+        </div>
+      </motion.section>
+
+      {/* ━━━ THE PROBLEM ━━━ */}
+      <section className="py-32 px-6">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+          <motion.div {...fadeUp}>
+            <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
+              The problem
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight leading-[1.1]">
+              Streaming wasn&apos;t built
+              <br />for this scale.
+            </h2>
+            <p className="text-lg text-[#B0B8C4] mt-6 leading-relaxed">
+              Today, video travels from a handful of massive data centers to
+              billions of viewers. That&apos;s expensive, slow, and creates
+              single points of failure.
+            </p>
+            <p className="text-lg text-[#B0B8C4] mt-4 leading-relaxed">
+              Meanwhile, billions of devices sit idle — with bandwidth, storage,
+              and computing power going completely to waste.
+            </p>
+          </motion.div>
+
+          {/* Visual: Centralized vs Decentralized */}
+          <motion.div
+            className="grid grid-cols-2 gap-6"
+            {...fadeUp}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            {/* Centralized */}
+            <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-center justify-center mb-6">
+                <div className="w-4 h-4 rounded-full bg-[#EF4444]" />
+              </div>
+              <div className="flex justify-center gap-3 mb-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex flex-col items-center gap-2">
+                    <div className="w-px h-10 bg-[#445064]" />
+                    <div className="w-6 h-6 rounded-full bg-[#151D2E] border border-[#445064]" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm font-medium text-[#EF4444]/70">Traditional</p>
+              <p className="text-xs text-[#7D8694] mt-1">Single point of failure</p>
+            </div>
+
+            {/* Decentralized */}
+            <div className="bg-[#151D2E] border border-[#2AB8E6]/20 rounded-2xl p-8 text-center">
+              <div className="w-full aspect-square max-w-[160px] mx-auto mb-4">
+                <NodeMesh count={7} />
+              </div>
+              <p className="text-sm font-medium text-[#2AB8E6]">Theta Network</p>
+              <p className="text-xs text-[#7D8694] mt-1">Distributed &amp; resilient</p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ━━━ HOW IT WORKS ━━━ */}
+      <section className="py-32 px-6 relative">
+        <GlowOrb className="w-[500px] h-[500px] bg-[#2AB8E6] top-0 left-1/4 -translate-x-1/2" />
+
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div className="text-center mb-20" {...fadeUp}>
+            <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
+              How it works
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              Four steps. Zero jargon.
+            </h2>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { num: "01", title: "Stake", desc: "Lock THETA or TFUEL to secure the network and earn rewards.", color: "#2AB8E6" },
+              { num: "02", title: "Share", desc: "Edge nodes contribute your spare bandwidth and compute power.", color: "#10B981" },
+              { num: "03", title: "Deliver", desc: "Content streams from the nearest node — faster and cheaper.", color: "#F59E0B" },
+              { num: "04", title: "Earn", desc: "Node operators receive TFUEL rewards every block (~6 seconds).", color: "#8B5CF6" },
+            ].map((step, i) => (
+              <motion.div
+                key={step.num}
+                className="relative bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 hover:border-opacity-50 transition-all duration-500"
+                style={{ "--hover-color": step.color } as React.CSSProperties}
+                {...stagger}
+                transition={{ duration: 0.6, delay: i * 0.15 }}
+              >
+                <span
+                  className="text-5xl font-bold opacity-10 absolute top-4 right-6"
+                  style={{ color: step.color }}
+                >
+                  {step.num}
+                </span>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-5"
+                  style={{ backgroundColor: `${step.color}15`, border: `1px solid ${step.color}30` }}
+                >
+                  <span className="text-lg font-bold" style={{ color: step.color }}>
+                    {step.num}
+                  </span>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">{step.title}</h3>
+                <p className="text-[#B0B8C4] leading-relaxed text-sm">{step.desc}</p>
+              </motion.div>
+            ))}
           </div>
-        </Container>
-      </Section>
+        </div>
+      </section>
+
+      {/* ━━━ TWO TOKENS ━━━ */}
+      <section className="py-32 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div className="text-center mb-20" {...fadeUp}>
+            <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
+              Two tokens
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              THETA secures. TFUEL powers.
+            </h2>
+            <p className="text-lg text-[#B0B8C4] mt-6 max-w-2xl mx-auto">
+              Think of THETA as the equity — fixed supply, governance, network security.
+              TFUEL is the currency — used for every transaction, earned as rewards.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <motion.div
+              className="bg-[#151D2E] border border-[#2AB8E6]/20 rounded-2xl p-8"
+              {...stagger}
+              transition={{ duration: 0.6, delay: 0 }}
+            >
+              <div className="w-12 h-12 rounded-full bg-[#2AB8E6]/10 border border-[#2AB8E6]/30 flex items-center justify-center mb-5">
+                <span className="text-lg font-bold text-[#2AB8E6]">&#920;</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">THETA</h3>
+              <ul className="space-y-3 text-[#B0B8C4]">
+                <li className="flex gap-3">
+                  <span className="text-[#2AB8E6] mt-0.5">&#10003;</span>
+                  <span>Fixed supply — 1 billion, forever</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-[#2AB8E6] mt-0.5">&#10003;</span>
+                  <span>Secures the network via staking</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-[#2AB8E6] mt-0.5">&#10003;</span>
+                  <span>Earn TFUEL rewards by staking</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-[#2AB8E6] mt-0.5">&#10003;</span>
+                  <span>Validators: Google, Samsung, Sony</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+              className="bg-[#151D2E] border border-[#10B981]/20 rounded-2xl p-8"
+              {...stagger}
+              transition={{ duration: 0.6, delay: 0.15 }}
+            >
+              <div className="w-12 h-12 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center mb-5">
+                <span className="text-lg font-bold text-[#10B981]">&#9889;</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">TFUEL</h3>
+              <ul className="space-y-3 text-[#B0B8C4]">
+                <li className="flex gap-3">
+                  <span className="text-[#10B981] mt-0.5">&#10003;</span>
+                  <span>Gas token — powers every transaction</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-[#10B981] mt-0.5">&#10003;</span>
+                  <span>Burn mechanism — usage reduces supply</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-[#10B981] mt-0.5">&#10003;</span>
+                  <span>Higher staking yield than THETA</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-[#10B981] mt-0.5">&#10003;</span>
+                  <span>Lower barrier to entry (10K TFUEL min)</span>
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━ USE CASES ━━━ */}
+      <section className="py-32 px-6 relative">
+        <GlowOrb className="w-[400px] h-[400px] bg-[#8B5CF6] bottom-0 right-0" />
+
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div className="text-center mb-20" {...fadeUp}>
+            <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
+              Real applications
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              Built for what&apos;s next.
+            </h2>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <FeatureCard
+              title="Video Streaming"
+              description="Deliver live and on-demand video globally without massive CDN costs. Viewers help relay content to each other."
+              gradient="bg-gradient-to-br from-[#2AB8E6]/5 to-transparent"
+              delay={0}
+            />
+            <FeatureCard
+              title="AI & GPU Compute"
+              description="Distribute AI training and inference workloads across thousands of idle GPUs via EdgeCloud."
+              gradient="bg-gradient-to-br from-[#8B5CF6]/5 to-transparent"
+              delay={0.1}
+            />
+            <FeatureCard
+              title="Cloud Gaming"
+              description="Low-latency game streaming powered by edge nodes located near players — no central server bottleneck."
+              gradient="bg-gradient-to-br from-[#10B981]/5 to-transparent"
+              delay={0.2}
+            />
+            <FeatureCard
+              title="Enterprise CDN"
+              description="Cost-effective content delivery for businesses of any size. Pay with TFUEL, skip the middleman."
+              gradient="bg-gradient-to-br from-[#F59E0B]/5 to-transparent"
+              delay={0.3}
+            />
+            <FeatureCard
+              title="NFT & Digital Media"
+              description="Decentralized storage and delivery for digital collectibles and creative content."
+              gradient="bg-gradient-to-br from-[#EF4444]/5 to-transparent"
+              delay={0.4}
+            />
+            <FeatureCard
+              title="Live Events"
+              description="Scale to millions of concurrent viewers instantly. No infrastructure limits, no buffering."
+              gradient="bg-gradient-to-br from-[#2AB8E6]/5 to-transparent"
+              delay={0.5}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━ THE VISION ━━━ */}
+      <section className="py-32 px-6 relative">
+        <GlowOrb className="w-[600px] h-[600px] bg-[#2AB8E6] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <motion.div {...fadeUp}>
+            <h2 className="text-4xl sm:text-6xl font-bold text-white tracking-tight leading-[1.1]">
+              Compute demand is
+              <br />
+              <span className="bg-gradient-to-r from-[#2AB8E6] via-[#8B5CF6] to-[#10B981] bg-clip-text text-transparent">
+                exploding.
+              </span>
+            </h2>
+            <p className="text-lg sm:text-xl text-[#B0B8C4] mt-8 max-w-2xl mx-auto leading-relaxed">
+              AI, 4K streaming, and cloud gaming are pushing centralized infrastructure
+              to its limits. Theta unlocks millions of idle machines to meet that demand —
+              decentralized, efficient, and rewarding for everyone who participates.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ━━━ CTA ━━━ */}
+      <section className="py-32 px-6 border-t border-[#2A3548]">
+        <motion.div className="max-w-3xl mx-auto text-center" {...fadeUp}>
+          <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+            Ready to explore?
+          </h2>
+          <p className="text-lg text-[#B0B8C4] mt-6 max-w-xl mx-auto">
+            Dive into the network data, calculate your staking rewards,
+            or learn how to get started.
+          </p>
+          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/network"
+              className="px-8 py-4 bg-[#2AB8E6] text-white font-semibold rounded-full hover:bg-[#2AB8E6]/90 transition-all text-base hover:scale-105"
+            >
+              View Network Dashboard
+            </Link>
+            <Link
+              href="/earn"
+              className="px-8 py-4 border border-[#2A3548] text-white font-semibold rounded-full hover:border-[#2AB8E6]/50 transition-all text-base hover:scale-105"
+            >
+              Calculate Rewards
+            </Link>
+            <Link
+              href="/get-started"
+              className="px-8 py-4 border border-[#2A3548] text-white font-semibold rounded-full hover:border-[#10B981]/50 transition-all text-base hover:scale-105"
+            >
+              Get Started
+            </Link>
+          </div>
+        </motion.div>
+      </section>
     </div>
   );
 }
