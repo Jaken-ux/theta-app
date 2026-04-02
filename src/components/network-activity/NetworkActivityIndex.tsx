@@ -371,6 +371,40 @@ export default function NetworkActivityIndex({
         </SimplifyThis>
       </div>
 
+      {/* Why still useful */}
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
+        <h3 className="text-base font-semibold text-white mb-2">
+          Why this index is still useful
+        </h3>
+        <p className="text-sm text-[#B0B8C4] mb-4">
+          Even partial data can show real trends. If observable activity increases consistently, it usually means real adoption is increasing somewhere in the ecosystem.
+        </p>
+
+        <p className="text-xs text-[#D1D5DB] leading-relaxed mb-5">
+          Think of it like measuring electricity usage in part of a city. You may not see every building, but rising consumption still signals growth.
+        </p>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#10B981] mb-2">Most useful for</p>
+            <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
+              <li>• Detecting growth trends</li>
+              <li>• Identifying acceleration or slowdown</li>
+              <li>• Comparing activity over time</li>
+              <li>• Spotting structural changes in usage</li>
+            </ul>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#F59E0B] mb-2">Less useful for</p>
+            <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
+              <li>• Calculating total market size</li>
+              <li>• Predicting price</li>
+              <li>• Estimating total revenue of the network</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       {/* Four metric cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <ActivityMetric
