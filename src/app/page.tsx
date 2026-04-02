@@ -46,7 +46,7 @@ function NodeMesh({ count = 6, color = "#2AB8E6" }: { count?: number; color?: st
             <motion.line
               key={`${i}-${j}`}
               x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-              stroke={color} strokeOpacity={0.15} strokeWidth={0.3}
+              stroke={color} strokeOpacity={0.5} strokeWidth={0.5}
               initial={{ pathLength: 0 }}
               whileInView={{ pathLength: 1 }}
               viewport={{ once: true }}
