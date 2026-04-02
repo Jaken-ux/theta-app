@@ -314,7 +314,7 @@ export default function NetworkActivityIndex({
         </div>
 
         <p className="text-xs text-[#B0B8C4] leading-relaxed">
-          Medium confidence means: the data sources are reliable, but they only show part of the picture. Theta&apos;s Metachain processes ~300K+ transactions per day across subchains, but only main-chain data (~14K/day) is available via public API. The real network activity is significantly higher than what this index reflects.
+          Medium confidence means: the data sources are reliable, but they only show part of the picture. Theta&apos;s Metachain processes ~300K+ transactions per day across subchains, but only main-chain data (~14K/day) is available via public API. The real network activity is significantly higher than what this index reflects. That said, main chain activity still serves as a meaningful directional signal — if it trends up, the ecosystem is growing. If it trends down, visible on-chain usage is declining. The value is in the trend, not the absolute number.
         </p>
       </div>
 
