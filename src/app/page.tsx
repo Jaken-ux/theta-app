@@ -340,10 +340,10 @@ export default function Home() {
 
           <div className="max-w-2xl mx-auto mt-8">
             <SimplifyThis>
-              <p className="mb-2"><strong className="text-white">Stake</strong> = you put your tokens in a digital lockbox. While they&apos;re locked, you help keep the network safe — like putting a deposit down that says &quot;I&apos;m trustworthy.&quot; In return, you get paid.</p>
-              <p className="mb-2"><strong className="text-white">Share</strong> = your computer shares some of its unused internet speed and processing power with the network. You don&apos;t notice it — it runs quietly in the background.</p>
-              <p className="mb-2"><strong className="text-white">Deliver</strong> = instead of a video coming from a server far away, it comes from someone nearby who already has it. Faster for everyone.</p>
-              <p><strong className="text-white">Earn</strong> = every ~6 seconds, the network pays out TFUEL tokens to people who help. TFUEL has real value — you can sell it, trade it, or save it.</p>
+              <p className="mb-2"><strong className="text-white">Stake</strong> = you lock your tokens as a kind of security deposit. It shows the network you are serious about helping. In return, you can earn rewards.</p>
+              <p className="mb-2"><strong className="text-white">Share</strong> = your computer contributes a small part of its unused internet speed or processing power. It runs quietly in the background and helps the network do its job.</p>
+              <p className="mb-2"><strong className="text-white">Deliver</strong> = instead of a video always coming from a big data center far away, it can come from a nearby computer that already has the data. This can make delivery faster and cheaper.</p>
+              <p><strong className="text-white">Earn</strong> = when the network is used, people who help run it receive TFUEL tokens as payment. The more useful the network becomes, the more demand there can be for these rewards.</p>
             </SimplifyThis>
           </div>
         </div>
