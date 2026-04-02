@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Nav from "../components/Nav";
+import PageTracker from "../components/PageTracker";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} antialiased`}>
         <Nav />
+        <PageTracker />
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           {children}
         </main>

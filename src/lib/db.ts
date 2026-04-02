@@ -35,6 +35,24 @@ export async function getPool(): Promise<Pool> {
       'validator_guardian_nodes INTEGER', 'edge_nodes INTEGER',
       'subchain_api_available BOOLEAN DEFAULT FALSE',
     ];
+
+    // Visitor tracking table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS theta_visitors (
+        visitor_id TEXT PRIMARY KEY,
+        first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        visit_count INTEGER NOT NULL DEFAULT 1
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS theta_page_views (
+        id SERIAL PRIMARY KEY,
+        visitor_id TEXT NOT NULL,
+        page TEXT NOT NULL,
+        viewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
     for (const col of cols) {
       const name = col.split(' ')[0];
       await pool.query(`ALTER TABLE theta_activity_history ADD COLUMN IF NOT EXISTS ${name} ${col.split(' ').slice(1).join(' ')}`).catch(() => {});
