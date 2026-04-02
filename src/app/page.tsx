@@ -428,8 +428,10 @@ export default function Home() {
           <div className="max-w-2xl mx-auto mt-8">
             <SimplifyThis>
               <p className="mb-2">Think of it like a country with two types of money:</p>
-              <p className="mb-2"><strong className="text-white">THETA</strong> is like owning shares in the country itself. There will only ever be 1 billion of them — no more can be created. If the country grows, your shares become more valuable. You can also &quot;stake&quot; them (lock them up) to earn TFUEL.</p>
-              <p><strong className="text-white">TFUEL</strong> is like the cash people use every day. Every time someone watches a video, runs an AI job, or does anything on the network — they pay a tiny bit of TFUEL. Some of it gets destroyed (burned), so if lots of people use the network, there&apos;s less TFUEL available over time. You earn TFUEL as a reward for helping the network.</p>
+              <p className="mb-2"><strong className="text-white">THETA</strong> is like owning part of the infrastructure that keeps the country running. There will only ever be 1 billion THETA tokens. People stake THETA to help secure the network and keep it reliable. In return, they can earn TFUEL.</p>
+              <p className="mb-2"><strong className="text-white">TFUEL</strong> is like the everyday currency used inside the network. Whenever someone sends data, runs an AI job, deploys a smart contract, or uses an application — a small amount of TFUEL is used as payment.</p>
+              <p className="mb-2">Some TFUEL is permanently removed from circulation (&quot;burned&quot;) when the network is used. This means the supply can slowly decrease if activity increases.</p>
+              <p>In simple terms: <strong className="text-white">THETA helps secure the network. TFUEL powers the network.</strong></p>
             </SimplifyThis>
           </div>
         </div>
