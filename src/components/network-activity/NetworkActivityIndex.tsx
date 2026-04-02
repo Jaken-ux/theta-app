@@ -280,15 +280,9 @@ export default function NetworkActivityIndex({
             Medium
           </span>
         </div>
-        <p className="text-sm text-[#B0B8C4] mb-1">
-          How much of the real network activity does this index capture?
+        <p className="text-sm text-[#B0B8C4] mb-4">
+          Confidence level describes how much of the total network activity this index can directly observe.
         </p>
-        <SimplifyThis>
-          <p className="mb-2">Imagine a big company with many departments. You only have access to the sales reports from one department. You can&apos;t see what the other departments are doing.</p>
-          <p className="mb-2">That&apos;s roughly where we are. We can see the main blockchain (one department), but Theta also runs video delivery, AI computing, and subchain transactions that we simply can&apos;t measure with public data.</p>
-          <p className="mb-2">So why is it still useful? Because the department we <em>can</em> see is still a real part of the business. If its numbers go up, something is growing. If they go down, something is slowing. It&apos;s not the full picture — but it&apos;s a genuine signal, not a guess.</p>
-          <p><strong className="text-white">Medium confidence</strong> means: the data is real and reliable, but it only covers part of what the network actually does.</p>
-        </SimplifyThis>
 
         {/* Confidence bar */}
         <div className="mb-6">
@@ -309,30 +303,72 @@ export default function NetworkActivityIndex({
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 mb-4">
+        {/* Three confidence levels */}
+        <div className="grid sm:grid-cols-3 gap-3 mb-6">
           <div className="bg-[#0D1117] rounded-xl p-4">
-            <p className="text-sm font-medium text-[#10B981] mb-2">What we can measure</p>
-            <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
-              <li>On-chain transactions (transfers, smart contracts)</li>
-              <li>TFUEL trading volume on exchanges</li>
-              <li>Staking participation (validators, guardians, edge nodes)</li>
-              <li>Wallet activity across blocks</li>
-            </ul>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-[#10B981]" />
+              <p className="text-sm font-medium text-[#10B981]">High</p>
+            </div>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              We can measure most meaningful activity directly. Example: a public blockchain with most usage on-chain.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4 border border-[#F59E0B]/20">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+              <p className="text-sm font-medium text-[#F59E0B]">Medium</p>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/10 text-[#F59E0B]">current</span>
+            </div>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              We can measure reliable real activity, but significant parts of the ecosystem happen off-chain or on subchains without public APIs.
+            </p>
           </div>
           <div className="bg-[#0D1117] rounded-xl p-4">
-            <p className="text-sm font-medium text-[#F59E0B] mb-2">What we cannot measure</p>
-            <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
-              <li>Subchain transactions (~300K+/day — no public API)</li>
-              <li>Video streams relayed through Theta CDN</li>
-              <li>AI and GPU jobs running on EdgeCloud</li>
-              <li>Off-chain data delivery and storage</li>
-            </ul>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 rounded-full bg-[#EF4444]" />
+              <p className="text-sm font-medium text-[#EF4444]">Low</p>
+            </div>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              We only see weak proxies or indirect signals. Not the case here.
+            </p>
           </div>
         </div>
 
-        <p className="text-xs text-[#B0B8C4] leading-relaxed">
-          Medium confidence means: the data sources are reliable, but they only show part of the picture. Theta&apos;s Metachain processes ~300K+ transactions per day across subchains, but only main-chain data (~14K/day) is available via public API. The real network activity is significantly higher than what this index reflects. That said, main chain activity still serves as a meaningful directional signal — if it trends up, the ecosystem is growing. If it trends down, visible on-chain usage is declining. The value is in the trend, not the absolute number.
-        </p>
+        {/* Current estimate */}
+        <div className="bg-[#0D1117] rounded-xl p-4 mb-4">
+          <p className="text-sm font-medium text-white mb-2">Current estimate</p>
+          <p className="text-xs text-[#D1D5DB] leading-relaxed mb-3">
+            This index likely reflects roughly <strong className="text-white">30–50%</strong> of total Theta network activity.
+          </p>
+          <p className="text-xs text-[#B0B8C4] font-medium mb-1.5">Why not higher?</p>
+          <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
+            Because large parts of Theta usage happen in:
+          </p>
+          <ul className="space-y-1 text-xs text-[#D1D5DB] leading-relaxed ml-3">
+            <li>• Subchains (~300K+ txs/day — no public API)</li>
+            <li>• Video delivery via Theta CDN</li>
+            <li>• AI and GPU compute jobs on EdgeCloud</li>
+            <li>• Enterprise integrations</li>
+          </ul>
+          <p className="text-xs text-[#D1D5DB] leading-relaxed mt-2">
+            These do not publish detailed public metrics.
+          </p>
+        </div>
+
+        <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-xl p-4">
+          <p className="text-xs text-white font-medium mb-1">Important</p>
+          <p className="text-xs text-[#D1D5DB] leading-relaxed">
+            Confidence does <strong className="text-white">not</strong> mean the data is unreliable. It means the data is <strong className="text-white">incomplete</strong>. What we measure is real — we just can&apos;t measure everything.
+          </p>
+        </div>
+
+        <SimplifyThis>
+          <p className="mb-2">Imagine a big company with many departments. You only have access to the sales reports from one department. You can&apos;t see what the other departments are doing.</p>
+          <p className="mb-2">That&apos;s roughly where we are. We can see the main blockchain (one department), but Theta also runs video delivery, AI computing, and subchain transactions that we simply can&apos;t measure with public data.</p>
+          <p className="mb-2">So why is it still useful? Because the department we <em>can</em> see is still a real part of the business. If its numbers go up, something is growing. If they go down, something is slowing. It&apos;s not the full picture — but it&apos;s a genuine signal, not a guess.</p>
+          <p><strong className="text-white">Medium confidence</strong> means: the data is real and reliable, but it only covers part of what the network actually does.</p>
+        </SimplifyThis>
       </div>
 
       {/* Four metric cards */}
