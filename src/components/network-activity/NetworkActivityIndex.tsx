@@ -100,13 +100,16 @@ function getCurrentTier(score: number): { tier: Tier; progress: number; tierInde
 
 export default function NetworkActivityIndex({
   snapshot,
+  serverScore,
 }: {
   snapshot: ActivitySnapshot;
+  serverScore?: number | null;
 }) {
   const rawScore = Math.round(computeIndex(snapshot));
   const [infoOpen, setInfoOpen] = useState(false);
   const [todaySamples, setTodaySamples] = useState(0);
-  const [dailyAvg, setDailyAvg] = useState<number | null>(null);
+  // Use server-provided score immediately — no loading delay
+  const [dailyAvg, setDailyAvg] = useState<number | null>(serverScore ?? null);
   const [txHistory, setTxHistory] = useState<MetricHistoryPoint[]>([]);
   const [volumeHistory, setVolumeHistory] = useState<MetricHistoryPoint[]>([]);
   const [walletHistory, setWalletHistory] = useState<MetricHistoryPoint[]>([]);
@@ -115,12 +118,16 @@ export default function NetworkActivityIndex({
   useEffect(() => {
     async function load() {
       setTodaySamples(await getTodaySampleCount());
-      const history: HistoryEntry[] = await getHistory();
-      const today = new Date().toISOString().slice(0, 10);
-      const todayEntry = history.find((e) => e.date === today);
-      setDailyAvg(todayEntry ? todayEntry.score : rawScore);
 
-      // Extract per-metric histories from API response
+      // Only fetch from API if we didn't get a server score
+      if (serverScore == null) {
+        const history: HistoryEntry[] = await getHistory();
+        const today = new Date().toISOString().slice(0, 10);
+        const todayEntry = history.find((e) => e.date === today);
+        setDailyAvg(todayEntry ? todayEntry.score : rawScore);
+      }
+
+      // Fetch per-metric histories for sparklines (non-blocking)
       try {
         const res = await fetch("/api/activity-history");
         if (res.ok) {

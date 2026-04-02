@@ -71,13 +71,28 @@ export default async function NetworkPage() {
   const stats = await fetchNetworkStats();
   const activity = await fetchActivitySnapshot(stats);
 
-  // Save metrics to DB on every page load (server-side)
+  // Save metrics to DB and fetch today's average — all server-side
   await saveSnapshot(activity);
+
+  let dailyAvg: number | null = null;
+  try {
+    const pool = await getPool();
+    const today = new Date().toISOString().slice(0, 10);
+    const result = await pool.query(
+      `SELECT average, samples FROM theta_activity_history WHERE date = $1`,
+      [today]
+    );
+    if (result.rows.length > 0) {
+      dailyAvg = result.rows[0].average;
+    }
+  } catch {
+    // Fall back to raw score
+  }
 
   return (
     <div className="space-y-16">
       {/* Network Activity Index — real usage overview */}
-      <NetworkActivityIndex snapshot={activity} />
+      <NetworkActivityIndex snapshot={activity} serverScore={dailyAvg} />
 
       {/* Divider */}
       <hr className="border-[#2A3548]" />
