@@ -10,7 +10,7 @@ export default function SimplifyThis({ children }: { children: React.ReactNode }
     <div className="mt-4">
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#2AB8E6]/70 hover:text-[#2AB8E6] transition-colors group"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#2AB8E6]/70 hover:text-[#2AB8E6] transition-colors group py-2 -my-2 pr-4"
       >
         <svg
           className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-45" : ""}`}

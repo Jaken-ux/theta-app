@@ -96,7 +96,7 @@ export default function NetworkCharts({ stats }: { stats: NetworkStats }) {
                 tick={{ fill: "#B0B8C4", fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
-                width={140}
+                width={100}
               />
               <Tooltip
                 contentStyle={{

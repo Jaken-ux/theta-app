@@ -330,7 +330,7 @@ export default function NetworkActivityIndex({
       </div>
 
       {/* Four metric cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <ActivityMetric
           title="Transaction Activity"
           value={fmt(snapshot.estimatedDailyTxs)}
@@ -388,7 +388,7 @@ export default function NetworkActivityIndex({
           This index only captures on-chain signals. Much of Theta&apos;s real-world usage is invisible to it.
         </p>
 
-        <div className="grid sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
           <div className="bg-[#151D2E] rounded-xl p-4">
             <p className="text-sm font-medium text-white mb-1">Video Delivery</p>
             <p className="text-xs text-[#B0B8C4] leading-relaxed">

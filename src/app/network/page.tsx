@@ -106,7 +106,7 @@ export default async function NetworkPage() {
       </div>
 
       {/* Price row */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           label="THETA Price"
           value={`$${stats.thetaPrice.price.toFixed(4)}`}
@@ -130,7 +130,7 @@ export default async function NetworkPage() {
       </div>
 
       {/* Staking row */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           label="THETA Staked"
           value={`${fmt(stats.thetaStake.totalAmount / 1_000_000, 1)}M`}

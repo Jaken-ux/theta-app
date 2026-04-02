@@ -67,7 +67,7 @@ export default async function EarnPage() {
         <h2 className="text-xl font-semibold text-white mb-4">
           Ways to Earn
         </h2>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ways.map((way) => (
             <Card key={way.title}>
               <div className="flex items-center justify-between mb-2">

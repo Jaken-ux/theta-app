@@ -99,7 +99,7 @@ function Stat({ value, label, delay = 0 }: { value: string; label: string; delay
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay }}
     >
-      <p className="text-4xl sm:text-5xl font-bold text-white tracking-tight">{value}</p>
+      <p className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">{value}</p>
       <p className="text-sm text-[#B0B8C4] mt-2">{label}</p>
     </motion.div>
   );
@@ -139,7 +139,7 @@ export default function Home() {
   return (
     <div className="overflow-hidden -mt-8">
       {/* ━━━ HERO ━━━ */}
-      <section className="relative min-h-[90vh] flex items-center justify-center px-6">
+      <section className="relative min-h-[90vh] flex items-center justify-center px-4 sm:px-6">
         <GlowOrb className="w-[600px] h-[600px] bg-[#2AB8E6] -top-40 left-1/2 -translate-x-1/2" />
         <GlowOrb className="w-[400px] h-[400px] bg-[#8B5CF6] top-20 -right-20" />
         <GlowOrb className="w-[300px] h-[300px] bg-[#10B981] bottom-20 -left-20" />
@@ -155,7 +155,7 @@ export default function Home() {
           </motion.p>
 
           <motion.h1
-            className="text-5xl sm:text-7xl lg:text-8xl font-bold text-white tracking-tight leading-[1.05]"
+            className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight leading-[1.05]"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -226,15 +226,16 @@ export default function Home() {
       </motion.section>
 
       {/* ━━━ THE PROBLEM ━━━ */}
-      <section className="py-32 px-6">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+      <section className="py-16 sm:py-32 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <motion.div {...fadeUp}>
             <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
               The problem
             </p>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight leading-[1.1]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.1]">
               Streaming wasn&apos;t built
-              <br />for this scale.
+              <br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>for this scale.
             </h2>
             <p className="text-lg text-[#B0B8C4] mt-6 leading-relaxed">
               Today, video travels from a handful of massive data centers to
@@ -252,41 +253,41 @@ export default function Home() {
 
           {/* Visual: Centralized vs Decentralized */}
           <motion.div
-            className="grid grid-cols-2 gap-6"
+            className="grid grid-cols-2 gap-3 sm:gap-6"
             {...fadeUp}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             {/* Centralized */}
-            <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-center justify-center mb-6">
-                <div className="w-4 h-4 rounded-full bg-[#EF4444]" />
+            <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-4 sm:p-8 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto rounded-full bg-[#EF4444]/10 border border-[#EF4444]/30 flex items-center justify-center mb-4 sm:mb-6">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#EF4444]" />
               </div>
-              <div className="flex justify-center gap-3 mb-6">
+              <div className="flex justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex flex-col items-center gap-2">
-                    <div className="w-px h-10 bg-[#445064]" />
-                    <div className="w-6 h-6 rounded-full bg-[#151D2E] border border-[#445064]" />
+                  <div key={i} className="flex flex-col items-center gap-1.5 sm:gap-2">
+                    <div className="w-px h-6 sm:h-10 bg-[#445064]" />
+                    <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-[#151D2E] border border-[#445064]" />
                   </div>
                 ))}
               </div>
-              <p className="text-sm font-medium text-[#EF4444]/70">Traditional</p>
-              <p className="text-xs text-[#7D8694] mt-1">Single point of failure</p>
+              <p className="text-xs sm:text-sm font-medium text-[#EF4444]/70">Traditional</p>
+              <p className="text-[10px] sm:text-xs text-[#7D8694] mt-1">Single point of failure</p>
             </div>
 
             {/* Decentralized */}
-            <div className="bg-[#151D2E] border border-[#2AB8E6]/20 rounded-2xl p-8 text-center">
+            <div className="bg-[#151D2E] border border-[#2AB8E6]/20 rounded-2xl p-4 sm:p-8 text-center">
               <div className="w-full aspect-square max-w-[160px] mx-auto mb-4">
                 <NodeMesh count={7} />
               </div>
-              <p className="text-sm font-medium text-[#2AB8E6]">Theta Network</p>
-              <p className="text-xs text-[#7D8694] mt-1">Distributed &amp; resilient</p>
+              <p className="text-xs sm:text-sm font-medium text-[#2AB8E6]">Theta Network</p>
+              <p className="text-[10px] sm:text-xs text-[#7D8694] mt-1">Distributed &amp; resilient</p>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* ━━━ HOW IT WORKS ━━━ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-16 sm:py-32 px-4 sm:px-6 relative">
         <GlowOrb className="w-[500px] h-[500px] bg-[#2AB8E6] top-0 left-1/4 -translate-x-1/2" />
 
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -294,12 +295,12 @@ export default function Home() {
             <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
               How it works
             </p>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
               Four steps. Zero jargon.
             </h2>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {[
               { num: "01", title: "Stake", desc: "Lock THETA or TFUEL to secure the network and earn rewards.", color: "#2AB8E6" },
               { num: "02", title: "Share", desc: "Edge nodes contribute your spare bandwidth and compute power.", color: "#10B981" },
@@ -308,7 +309,7 @@ export default function Home() {
             ].map((step, i) => (
               <motion.div
                 key={step.num}
-                className="relative bg-[#151D2E] border border-[#2A3548] rounded-2xl p-8 hover:border-opacity-50 transition-all duration-500"
+                className="relative bg-[#151D2E] border border-[#2A3548] rounded-2xl p-5 sm:p-8 hover:border-opacity-50 transition-all duration-500"
                 style={{ "--hover-color": step.color } as React.CSSProperties}
                 {...stagger}
                 transition={{ duration: 0.6, delay: i * 0.15 }}
@@ -345,13 +346,13 @@ export default function Home() {
       </section>
 
       {/* ━━━ TWO TOKENS ━━━ */}
-      <section className="py-32 px-6">
+      <section className="py-16 sm:py-32 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div className="text-center mb-20" {...fadeUp}>
             <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
               Two tokens
             </p>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
               THETA secures. TFUEL powers.
             </h2>
             <p className="text-lg text-[#B0B8C4] mt-6 max-w-2xl mx-auto">
@@ -362,7 +363,7 @@ export default function Home() {
 
           <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <motion.div
-              className="bg-[#151D2E] border border-[#2AB8E6]/20 rounded-2xl p-8"
+              className="bg-[#151D2E] border border-[#2AB8E6]/20 rounded-2xl p-5 sm:p-8"
               {...stagger}
               transition={{ duration: 0.6, delay: 0 }}
             >
@@ -391,7 +392,7 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              className="bg-[#151D2E] border border-[#10B981]/20 rounded-2xl p-8"
+              className="bg-[#151D2E] border border-[#10B981]/20 rounded-2xl p-5 sm:p-8"
               {...stagger}
               transition={{ duration: 0.6, delay: 0.15 }}
             >
@@ -431,7 +432,7 @@ export default function Home() {
       </section>
 
       {/* ━━━ USE CASES ━━━ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-16 sm:py-32 px-4 sm:px-6 relative">
         <GlowOrb className="w-[400px] h-[400px] bg-[#8B5CF6] bottom-0 right-0" />
 
         <div className="relative z-10 max-w-6xl mx-auto">
@@ -439,12 +440,12 @@ export default function Home() {
             <p className="text-[#2AB8E6] text-sm font-medium tracking-widest uppercase mb-4">
               Real applications
             </p>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
               Built for what&apos;s next.
             </h2>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <FeatureCard
               title="Video Streaming"
               description="Deliver live and on-demand video globally without massive CDN costs. Viewers help relay content to each other."
@@ -486,12 +487,12 @@ export default function Home() {
       </section>
 
       {/* ━━━ THE VISION ━━━ */}
-      <section className="py-32 px-6 relative">
+      <section className="py-16 sm:py-32 px-4 sm:px-6 relative">
         <GlowOrb className="w-[600px] h-[600px] bg-[#2AB8E6] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <motion.div {...fadeUp}>
-            <h2 className="text-4xl sm:text-6xl font-bold text-white tracking-tight leading-[1.1]">
+            <h2 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1]">
               Compute demand is
               <br />
               <span className="bg-gradient-to-r from-[#2AB8E6] via-[#8B5CF6] to-[#10B981] bg-clip-text text-transparent">
@@ -508,9 +509,9 @@ export default function Home() {
       </section>
 
       {/* ━━━ CTA ━━━ */}
-      <section className="py-32 px-6 border-t border-[#2A3548]">
+      <section className="py-16 sm:py-32 px-4 sm:px-6 border-t border-[#2A3548]">
         <motion.div className="max-w-3xl mx-auto text-center" {...fadeUp}>
-          <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
             Ready to explore?
           </h2>
           <p className="text-lg text-[#B0B8C4] mt-6 max-w-xl mx-auto">
