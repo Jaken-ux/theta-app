@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import SimplifyThis from "../components/SimplifyThis";
 
 /* ─── Animation helpers ─── */
 const fadeUp = {
@@ -244,6 +245,9 @@ export default function Home() {
               Meanwhile, billions of devices sit idle — with bandwidth, storage,
               and computing power going completely to waste.
             </p>
+            <SimplifyThis>
+              When you watch a YouTube video, it comes from a huge building full of computers far away. That building costs a fortune to run, and if it goes down — everyone loses their stream. Meanwhile, your own computer is just sitting there doing nothing. What if your computer could help send that video to your neighbor instead? That&apos;s the basic idea behind Theta.
+            </SimplifyThis>
           </motion.div>
 
           {/* Visual: Centralized vs Decentralized */}
@@ -328,6 +332,15 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+
+          <div className="max-w-2xl mx-auto mt-8">
+            <SimplifyThis>
+              <p className="mb-2"><strong className="text-white">Stake</strong> = you put your tokens in a digital lockbox. While they&apos;re locked, you help keep the network safe — like putting a deposit down that says &quot;I&apos;m trustworthy.&quot; In return, you get paid.</p>
+              <p className="mb-2"><strong className="text-white">Share</strong> = your computer shares some of its unused internet speed and processing power with the network. You don&apos;t notice it — it runs quietly in the background.</p>
+              <p className="mb-2"><strong className="text-white">Deliver</strong> = instead of a video coming from a server far away, it comes from someone nearby who already has it. Faster for everyone.</p>
+              <p><strong className="text-white">Earn</strong> = every ~6 seconds, the network pays out TFUEL tokens to people who help. TFUEL has real value — you can sell it, trade it, or save it.</p>
+            </SimplifyThis>
+          </div>
         </div>
       </section>
 
@@ -405,6 +418,14 @@ export default function Home() {
                 </li>
               </ul>
             </motion.div>
+          </div>
+
+          <div className="max-w-2xl mx-auto mt-8">
+            <SimplifyThis>
+              <p className="mb-2">Think of it like a country with two types of money:</p>
+              <p className="mb-2"><strong className="text-white">THETA</strong> is like owning shares in the country itself. There will only ever be 1 billion of them — no more can be created. If the country grows, your shares become more valuable. You can also &quot;stake&quot; them (lock them up) to earn TFUEL.</p>
+              <p><strong className="text-white">TFUEL</strong> is like the cash people use every day. Every time someone watches a video, runs an AI job, or does anything on the network — they pay a tiny bit of TFUEL. Some of it gets destroyed (burned), so if lots of people use the network, there&apos;s less TFUEL available over time. You earn TFUEL as a reward for helping the network.</p>
+            </SimplifyThis>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 import Card from "../../components/Card";
 import CalculatorCard from "../../components/CalculatorCard";
 import DreamCalculator from "../../components/DreamCalculator";
+import SimplifyThis from "../../components/SimplifyThis";
 import { fetchNetworkStats, fetchEurRate } from "../../lib/theta-api";
 
 export const revalidate = 60;
@@ -46,6 +47,9 @@ export default async function EarnPage() {
         <p className="text-theta-muted">
           Calculate your staking rewards based on live network data.
         </p>
+        <SimplifyThis>
+          You can actually make money by helping the Theta network. Here&apos;s how: you buy some THETA or TFUEL tokens, then &quot;stake&quot; them (lock them up to help keep the network running). In return, the network pays you TFUEL tokens every few seconds — like earning interest on a savings account, but in crypto. Those TFUEL tokens have real value — you can sell them for dollars/euros on exchanges, trade them for other crypto, or just hold them and see if they become more valuable over time.
+        </SimplifyThis>
       </div>
 
       {/* Calculator */}

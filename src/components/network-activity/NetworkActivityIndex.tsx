@@ -7,6 +7,7 @@ import { getTodaySampleCount, getHistory, type HistoryEntry } from "../../lib/ac
 import ActivityMetric, { type MetricHistoryPoint } from "./ActivityMetric";
 import ActivityTrendChart from "./ActivityTrendChart";
 import InfoModal, { InfoButton } from "./InfoModal";
+import SimplifyThis from "../SimplifyThis";
 
 function fmtUsd(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
@@ -163,6 +164,9 @@ export default function NetworkActivityIndex({
           Some Theta services such as EdgeCloud compute and video delivery may
           occur off-chain and are not fully visible in public blockchain data.
         </p>
+        <SimplifyThis>
+          This page tracks how busy the Theta blockchain is. Think of it like a fitness tracker for the network — it measures things like how many transactions happen per day, how many people are staking, and how active wallets are. The score you see is a simple number that goes up when the network gets busier and down when it&apos;s quieter. It&apos;s not perfect (some activity happens behind the scenes and can&apos;t be measured), but it gives you a sense of the trend.
+        </SimplifyThis>
       </div>
 
       {/* Box 1: Activity Index score + trend chart side by side */}
