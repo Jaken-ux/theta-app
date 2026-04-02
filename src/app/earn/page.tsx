@@ -50,9 +50,6 @@ export default async function EarnPage() {
 
       {/* Calculator */}
       <section>
-        <h2 className="text-xl font-semibold text-white mb-4">
-          Reward Calculator
-        </h2>
         <CalculatorCard stakingData={stakingData} eurRate={eurRate} />
       </section>
 

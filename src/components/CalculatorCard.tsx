@@ -166,8 +166,9 @@ export default function CalculatorCard({
 
   return (
     <div>
-      {/* Currency toggle */}
-      <div className="flex justify-end mb-3">
+      {/* Header + currency toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-white">Reward Calculator</h2>
         <div className="flex bg-[#0D1117] rounded-lg p-0.5 border border-theta-border">
           <button
             onClick={() => setCurrency("usd")}
