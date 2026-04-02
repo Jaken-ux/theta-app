@@ -410,6 +410,54 @@ export default function NetworkActivityIndex({
         </div>
       </div>
 
+      {/* What we CANNOT measure */}
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
+        <h3 className="text-base font-semibold text-white mb-2">
+          What we currently cannot measure precisely
+        </h3>
+        <p className="text-xs text-[#B0B8C4] mb-4">
+          These are real parts of the Theta ecosystem that do not appear fully in our data.
+        </p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#F59E0B] mb-1">Subchain activity</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              Theta uses additional chains that do not expose full public metrics.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#F59E0B] mb-1">Video delivery usage</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              When content is delivered via edge nodes, this activity does not always appear as blockchain transactions.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#F59E0B] mb-1">AI and GPU compute jobs</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              EdgeCloud workloads may generate value without always producing high visible on-chain transaction counts.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#F59E0B] mb-1">Enterprise integrations</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              Partners may use Theta infrastructure internally without publishing detailed activity data.
+            </p>
+          </div>
+          <div className="bg-[#0D1117] rounded-xl p-4">
+            <p className="text-sm font-medium text-[#F59E0B] mb-1">Off-chain coordination</p>
+            <p className="text-xs text-[#D1D5DB] leading-relaxed">
+              Some operations happen outside the public blockchain layer.
+            </p>
+          </div>
+        </div>
+        <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-xl p-4">
+          <p className="text-xs text-white font-medium mb-1">Important implication</p>
+          <p className="text-xs text-[#D1D5DB] leading-relaxed">
+            Transaction count alone does not represent total network usage.
+          </p>
+        </div>
+      </div>
+
       {/* Why still useful */}
       <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
         <h3 className="text-base font-semibold text-white mb-2">
