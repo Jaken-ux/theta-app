@@ -304,10 +304,10 @@ export default function Home() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {[
-              { num: "01", title: "Stake", desc: "Lock THETA or TFUEL to secure the network and earn rewards.", color: "#2AB8E6" },
-              { num: "02", title: "Share", desc: "Edge nodes contribute your spare bandwidth and compute power.", color: "#10B981" },
-              { num: "03", title: "Deliver", desc: "Content streams from the nearest node — faster and cheaper.", color: "#F59E0B" },
-              { num: "04", title: "Earn", desc: "Node operators receive TFUEL rewards every block (~6 seconds).", color: "#8B5CF6" },
+              { num: "01", title: "Lock tokens", tech: "staking", desc: "Commit your tokens to help secure the network. This is how you qualify to receive rewards.", color: "#2AB8E6" },
+              { num: "02", title: "Share resources", tech: "edge computing", desc: "Your computer contributes spare bandwidth and processing power in the background.", color: "#10B981" },
+              { num: "03", title: "Deliver content", tech: "peer-to-peer relay", desc: "Video and data are served from nearby devices instead of distant data centers — faster and cheaper.", color: "#F59E0B" },
+              { num: "04", title: "Get paid", tech: "TFUEL rewards", desc: "People who help run the network receive tokens as payment, roughly every 6 seconds.", color: "#8B5CF6" },
             ].map((step, i) => (
               <motion.div
                 key={step.num}
@@ -330,7 +330,8 @@ export default function Home() {
                     {step.num}
                   </span>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{step.title}</h3>
+                <h3 className="text-xl font-semibold text-white mb-1">{step.title}</h3>
+                <p className="text-xs text-[#7D8694] mb-2">({step.tech})</p>
                 <p className="text-[#B0B8C4] leading-relaxed text-sm">{step.desc}</p>
               </motion.div>
             ))}
