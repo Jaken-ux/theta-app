@@ -163,6 +163,34 @@ export default async function NetworkPage() {
       <p className="text-xs text-theta-muted/50 text-center pt-4">
         Data from explorer-api.thetatoken.org — same source as the official Theta blockchain explorer.
       </p>
+
+      {/* Next steps */}
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8 text-center">
+        <h3 className="text-lg font-semibold text-white mb-2">Keep exploring</h3>
+        <p className="text-sm text-[#B0B8C4] mb-6 max-w-lg mx-auto">
+          Now that you have seen the network data, here are some next steps.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <a
+            href="/earn"
+            className="px-6 py-3 bg-[#2AB8E6] text-white font-medium rounded-full hover:bg-[#2AB8E6]/90 transition-all text-sm hover:scale-105"
+          >
+            Understand staking rewards
+          </a>
+          <a
+            href="/theta-explained"
+            className="px-6 py-3 border border-[#2A3548] text-[#B0B8C4] font-medium rounded-full hover:text-white hover:border-[#2AB8E6]/40 transition-all text-sm"
+          >
+            Deep dive into the technology
+          </a>
+          <a
+            href="/get-started"
+            className="px-6 py-3 border border-[#2A3548] text-[#B0B8C4] font-medium rounded-full hover:text-white hover:border-[#10B981]/40 transition-all text-sm"
+          >
+            Learn how to get started
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
