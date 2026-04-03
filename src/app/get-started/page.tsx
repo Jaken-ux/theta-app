@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import GettingStarted from "../../components/GettingStarted";
+
+export const metadata: Metadata = {
+  title: "Get Started",
+  description: "How to buy THETA and TFUEL, set up a wallet, stake tokens, and stay safe. Step-by-step guide for beginners.",
+};
 
 export default function GetStartedPage() {
   return (

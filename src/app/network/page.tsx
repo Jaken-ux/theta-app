@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { fetchNetworkStats, fetchActivitySnapshot } from "../../lib/theta-api";
+
+export const metadata: Metadata = {
+  title: "Network Explorer",
+  description: "Live Theta Network activity index, staking metrics, transaction data, and TFUEL supply tracking. Updated every 60 seconds.",
+};
 import { getPool } from "../../lib/db";
 import MetricCard from "../../components/MetricCard";
 import NetworkCharts from "../../components/NetworkCharts";

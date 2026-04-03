@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import Card from "../../components/Card";
+
+export const metadata: Metadata = {
+  title: "Earn with Theta",
+  description: "Calculate THETA and TFUEL staking rewards with live APY data. Compare scenarios and understand how staking generates passive income.",
+};
 import CalculatorCard from "../../components/CalculatorCard";
 import DreamCalculator from "../../components/DreamCalculator";
 import SimplifyThis from "../../components/SimplifyThis";

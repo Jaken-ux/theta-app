@@ -11,8 +11,44 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Theta Simplified",
-  description: "Understand the Theta Network — simply.",
+  title: {
+    default: "Theta Simplified — Understand Theta Network",
+    template: "%s | Theta Simplified",
+  },
+  description:
+    "Plain-language explanations, live network stats, staking calculators, and honest analysis of the Theta Network. No jargon.",
+  keywords: [
+    "Theta Network",
+    "THETA",
+    "TFUEL",
+    "Theta staking",
+    "Theta explained",
+    "Theta dashboard",
+    "TFUEL staking calculator",
+    "Theta network activity",
+    "crypto staking rewards",
+    "decentralized video",
+    "Theta edge node",
+  ],
+  authors: [{ name: "Theta Simplified" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Theta Simplified",
+    title: "Theta Simplified — Understand Theta Network",
+    description:
+      "Plain-language explanations, live network stats, and honest analysis of the Theta Network.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Theta Simplified",
+    description:
+      "Understand Theta Network — live data, staking calculators, and plain-language explanations.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -22,6 +58,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Theta Simplified",
+              url: "https://theta-simplified.vercel.app",
+              description:
+                "Plain-language explanations, live network stats, and honest analysis of the Theta Network.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://theta-simplified.vercel.app/network",
+              },
+            }),
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} antialiased`}>
         <Nav />
         <PageTracker />
