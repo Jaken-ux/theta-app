@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SimplifyThis from "./SimplifyThis";
 import {
   AreaChart,
   Area,
@@ -180,8 +181,17 @@ export default function TfuelSupplyChart() {
       </div>
 
       <p className="text-[10px] text-[#7D8694] mt-3">
-        TFUEL has built-in inflation (new tokens minted per block) and burn (5% of every transaction fee is burned). This chart shows the net effect over time.
+        TFUEL has built-in inflation (new tokens minted per block) and burn (25% of every transaction fee is burned). This chart shows the net effect over time.
       </p>
+
+      <SimplifyThis>
+        <p className="mb-2">If you see this line going up, don&apos;t panic — it&apos;s expected right now.</p>
+        <p className="mb-2">TFUEL works a bit like regular money: new tokens are created over time (inflation). This happens because the network needs to pay rewards to the people who help run it — stakers and node operators. Without those rewards, nobody would have a reason to secure the network.</p>
+        <p className="mb-2">At the same time, every time someone uses the network (sends a transaction, runs a smart contract), a portion of the fee is permanently destroyed — removed from existence. This is called <strong className="text-white">burning</strong>.</p>
+        <p className="mb-2">Right now, more new TFUEL is being created than burned, because network usage is still relatively low. So the total supply grows.</p>
+        <p className="mb-2">But here&apos;s what makes this interesting: if Theta&apos;s usage grows significantly — more video streaming, more AI jobs, more transactions — the burn rate increases. At some point, it could surpass the rate of new creation. When that happens, the supply starts <strong className="text-white">shrinking</strong> instead of growing.</p>
+        <p>That&apos;s the moment this line would turn around and start going down. It hasn&apos;t happened yet — but this chart will show it if it does.</p>
+      </SimplifyThis>
     </div>
   );
 }
