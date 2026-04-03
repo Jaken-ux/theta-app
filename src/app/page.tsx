@@ -186,13 +186,13 @@ export default function Home() {
               href="/network"
               className="px-8 py-4 bg-[#2AB8E6] text-white font-semibold rounded-full hover:bg-[#2AB8E6]/90 transition-all text-base hover:scale-105"
             >
-              Explore the Network
+              Explore real network usage
             </Link>
             <Link
               href="/earn"
-              className="px-8 py-4 border border-[#2A3548] text-white font-semibold rounded-full hover:border-[#2AB8E6]/50 transition-all text-base hover:scale-105"
+              className="px-6 py-3 text-[#B0B8C4] text-sm hover:text-white transition-colors"
             >
-              Start Earning
+              Learn how staking works &rarr;
             </Link>
           </motion.div>
         </div>
