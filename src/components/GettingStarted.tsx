@@ -207,7 +207,7 @@ export default function GettingStarted() {
         <p className="text-sm font-medium text-white mb-2">Official resources</p>
         <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-[#B0B8C4]">
           <p>Theta Wallet — wallet.thetatoken.org</p>
-          <p>Theta Explorer — explorer.thetatoken.org</p>
+          <p>Theta Blockchain Explorer — explorer.thetatoken.org</p>
           <p>Theta Docs — docs.thetatoken.org</p>
           <p>Theta GitHub — github.com/thetatoken</p>
         </div>

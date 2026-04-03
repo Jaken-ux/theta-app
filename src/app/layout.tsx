@@ -11,7 +11,7 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Theta Explorer",
+  title: "Theta Simplified",
   description: "Understand the Theta Network — simply.",
 };
 

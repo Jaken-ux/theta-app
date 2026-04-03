@@ -528,7 +528,7 @@ export default function Home() {
               href="/network"
               className="px-8 py-4 bg-[#2AB8E6] text-white font-semibold rounded-full hover:bg-[#2AB8E6]/90 transition-all text-base hover:scale-105"
             >
-              View Network Dashboard
+              View Network Explorer
             </Link>
             <Link
               href="/earn"

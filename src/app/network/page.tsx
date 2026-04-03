@@ -99,7 +99,7 @@ export default async function NetworkPage() {
 
       {/* Existing Dashboard */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Network Dashboard</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Network Explorer</h1>
         <p className="text-theta-muted">
           Live data from the Theta blockchain. Updates every 60 seconds.
         </p>
@@ -161,7 +161,7 @@ export default async function NetworkPage() {
 
       {/* Data source note */}
       <p className="text-xs text-theta-muted/50 text-center pt-4">
-        Data from explorer-api.thetatoken.org — same source as the official Theta Explorer.
+        Data from explorer-api.thetatoken.org — same source as the official Theta blockchain explorer.
       </p>
     </div>
   );

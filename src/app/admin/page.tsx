@@ -129,7 +129,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytics</h1>
+          <h1 className="text-2xl font-bold text-white">Visitor Stats</h1>
           <p className="text-sm text-[#B0B8C4]">Private visitor statistics</p>
         </div>
         <button

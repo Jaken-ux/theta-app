@@ -607,10 +607,10 @@ export default function NetworkActivityIndex({
           value={fmt(snapshot.totalNodes)}
           subValue="wallets with staked tokens"
           secondaryValue="~8,100 nodes estimated online"
-          secondaryNote="Based on Theta Explorer node monitor. No public API available for active node count."
+          secondaryNote="Based on the official Theta node monitor. No public API available for active node count."
           description="Number of wallets participating in staking (validators, guardians, and edge node operators). Staking shows commitment and network security, but does not directly measure usage. A network can have high staking with low activity."
           weight="10%"
-          tooltip="Staking participants ≠ active nodes. The official Theta Explorer shows ~7,200 edge nodes, ~900 guardians, and ~23 validators actively online."
+          tooltip="Staking participants ≠ active nodes. The official node monitor shows ~7,200 edge nodes, ~900 guardians, and ~23 validators actively online."
           history={stakingHistory}
           historyColor="#8B5CF6"
           historyUnit="nodes"
