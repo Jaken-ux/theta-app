@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import SimplifyThis from "../components/SimplifyThis";
-import ContactSection from "../components/ContactSection";
 
 /* ─── Animation helpers ─── */
 const fadeUp = {
@@ -547,10 +546,6 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ━━━ CONTACT ━━━ */}
-      <section className="py-16 sm:py-32 px-4 sm:px-6">
-        <ContactSection />
-      </section>
     </div>
   );
 }

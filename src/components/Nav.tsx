@@ -10,6 +10,7 @@ const links = [
   { href: "/earn", label: "Earn" },
   { href: "/get-started", label: "Get Started" },
   { href: "/theta-explained", label: "Deep Dive" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export default function Nav() {
