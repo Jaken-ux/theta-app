@@ -151,7 +151,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            Decentralized infrastructure for the AI era
+            Theta Network — explained simply
           </motion.p>
 
           <motion.h1
@@ -160,10 +160,10 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            The world&apos;s bandwidth,
+            Understand Theta.
             <br />
             <span className="bg-gradient-to-r from-[#2AB8E6] to-[#8B5CF6] bg-clip-text text-transparent">
-              working for you.
+              See the real data.
             </span>
           </motion.h1>
 
@@ -173,9 +173,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
           >
-            Theta turns idle computers into a global network for video, AI, and
-            cloud computing. Stake your tokens. Earn rewards. Power the next
-            generation of the internet.
+            Plain-language explanations, live network stats, and honest analysis — so you can decide for yourself.
           </motion.p>
 
           <motion.div
