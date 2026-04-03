@@ -546,6 +546,27 @@ export default function NetworkActivityIndex({
         </div>
       </div>
 
+      {/* Why this matters */}
+      <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
+        <h3 className="text-base font-semibold text-white mb-3">
+          Why this index matters
+        </h3>
+        <ul className="space-y-3">
+          <li className="flex gap-3 text-sm text-[#D1D5DB] leading-relaxed">
+            <span className="text-[#2AB8E6] mt-0.5 shrink-0">1.</span>
+            <span>It helps you see whether the network is being used more or less over time — without needing to interpret raw blockchain data yourself.</span>
+          </li>
+          <li className="flex gap-3 text-sm text-[#D1D5DB] leading-relaxed">
+            <span className="text-[#2AB8E6] mt-0.5 shrink-0">2.</span>
+            <span>It gives you a baseline to compare against. When something changes — a new partnership, a product launch, a market shift — you can see if it shows up in actual usage.</span>
+          </li>
+          <li className="flex gap-3 text-sm text-[#D1D5DB] leading-relaxed">
+            <span className="text-[#2AB8E6] mt-0.5 shrink-0">3.</span>
+            <span>It separates what is happening on the network from what people are saying about it. Activity data does not have opinions.</span>
+          </li>
+        </ul>
+      </div>
+
       {/* Four metric cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <ActivityMetric
