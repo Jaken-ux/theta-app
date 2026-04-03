@@ -8,6 +8,7 @@ import ActivityMetric, { type MetricHistoryPoint } from "./ActivityMetric";
 import ActivityTrendChart from "./ActivityTrendChart";
 import InfoModal, { InfoButton } from "./InfoModal";
 import SimplifyThis from "../SimplifyThis";
+import LearnMore from "../LearnMore";
 
 function fmtUsd(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
@@ -303,6 +304,7 @@ export default function NetworkActivityIndex({
           </div>
         </div>
 
+        <LearnMore>
         {/* Three confidence levels */}
         <div className="grid sm:grid-cols-3 gap-3 mb-6">
           <div className="bg-[#0D1117] rounded-xl p-4">
@@ -371,13 +373,15 @@ export default function NetworkActivityIndex({
           <p className="mb-2">However: if activity in the part we <strong className="text-white">can</strong> see increases, it usually indicates real growth somewhere in the system.</p>
           <p>The index should be interpreted as a <strong className="text-white">directional signal</strong>, not a complete measurement.</p>
         </SimplifyThis>
+        </LearnMore>
       </div>
 
       {/* What we CAN measure */}
       <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
-        <h3 className="text-base font-semibold text-white mb-4">
+        <h3 className="text-base font-semibold text-white">
           What we CAN measure reliably
         </h3>
+        <LearnMore>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-[#0D1117] rounded-xl p-4">
             <p className="text-sm font-medium text-white mb-1">Main-chain transactions</p>
@@ -410,13 +414,15 @@ export default function NetworkActivityIndex({
             </p>
           </div>
         </div>
+        </LearnMore>
       </div>
 
       {/* What we CANNOT measure */}
       <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
-        <h3 className="text-base font-semibold text-white mb-2">
+        <h3 className="text-base font-semibold text-white">
           What we currently cannot measure precisely
         </h3>
+        <LearnMore>
         <p className="text-xs text-[#B0B8C4] mb-4">
           These are real parts of the Theta ecosystem that do not appear fully in our data.
         </p>
@@ -458,6 +464,7 @@ export default function NetworkActivityIndex({
             Transaction count alone does not represent total network usage.
           </p>
         </div>
+        </LearnMore>
       </div>
 
       {/* Why still useful */}
@@ -465,10 +472,10 @@ export default function NetworkActivityIndex({
         <h3 className="text-base font-semibold text-white mb-2">
           Why this index is still useful
         </h3>
-        <p className="text-sm text-[#B0B8C4] mb-4">
+        <p className="text-sm text-[#B0B8C4]">
           Even partial data can show real trends. If observable activity increases consistently, it usually means real adoption is increasing somewhere in the ecosystem.
         </p>
-
+        <LearnMore>
         <p className="text-xs text-[#D1D5DB] leading-relaxed mb-5">
           Think of it like measuring electricity usage in part of a city. You may not see every building, but rising consumption still signals growth.
         </p>
@@ -492,13 +499,15 @@ export default function NetworkActivityIndex({
             </ul>
           </div>
         </div>
+        </LearnMore>
       </div>
 
       {/* How to interpret trends */}
       <div className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8">
-        <h3 className="text-base font-semibold text-white mb-4">
+        <h3 className="text-base font-semibold text-white">
           How to interpret trend changes
         </h3>
+        <LearnMore>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
             <span className="text-[#10B981] text-lg mt-0.5">↑</span>
@@ -544,6 +553,7 @@ export default function NetworkActivityIndex({
             <span className="text-[10px] text-[#B0B8C4]">Weakening signal</span>
           </div>
         </div>
+        </LearnMore>
       </div>
 
       {/* Why this matters */}
@@ -622,10 +632,10 @@ export default function NetworkActivityIndex({
         <h3 className="text-base font-semibold text-[#2AB8E6] mb-1">
           Why a low Main Chain Activity Index does not mean the network is inactive
         </h3>
-        <p className="text-xs text-[#B0B8C4] mb-5">
+        <p className="text-xs text-[#B0B8C4]">
           This index only captures on-chain signals. Much of Theta&apos;s real-world usage is invisible to it.
         </p>
-
+        <LearnMore>
         <div className="grid md:grid-cols-3 gap-4 mb-6">
           <div className="bg-[#151D2E] rounded-xl p-4">
             <p className="text-sm font-medium text-white mb-1">Video Delivery</p>
@@ -653,6 +663,7 @@ export default function NetworkActivityIndex({
             A newly built highway may have low traffic today — but the road is there, the on-ramps work, and tollbooths are staffed. Low traffic now doesn&apos;t mean the highway was a bad investment. It means the city is still growing around it. Theta&apos;s {fmt(snapshot.totalNodes)} staking participants are the infrastructure waiting for traffic to arrive.
           </p>
         </div>
+        </LearnMore>
       </div>
 
       {/* How to read this */}
