@@ -64,28 +64,28 @@ const TIERS: Tier[] = [
     ceiling: 100,
     color: "#F59E0B",
     label: "Building the base",
-    description: "The network is functional with early adopters and stakers. On-chain activity is growing from a small base.",
+    description: "The network is functional with early adopters and stakers. Current activity scores around 50 — reaching 100 would mean roughly doubling observable on-chain activity across all metrics.",
   },
   {
     name: "Growth",
     ceiling: 500,
     color: "#2AB8E6",
     label: "Ecosystem expanding",
-    description: "Main chain handles 30K+ txs/day. TFUEL burn is continuous. Real applications are driving demand.",
+    description: "Observable activity has surpassed its initial baselines. Transaction volume, trading activity, and network participation are all significantly above today's levels.",
   },
   {
     name: "Scale",
     ceiling: 2500,
     color: "#10B981",
-    label: "Mass adoption",
-    description: "Multiple applications, high transaction volume, significant TFUEL burn reducing supply. The network is a daily-use platform.",
+    label: "Sustained high usage",
+    description: "The network consistently shows high on-chain activity across multiple metrics. Usage is no longer occasional — it reflects sustained demand from applications and users.",
   },
   {
     name: "Dominance",
     ceiling: 10000,
     color: "#8B5CF6",
     label: "Major infrastructure",
-    description: "Theta processes volumes comparable to top-tier networks. TFUEL demand is structurally embedded in a large ecosystem.",
+    description: "Observable on-chain activity is comparable to established high-traffic networks. All metrics are many multiples above current levels.",
   },
 ];
 

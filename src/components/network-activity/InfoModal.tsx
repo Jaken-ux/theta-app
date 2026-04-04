@@ -274,13 +274,13 @@ export default function InfoModal({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/15 text-[#F59E0B]">current tier</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-                        The network is functional with early adopters and stakers. Infrastructure
-                        is in place. On-chain activity is growing from a small base.
+                        The network is functional with early adopters and stakers.
+                        Current activity scores around 50. Reaching 100 would mean roughly
+                        doubling observable on-chain activity across all metrics.
                       </p>
                       <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
-                        <p>Now (~42): ~14K txs/day, ~$2M volume, ~12K stakers</p>
-                        <p>At 60: ~18K txs/day, ~$4M volume — TFUEL burn rate doubles</p>
-                        <p>At 80: ~25K txs/day, ~$7M volume — consistent demand for blockspace</p>
+                        <p>Current (~50): ~20K txs/day, ~$5M volume, ~12K stakers</p>
+                        <p>At 75: ~30K txs/day, ~$9M volume — noticeable increase in usage</p>
                         <p>At 100: all metrics at baseline — first milestone reached</p>
                       </div>
                     </div>
@@ -293,14 +293,13 @@ export default function InfoModal({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-                        The network surpasses its initial baselines. Main chain processes 30K+ txs/day.
-                        TFUEL burn is continuous and supply reduction becomes visible on-chain.
-                        Real applications are driving consistent demand.
+                        Observable activity has surpassed its initial baselines. Transaction
+                        volume, trading activity, and network participation are all significantly
+                        above today&apos;s levels.
                       </p>
                       <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
-                        <p>At 200: ~60K txs/day, ~$20M volume — 2x all baselines</p>
-                        <p>At 300: ~90K txs/day — TFUEL burn is a significant economic force</p>
-                        <p>At 500: ~150K txs/day — multiple major applications on-chain daily</p>
+                        <p>At 200: ~84K txs/day, ~$24M volume — 2x all baselines</p>
+                        <p>At 500: ~210K txs/day, ~$60M volume — major sustained usage</p>
                       </div>
                     </div>
 
@@ -311,15 +310,11 @@ export default function InfoModal({
                         <span className="text-xs text-[#10B981] font-medium">Scale</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
-                      <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-                        Mass adoption territory. High transaction volume, significant TFUEL burn
-                        continuously reducing supply. The network is a daily-use platform for
-                        many applications and users.
+                      <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                        The network consistently shows high on-chain activity across multiple
+                        metrics. Usage reflects sustained demand from applications and users,
+                        not short-term spikes.
                       </p>
-                      <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
-                        <p>At this level, TFUEL burn creates sustained deflationary pressure</p>
-                        <p>Fundamental demand for TFUEL is structurally embedded, not speculative</p>
-                      </div>
                     </div>
 
                     {/* Dominance 2500-10000 */}
@@ -330,8 +325,8 @@ export default function InfoModal({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                        Theta processes volumes comparable to top-tier blockchain networks.
-                        TFUEL demand is structurally embedded in a large, active ecosystem.
+                        Observable on-chain activity is comparable to established high-traffic
+                        networks. All metrics are many multiples above current levels.
                       </p>
                     </div>
                   </div>
