@@ -27,17 +27,20 @@ function fmt(n: number): string {
  * The score can grow beyond 100 as the network grows, unlocking
  * new tiers / milestones.
  *
- * Baselines (= 100 points per metric):
- *   Transactions:  30,000 / day  (main chain)  — 30%
- *   TFUEL volume:  $10M / 24h                 — 30%
- *   Wallet activity: 30% of blocks with user txs — 30%
- *   Staking:       15,000 participants          — 10%
+ * Baselines (= 100 points per metric), calibrated against observed
+ * network levels as of April 2026. Current activity scores ~50,
+ * leaving clear room to grow into higher tiers.
+ *
+ *   Transactions:    42,000 / day  (main chain)  — 30%
+ *   TFUEL volume:    $12M / 24h                  — 30%
+ *   Wallet activity: 100% of blocks with user txs — 30%
+ *   Staking:         22,000 participants           — 10%
  */
 function computeIndex(snap: ActivitySnapshot): number {
-  const txScore = (snap.estimatedDailyTxs / 30_000) * 100;
-  const volumeScore = (snap.tfuelVolume24h / 10_000_000) * 100;
-  const walletScore = (snap.userTxRate / 30) * 100;
-  const nodeScore = (snap.totalNodes / 15_000) * 100;
+  const txScore = (snap.estimatedDailyTxs / 42_000) * 100;
+  const volumeScore = (snap.tfuelVolume24h / 12_000_000) * 100;
+  const walletScore = (snap.userTxRate / 100) * 100;
+  const nodeScore = (snap.totalNodes / 22_000) * 100;
 
   return txScore * 0.3 + volumeScore * 0.3 + walletScore * 0.3 + nodeScore * 0.1;
 }

@@ -27,10 +27,10 @@ function fmtUsd(n: number): string {
 export const revalidate = 60;
 
 function computeIndex(snap: { estimatedDailyTxs: number; tfuelVolume24h: number; userTxRate: number; totalNodes: number }) {
-  const txScore = (snap.estimatedDailyTxs / 30_000) * 100;
-  const volumeScore = (snap.tfuelVolume24h / 10_000_000) * 100;
-  const walletScore = (snap.userTxRate / 30) * 100;
-  const nodeScore = (snap.totalNodes / 15_000) * 100;
+  const txScore = (snap.estimatedDailyTxs / 42_000) * 100;
+  const volumeScore = (snap.tfuelVolume24h / 12_000_000) * 100;
+  const walletScore = (snap.userTxRate / 100) * 100;
+  const nodeScore = (snap.totalNodes / 22_000) * 100;
   return Math.round(txScore * 0.3 + volumeScore * 0.3 + walletScore * 0.3 + nodeScore * 0.1);
 }
 

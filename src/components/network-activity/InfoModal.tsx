@@ -50,10 +50,10 @@ function AlgorithmDropdown() {
               {/* Formula */}
               <div className="bg-[#0D1117] rounded-lg p-4 font-mono text-xs text-[#D1D5DB] space-y-2">
                 <p className="text-[#B0B8C4]">{/* eslint-disable-next-line */}{'// Step 1: Score each metric'}</p>
-                <p>txScore = (dailyTxs / 30,000) &times; 100</p>
-                <p>volumeScore = (tfuelVolume24h / $10,000,000) &times; 100</p>
-                <p>walletScore = (userTxRate / 30%) &times; 100</p>
-                <p>nodeScore = (stakingNodes / 15,000) &times; 100</p>
+                <p>txScore = (dailyTxs / 42,000) &times; 100</p>
+                <p>volumeScore = (tfuelVolume24h / $12,000,000) &times; 100</p>
+                <p>walletScore = (userTxRate / 100%) &times; 100</p>
+                <p>nodeScore = (stakingNodes / 22,000) &times; 100</p>
                 <p className="text-[#B0B8C4] pt-2">{'// Step 2: Weighted sum'}</p>
                 <p className="text-white">
                   index = txScore &times; 0.30
@@ -85,22 +85,22 @@ function AlgorithmDropdown() {
                   <tbody className="text-[#D1D5DB]">
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Daily transactions</td>
-                      <td className="py-1.5 font-mono">30,000</td>
+                      <td className="py-1.5 font-mono">42,000</td>
                       <td className="py-1.5">30%</td>
                     </tr>
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">TFUEL 24h volume</td>
-                      <td className="py-1.5 font-mono">$10,000,000</td>
+                      <td className="py-1.5 font-mono">$12,000,000</td>
                       <td className="py-1.5">30%</td>
                     </tr>
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Wallet activity</td>
-                      <td className="py-1.5 font-mono">30%</td>
+                      <td className="py-1.5 font-mono">100%</td>
                       <td className="py-1.5">30%</td>
                     </tr>
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Staking participants</td>
-                      <td className="py-1.5 font-mono">15,000</td>
+                      <td className="py-1.5 font-mono">22,000</td>
                       <td className="py-1.5">10%</td>
                     </tr>
                   </tbody>
@@ -249,10 +249,10 @@ export default function InfoModal({
                   </p>
                   <div className="mt-2 bg-[#0D1117] rounded-lg p-3 text-xs text-[#B0B8C4] space-y-1">
                     <p>Each metric baseline (= score of 100):</p>
-                    <p>Transactions: 30,000/day</p>
-                    <p>TFUEL volume: $10M/24h</p>
-                    <p>Block activity: 30% of blocks with user txs</p>
-                    <p>Staking: 15,000 participants</p>
+                    <p>Transactions: 42,000/day</p>
+                    <p>TFUEL volume: $12M/24h</p>
+                    <p>Block activity: 100% of blocks with user txs</p>
+                    <p>Staking: 22,000 participants</p>
                   </div>
                   <p className="text-xs text-[#B0B8C4] mt-2">
                     When the network exceeds these baselines, the score goes above
