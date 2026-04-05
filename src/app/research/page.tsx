@@ -95,6 +95,53 @@ function formatDate(d: string): string {
 
 // ── Shared UI ───────────────────────────────────────────────────────────────
 
+function Explainer({
+  whatIsThis,
+  howToRead,
+  useCase,
+}: {
+  whatIsThis: string;
+  howToRead: string;
+  useCase: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-4">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 text-xs text-[#2AB8E6] hover:text-[#2AB8E6]/80 transition-colors"
+      >
+        <svg
+          className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-90" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        {open ? "Dölj förklaring" : "Vad betyder detta?"}
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3 p-4 bg-[#0D1117] rounded-lg border border-[#2A3548]/50 text-sm text-[#B0B8C4] leading-relaxed">
+          <div>
+            <p className="text-white font-medium text-xs uppercase tracking-wide mb-1">Vad är detta?</p>
+            <p>{whatIsThis}</p>
+          </div>
+          <div>
+            <p className="text-white font-medium text-xs uppercase tracking-wide mb-1">Hur tolkar jag det?</p>
+            <p>{howToRead}</p>
+          </div>
+          <div>
+            <p className="text-white font-medium text-xs uppercase tracking-wide mb-1">Vad kan jag använda det till?</p>
+            <p>{useCase}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Section({
   title,
   subtitle,
@@ -343,6 +390,11 @@ export default function ResearchPage() {
       </div>
 
       {/* ── Summary cards ─────────────────────────────────────────────── */}
+      <Explainer
+        whatIsThis="De fyra korten visar en snabb överblick av den viktigaste statistiken. Korrelationsvärdena (de två första korten) mäter hur starkt vårt Activity Index hänger ihop med THETA- respektive TFUEL-priset. De två sista korten visar genomsnittet av indexet och priset under hela den period vi har data för."
+        howToRead={`Korrelationsvärdet (r) går från -1 till +1. Ett värde nära +1 betyder att index och pris tenderar att röra sig i samma riktning — när indexet går upp, går priset också upp. Ett värde nära -1 betyder att de rör sig i motsatta riktningar. Ett värde nära 0 betyder att det inte finns något tydligt samband. Vi färgkodar det: grönt = starkt samband (|r| > 0.7), gult = medel (0.4–0.7), rött = svagt (< 0.4).`}
+        useCase="Ger en snabb känsla för om nätverksaktivitet och pris hänger ihop överhuvudtaget. Om korrelationen är stark kan det tyda på att vårt index fångar något meningsfullt. Om den är svag kanske priset mest drivs av bredare marknadssentiment snarare än Theta-specifik aktivitet."
+      />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
           <p className="text-xs text-[#7D8694] mb-1">Index &harr; THETA-pris</p>
@@ -391,6 +443,11 @@ export default function ResearchPage() {
         title="Trendanalys: Index vs Pris"
         subtitle="Activity index med 7- och 14-dagars glidande medelvärde. Priset normaliserat till 0–100-skala för jämförelse."
       >
+        <Explainer
+          whatIsThis="Det här diagrammet visar hur vårt Activity Index och THETA-priset har rört sig över tid, plottade ovanpå varandra. Eftersom index (0–100) och pris (t.ex. $0.80) har helt olika skalor, har vi normaliserat priset till samma 0–100-skala. Det betyder att prisets lägsta punkt under perioden blir 0 och högsta blir 100, så du kan jämföra rörelsemönstren visuellt. De blå linjerna representerar indexet: den tunna, ljusa linjen är det dagliga råvärdet (kan vara brusigt), MA-7 är ett glidande medelvärde över 7 dagar (jämnar ut veckosvängningar), och MA-14 (streckad lila) jämnar ut över 14 dagar. Den gula linjen är det normaliserade priset."
+          howToRead="Titta efter om den gula linjen (pris) och de blå linjerna (index) rör sig i samma riktning och vid samma tidpunkter. Om kurvorna följer varandra nära, finns ett samband. Om de går åt olika håll eller den ena rör sig utan att den andra reagerar, är sambandet svagt. MA-7 är bra för att se kortsiktiga trender (veckovis), medan MA-14 visar mer övergripande riktning. När MA-7 korsar över MA-14 uppåt kan det indikera en uppåtgående trend, och tvärtom."
+          useCase="Hjälper dig visuellt avgöra om index och pris hänger ihop över tid. Om de rör sig synkroniserat kan indexet vara en nyttig indikator. Du kan också se om det finns perioder där indexet rörde sig först och priset följde efter — det syns som en tidsfördröjning mellan kurvorna."
+        />
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData}>
@@ -457,6 +514,11 @@ export default function ResearchPage() {
         title="Korrelation: Index vs THETA-pris"
         subtitle={`Varje punkt = en dag. Pearson r = ${corrIndexTheta.toFixed(3)}`}
       >
+        <Explainer
+          whatIsThis={`Ett scatter-diagram (spridningsdiagram) där varje prick representerar en enskild dag. X-axeln visar Activity Index den dagen och Y-axeln visar THETA-priset samma dag. Pearson-korrelationen (r = ${corrIndexTheta.toFixed(3)}) är det matematiska måttet på hur väl punkterna bildar en rak linje.`}
+          howToRead="Om punkterna bildar ett tydligt mönster som lutar uppåt från vänster till höger, betyder det att dagar med högre index också hade högre pris (positiv korrelation). Om de bildar ett moln utan tydlig riktning finns inget samband. Om de lutar nedåt, är sambandet negativt (högt index = lågt pris). Ju tätare punkterna ligger längs en tänkt linje, desto starkare korrelation."
+          useCase="Scatter-plottet ger en ärligare bild av sambandet än trendlinjer. Du kan se om korrelationen drivs av hela datasetet eller bara ett par extremdagar. Om du ser punkter som ligger långt ifrån resten (outliers), kan de snedvrida korrelationsvärdet. Det hjälper dig bedöma hur pålitlig korrelationssiffran egentligen är."
+        />
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart>
@@ -507,6 +569,11 @@ export default function ResearchPage() {
         title="Komponent-korrelationer vs THETA-pris"
         subtitle="Vilka nätverksmetriker korrelerar starkast med priset?"
       >
+        <Explainer
+          whatIsThis="Vårt Activity Index är byggt av flera komponenter: antal transaktioner, TFUEL-handelsvolym, andel aktiva wallets, antal noder, staking-ratios och antal block. Här bryter vi ut varje komponent separat och mäter hur starkt just den komponenten korrelerar med THETA-priset. Staplarna sorteras efter styrka, från starkast till svagast."
+          howToRead="Varje rad visar en komponent med dess korrelationsvärde (r). Längre stapel = starkare samband. Positivt r (t.ex. +0.65) betyder att komponenten rör sig i samma riktning som priset. Negativt r (t.ex. -0.30) betyder att de rör sig i motsatt riktning. Färgkoden till höger sammanfattar: grönt = starkt, gult = medel, rött = svagt."
+          useCase="Avslöjar vilka delar av nätverket som har starkast koppling till priset. Om t.ex. transaktioner har stark korrelation men noder har svag, antyder det att marknaden reagerar mer på transaktionsaktivitet. Det kan hjälpa dig förstå vilka metriker som är mest intressanta att bevaka och eventuellt vikta tyngre i indexet."
+        />
         <div className="space-y-3">
           {componentCorrelations
             .sort((a, b) => Math.abs(b.r) - Math.abs(a.r))
@@ -552,6 +619,11 @@ export default function ResearchPage() {
         title="Lead/Lag-analys"
         subtitle="Korrelerar dagliga indexförändringar med prisförändringar vid olika tidsfördröjningar. Negativt lag = index leder priset."
       >
+        <Explainer
+          whatIsThis="Lead/lag-analysen undersöker en central fråga: kommer förändringar i nätverksaktivitet före, efter, eller samtidigt som prisförändringar? Vi gör detta genom att skjuta dataserierna mot varandra i tid (från -7 till +7 dagar) och mäta korrelationen vid varje förskjutning. Dag 0 = samma dag. Negativa dagar (t.ex. -3) = vi jämför indexförändringen idag med prisförändringen 3 dagar senare. Positiva dagar (t.ex. +2) = vi jämför indexförändringen idag med prisförändringen 2 dagar innan."
+          howToRead={`Varje stapel representerar en tidsförskjutning. Den högsta stapeln (oavsett riktning) visar vid vilken förskjutning sambandet är starkast. Om den högsta stapeln ligger på negativa dagar (t.ex. -2), betyder det att indexförändringar tenderar att komma FÖRE prisförändringar med 2 dagar — indexet "leder" priset. Om den ligger på positiva dagar, är det tvärtom — priset rör sig först. Om den högsta stapeln ligger på dag 0, rör sig index och pris ungefär samtidigt. Gröna staplar = positiv korrelation (rör sig samma håll), röda = negativ korrelation (rör sig motsatt håll), gul = dag 0.`}
+          useCase="Det här är kanske den mest intressanta analysen. Om indexet konsekvent leder priset med t.ex. 1-3 dagar, betyder det att nätverksaktivitet kan vara en tidig signal för prisrörelser. Det skulle ge indexet prediktivt värde. OBS: Med begränsad data (kort tidsperiod) ska man vara försiktig med att dra starka slutsatser — mönstret kan vara slumpmässigt. Ju mer data vi samlar, desto mer tillförlitlig blir analysen."
+        />
         {leadLag.length > 0 ? (
           <>
             <div className="h-64">
@@ -641,6 +713,11 @@ export default function ResearchPage() {
         title="Dagliga förändringar: Index vs Pris"
         subtitle="Procentuell daglig förändring jämförd sida vid sida"
       >
+        <Explainer
+          whatIsThis="Det här diagrammet visar den procentuella förändringen från dag till dag — både för Activity Index (blå) och THETA-priset (gul). Istället för att titta på absoluta värden (t.ex. index = 45, pris = $0.82) tittar vi på hur mycket de förändrades jämfört med dagen innan. En punkt på +5% betyder att värdet ökade med 5% jämfört med föregående dag. Nolllinjen i mitten markerar ingen förändring."
+          howToRead="Om de blå och gula linjerna ofta peakar och dippar vid samma tidpunkter, reagerar index och pris på samma saker. Om den blå linjen (index) gör stora hopp utan att den gula (pris) reagerar, eller tvärtom, finns det ingen stark daglig koppling. Stora spikar indikerar ovanligt volatila dagar. Om du ser att den blå linjen konsekvent peakar en dag före den gula, kan det tyda på att indexet leder priset (detta undersöks mer noggrant i lead/lag-analysen ovan)."
+          useCase="Hjälper dig identifiera specifika dagar med ovanliga rörelser. Om du ser en stor spike i index utan motsvarande prisrörelse, kan du gå tillbaka och undersöka vad som hände den dagen i nätverket. Det är också användbart för att visuellt upptäcka mönster som de statistiska analyserna kanske missar — t.ex. att sambandet bara gäller vid stora rörelser men inte vid små."
+        />
         {dailyChanges.length > 0 ? (
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -696,6 +773,11 @@ export default function ResearchPage() {
 
       {/* ── 6. Raw data table ────────────────────────────────────────── */}
       <Section title="Rådata" subtitle="Senaste 30 dagarna">
+        <Explainer
+          whatIsThis="Rådata-tabellen visar de faktiska siffror som alla grafer och beräkningar ovan bygger på. Varje rad är en dag. Kolumnerna visar: Activity Index, THETA- och TFUEL-pris i dollar, antal transaktioner, TFUEL-handelsvolym (i miljoner), andel aktiva wallets (i procent), och antal staking-noder."
+          howToRead="Tabellen sorteras med nyaste datum överst. Du kan använda den för att dubbelkolla specifika datapunkter som sticker ut i graferna. Om en graf visar en ovanlig spike, kan du hitta det exakta datumet här och se alla metriker för just den dagen. Streck (–) betyder att data saknas för den dagen."
+          useCase="Ger full transparens — du kan se exakt vilken data som matats in och granska den manuellt. Användbart för att identifiera dataproblem (saknade värden, orimliga siffror) och för att korskontrollera mot externa källor."
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
