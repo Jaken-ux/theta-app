@@ -45,6 +45,9 @@ export async function getPool(): Promise<Pool> {
         visit_count INTEGER NOT NULL DEFAULT 1
       )
     `);
+    await pool
+      .query(`ALTER TABLE theta_visitors ADD COLUMN IF NOT EXISTS is_dev BOOLEAN DEFAULT FALSE`)
+      .catch(() => {});
     await pool.query(`
       CREATE TABLE IF NOT EXISTS theta_page_views (
         id SERIAL PRIMARY KEY,

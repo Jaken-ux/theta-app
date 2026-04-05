@@ -56,6 +56,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isDev, setIsDev] = useState<boolean | null>(null);
+  const [devToggling, setDevToggling] = useState(false);
 
   async function loadStats(secret: string) {
     setLoading(true);
@@ -75,12 +77,55 @@ export default function AdminPage() {
     }
   }
 
+  async function checkDevStatus(secret: string) {
+    const visitorId = localStorage.getItem("theta-visitor-id");
+    if (!visitorId) {
+      setIsDev(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/mark-dev?key=${encodeURIComponent(secret)}&visitorId=${encodeURIComponent(visitorId)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setIsDev(data.isDev);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function toggleDev() {
+    const visitorId = localStorage.getItem("theta-visitor-id");
+    if (!visitorId || isDev === null) return;
+    setDevToggling(true);
+    try {
+      const res = await fetch(`/api/mark-dev?key=${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId, isDev: !isDev }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsDev(data.isDev);
+        // Reload stats to reflect change
+        loadStats(key);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setDevToggling(false);
+    }
+  }
+
   // Check if key is stored
   useEffect(() => {
     const stored = localStorage.getItem("theta-admin-key");
     if (stored) {
       setKey(stored);
       loadStats(stored);
+      checkDevStatus(stored);
     }
   }, []);
 
@@ -127,17 +172,41 @@ export default function AdminPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white">Visitor Stats</h1>
-          <p className="text-sm text-[#B0B8C4]">Private visitor statistics</p>
+          <p className="text-sm text-[#B0B8C4]">
+            Private visitor statistics
+            {isDev && (
+              <span className="text-[#F59E0B]"> · This device excluded from stats</span>
+            )}
+          </p>
         </div>
-        <button
-          onClick={() => loadStats(key)}
-          className="px-4 py-2 text-sm bg-[#151D2E] border border-[#2A3548] rounded-lg text-[#B0B8C4] hover:text-white transition-colors"
-        >
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          {isDev !== null && (
+            <button
+              onClick={toggleDev}
+              disabled={devToggling}
+              className={`px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
+                isDev
+                  ? "bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/30"
+                  : "bg-[#151D2E] border border-[#2A3548] text-[#B0B8C4] hover:text-white"
+              }`}
+            >
+              {devToggling
+                ? "..."
+                : isDev
+                  ? "Include this device"
+                  : "Exclude this device"}
+            </button>
+          )}
+          <button
+            onClick={() => loadStats(key)}
+            className="px-4 py-2 text-sm bg-[#151D2E] border border-[#2A3548] rounded-lg text-[#B0B8C4] hover:text-white transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Top stats */}
