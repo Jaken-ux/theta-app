@@ -10,8 +10,7 @@ export async function GET() {
               theta_market_cap, tfuel_circulating_supply, daily_blocks,
               validator_guardian_nodes, edge_nodes
        FROM theta_activity_history
-       ORDER BY date ASC
-       LIMIT 90`
+       ORDER BY date ASC`
     );
 
     const history = result.rows.map((row) => ({

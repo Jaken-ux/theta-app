@@ -170,12 +170,67 @@ const CHART_TOOLTIP_STYLE = {
 
 // ── Main page ───────────────────────────────────────────────────────────────
 
+type TimeRange = "30d" | "90d" | "6m" | "1y" | "all";
+
+const TIME_RANGES: { key: TimeRange; label: string; days: number | null }[] = [
+  { key: "30d", label: "30 dagar", days: 30 },
+  { key: "90d", label: "90 dagar", days: 90 },
+  { key: "6m", label: "6 månader", days: 180 },
+  { key: "1y", label: "1 år", days: 365 },
+  { key: "all", label: "Allt", days: null },
+];
+
+function aggregateToWeekly(rows: HistoryRow[]): HistoryRow[] {
+  const weeks: Map<string, HistoryRow[]> = new Map();
+  for (const row of rows) {
+    const d = new Date(row.date + "T00:00:00");
+    // Use Monday of the week as key
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d);
+    monday.setDate(diff);
+    const weekKey = monday.toISOString().slice(0, 10);
+    if (!weeks.has(weekKey)) weeks.set(weekKey, []);
+    weeks.get(weekKey)!.push(row);
+  }
+
+  return Array.from(weeks.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([weekStart, weekRows]) => {
+      const avg = (fn: (r: HistoryRow) => number | null): number | null => {
+        const vals = weekRows.map(fn).filter((v): v is number => v != null);
+        return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+      };
+      return {
+        date: weekStart,
+        score: Math.round(weekRows.reduce((s, r) => s + r.score, 0) / weekRows.length),
+        sampleCount: weekRows.reduce((s, r) => s + r.sampleCount, 0),
+        metrics: {
+          dailyTxs: avg((r) => r.metrics.dailyTxs),
+          tfuelVolume: avg((r) => r.metrics.tfuelVolume),
+          walletActivity: avg((r) => r.metrics.walletActivity),
+          stakingNodes: avg((r) => r.metrics.stakingNodes),
+          thetaStakingRatio: avg((r) => r.metrics.thetaStakingRatio),
+          tfuelStakingRatio: avg((r) => r.metrics.tfuelStakingRatio),
+          thetaPrice: avg((r) => r.metrics.thetaPrice),
+          tfuelPrice: avg((r) => r.metrics.tfuelPrice),
+          thetaMarketCap: avg((r) => r.metrics.thetaMarketCap),
+          tfuelCirculatingSupply: avg((r) => r.metrics.tfuelCirculatingSupply),
+          dailyBlocks: avg((r) => r.metrics.dailyBlocks),
+          validatorGuardianNodes: avg((r) => r.metrics.validatorGuardianNodes),
+          edgeNodes: avg((r) => r.metrics.edgeNodes),
+        },
+      };
+    });
+}
+
 export default function ResearchPage() {
   const [key, setKey] = useState("");
   const [authed, setAuthed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<HistoryRow[]>([]);
+  const [timeRange, setTimeRange] = useState<TimeRange>("90d");
 
   // Auth check — reuse STATS_SECRET via /api/stats
   async function authenticate(secret: string) {
@@ -208,11 +263,24 @@ export default function ResearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Filter rows with price data ──────────────────────────────────────────
-  const rows = useMemo(
-    () => data.filter((r) => r.metrics.thetaPrice != null && r.score > 0),
-    [data]
-  );
+  // ── Filter rows by time range ────────────────────────────────────────────
+  const filteredRows = useMemo(() => {
+    const valid = data.filter((r) => r.metrics.thetaPrice != null && r.score > 0);
+    const rangeDef = TIME_RANGES.find((t) => t.key === timeRange);
+    if (!rangeDef?.days) return valid;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - rangeDef.days);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return valid.filter((r) => r.date >= cutoffStr);
+  }, [data, timeRange]);
+
+  // Auto-aggregate to weekly averages when showing > 120 data points
+  const rows = useMemo(() => {
+    if (filteredRows.length <= 120) return filteredRows;
+    return aggregateToWeekly(filteredRows);
+  }, [filteredRows]);
+
+  const isAggregated = rows !== filteredRows;
 
   // ── Derived arrays ───────────────────────────────────────────────────────
   const scores = useMemo(() => rows.map((r) => r.score), [rows]);
@@ -382,11 +450,31 @@ export default function ResearchPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Research Lab</h1>
-        <p className="text-sm text-[#B0B8C4]">
-          Intern analys av nätverksdata &middot; {rows.length} datapunkter
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Research Lab</h1>
+          <p className="text-sm text-[#B0B8C4]">
+            Intern analys av nätverksdata &middot; {rows.length} datapunkter
+            {isAggregated && (
+              <span className="text-[#F59E0B]"> &middot; Veckosnitt (auto-aggregerat)</span>
+            )}
+          </p>
+        </div>
+        <div className="flex gap-1.5 bg-[#0D1117] p-1 rounded-lg border border-[#2A3548]">
+          {TIME_RANGES.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTimeRange(t.key)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                timeRange === t.key
+                  ? "bg-[#2AB8E6] text-white"
+                  : "text-[#7D8694] hover:text-white"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Summary cards ─────────────────────────────────────────────── */}
@@ -772,7 +860,7 @@ export default function ResearchPage() {
       </Section>
 
       {/* ── 6. Raw data table ────────────────────────────────────────── */}
-      <Section title="Rådata" subtitle="Senaste 30 dagarna">
+      <Section title="Rådata" subtitle={isAggregated ? `${rows.length} veckosnitt` : `Senaste ${rows.length} dagarna`}>
         <Explainer
           whatIsThis="Rådata-tabellen visar de faktiska siffror som alla grafer och beräkningar ovan bygger på. Varje rad är en dag. Kolumnerna visar: Activity Index, THETA- och TFUEL-pris i dollar, antal transaktioner, TFUEL-handelsvolym (i miljoner), andel aktiva wallets (i procent), och antal staking-noder."
           howToRead="Tabellen sorteras med nyaste datum överst. Du kan använda den för att dubbelkolla specifika datapunkter som sticker ut i graferna. Om en graf visar en ovanlig spike, kan du hitta det exakta datumet här och se alla metriker för just den dagen. Streck (–) betyder att data saknas för den dagen."
@@ -795,7 +883,7 @@ export default function ResearchPage() {
             <tbody>
               {[...rows]
                 .reverse()
-                .slice(0, 30)
+                .slice(0, 50)
                 .map((r) => (
                   <tr
                     key={r.date}
