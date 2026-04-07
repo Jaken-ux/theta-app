@@ -1,5 +1,5 @@
 /**
- * Activity-index history — fetched from PostgreSQL via API routes.
+ * Main Chain Activity Index history — fetched from PostgreSQL via API routes.
  *
  * Previously stored in localStorage. Now all data lives in a shared
  * database so every visitor sees the same historical trend.

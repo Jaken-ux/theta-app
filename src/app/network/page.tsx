@@ -3,7 +3,7 @@ import { fetchNetworkStats, fetchActivitySnapshot } from "../../lib/theta-api";
 
 export const metadata: Metadata = {
   title: "Network Explorer",
-  description: "Live Theta Network activity index, staking metrics, transaction data, and TFUEL supply tracking. Updated every 60 seconds.",
+  description: "Live Main Chain Activity Index, staking metrics, transaction data, and TFUEL supply tracking. Theta's settlement layer — updated every 60 seconds.",
 };
 import { getPool } from "../../lib/db";
 import MetricCard from "../../components/MetricCard";
@@ -97,7 +97,7 @@ export default async function NetworkPage() {
 
   return (
     <div className="space-y-16">
-      {/* Network Activity Index — real usage overview */}
+      {/* Main Chain Activity Index — settlement layer metrics */}
       <NetworkActivityIndex snapshot={activity} serverScore={dailyAvg} />
 
       {/* Divider */}

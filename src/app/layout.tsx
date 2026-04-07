@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "Theta explained",
     "Theta dashboard",
     "TFUEL staking calculator",
-    "Theta network activity",
+    "Theta main chain activity index",
     "crypto staking rewards",
     "decentralized video",
     "Theta edge node",

@@ -23,13 +23,12 @@ function fmt(n: number): string {
 /**
  * Main Chain Activity Index — uncapped composite score.
  *
- * Each metric is scored as (value / baseline) * 100 with NO cap.
- * The score can grow beyond 100 as the network grows, unlocking
- * new tiers / milestones.
+ * Measures activity on Theta's main chain (settlement layer): token
+ * transfers, TFUEL volume, wallet participation, and staking. Subchain
+ * activity, video delivery, and EdgeCloud compute are NOT included —
+ * those APIs are not yet publicly available.
  *
- * Baselines (= 100 points per metric), calibrated against observed
- * network levels as of April 2026. Current activity scores ~50,
- * leaving clear room to grow into higher tiers.
+ * Each metric is scored as (value / baseline) * 100 with NO cap.
  *
  *   Transactions:    42,000 / day  (main chain)  — 30%
  *   TFUEL volume:    $12M / 24h                  — 30%
@@ -46,7 +45,7 @@ function computeIndex(snap: ActivitySnapshot): number {
 }
 
 /**
- * Tier system — milestones that unlock as the network grows.
+ * Tier system — milestones based on main-chain activity metrics.
  * Each tier has a ceiling. When the score exceeds it, the next tier
  * becomes the new target and the display updates accordingly.
  */
@@ -64,28 +63,28 @@ const TIERS: Tier[] = [
     ceiling: 100,
     color: "#F59E0B",
     label: "Building the base",
-    description: "The network is functional with early adopters and stakers. Current activity scores around 50 — reaching 100 would mean roughly doubling observable on-chain activity across all metrics.",
+    description: "The main chain is functional with active stakers and regular transactions. Reaching 100 would mean roughly doubling current on-chain activity across all metrics.",
   },
   {
     name: "Growth",
     ceiling: 500,
     color: "#2AB8E6",
     label: "Ecosystem expanding",
-    description: "Observable activity has surpassed its initial baselines. Transaction volume, trading activity, and network participation are all significantly above today's levels.",
+    description: "Main-chain activity has surpassed its initial baselines. Transaction volume, staking participation, and TFUEL usage are all significantly above today's levels.",
   },
   {
     name: "Scale",
     ceiling: 2500,
     color: "#10B981",
     label: "Sustained high usage",
-    description: "The network consistently shows high on-chain activity across multiple metrics. Usage is no longer occasional — it reflects sustained demand from applications and users.",
+    description: "The main chain consistently shows high on-chain activity. Usage reflects sustained demand — though subchain and off-chain activity are not captured here.",
   },
   {
     name: "Dominance",
     ceiling: 10000,
     color: "#8B5CF6",
     label: "Major infrastructure",
-    description: "Observable on-chain activity is comparable to established high-traffic networks. All metrics are many multiples above current levels.",
+    description: "Main-chain activity is comparable to established high-traffic networks. All metrics are many multiples above current levels.",
   },
 ];
 
@@ -159,17 +158,16 @@ export default function NetworkActivityIndex({
       {/* Section header */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-1">
-          Network Activity
+          Main Chain Activity
         </h2>
         <p className="text-[#B0B8C4]">
-          Observable signals of blockchain usage.
+          Observable activity on Theta&apos;s settlement layer.
         </p>
         <p className="text-xs text-[#B0B8C4] mt-1">
-          Some Theta services such as EdgeCloud compute and video delivery may
-          occur off-chain and are not fully visible in public blockchain data.
+          This index tracks main-chain transactions, TFUEL trading volume, wallet participation, and staking. It does <strong className="text-white">not</strong> include subchain activity, video delivery, or EdgeCloud compute — those APIs are not yet publicly available. When they are, we will expand this index.
         </p>
         <SimplifyThis>
-          This page tracks how busy the Theta blockchain is. Think of it like a fitness tracker for the network — it measures things like how many transactions happen per day, how many people are staking, and how active wallets are. The score you see is a simple number that goes up when the network gets busier and down when it&apos;s quieter. It&apos;s not perfect (some activity happens behind the scenes and can&apos;t be measured), but it gives you a sense of the trend.
+          This measures how busy Theta&apos;s main blockchain is — the foundation layer where staking, token transfers, and cross-chain operations happen. The score goes up when more transactions occur and more people interact with the chain. But it does <strong className="text-white">not</strong> capture everything Theta does. Video streaming, AI compute, and subchain transactions (which make up the majority of Theta&apos;s actual usage) happen elsewhere. A low score here does not mean Theta is failing — it means the main chain is quiet.
         </SimplifyThis>
       </div>
 
@@ -285,7 +283,7 @@ export default function NetworkActivityIndex({
           </span>
         </div>
         <p className="text-sm text-[#B0B8C4] mb-4">
-          Confidence level describes how much of the total network activity this index can directly observe.
+          Confidence level describes how much of the total network activity this index can observe. It only measures main-chain data — subchain and off-chain activity are not included yet.
         </p>
 
         {/* Confidence bar */}
@@ -344,37 +342,32 @@ export default function NetworkActivityIndex({
         <div className="bg-[#0D1117] rounded-xl p-4 mb-4">
           <p className="text-sm font-medium text-white mb-2">Current estimate</p>
           <p className="text-xs text-[#D1D5DB] leading-relaxed mb-3">
-            This index likely reflects roughly <strong className="text-white">30–50%</strong> of total Theta network activity.
+            This index measures main-chain activity only. It is <strong className="text-white">not a proxy for total network usage</strong> — subchain activity (250K+ txs/day) and off-chain services operate independently.
           </p>
-          <p className="text-xs text-[#B0B8C4] font-medium mb-1.5">Why not higher?</p>
+          <p className="text-xs text-[#B0B8C4] font-medium mb-1.5">Why can&apos;t this index tell the full story?</p>
           <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-            Because large parts of Theta usage happen in:
+            The main chain is Theta&apos;s settlement layer — it handles staking, governance, cross-chain transfers, and native token movement. But most application activity happens elsewhere:
           </p>
           <ul className="space-y-1 text-xs text-[#D1D5DB] leading-relaxed ml-3">
-            <li>• Subchains (~300K+ txs/day — no public API)</li>
-            <li>• Video delivery via Theta CDN</li>
-            <li>• AI and GPU compute jobs on EdgeCloud</li>
-            <li>• Enterprise integrations</li>
+            <li>• Subchains process ~300K+ txs/day — no public API available yet</li>
+            <li>• Video delivery and AI compute happen off-chain</li>
+            <li>• Enterprise integrations may not produce visible on-chain transactions</li>
+            <li>• When subchain APIs become available, we will add them to this index</li>
           </ul>
-          <p className="text-xs text-[#D1D5DB] leading-relaxed mt-2">
-            These do not publish detailed public metrics.
-          </p>
         </div>
 
         <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-xl p-4">
           <p className="text-xs text-white font-medium mb-1">Important</p>
           <p className="text-xs text-[#D1D5DB] leading-relaxed">
-            Confidence does <strong className="text-white">not</strong> mean the data is unreliable. It means the data is <strong className="text-white">incomplete</strong>. What we measure is real — we just can&apos;t measure everything.
+            The data we measure is real — but it only covers the main chain. The index can show &quot;low&quot; while Theta&apos;s actual utility (video, AI, subchains) is growing, and vice versa.
           </p>
         </div>
 
         <SimplifyThis>
-          <p className="mb-2">Imagine a large company with many departments.</p>
-          <p className="mb-2">We only have detailed reports from one department — the main blockchain.</p>
-          <p className="mb-2">But Theta&apos;s ecosystem also includes video delivery, AI compute, and subchains where detailed public data is limited.</p>
-          <p className="mb-2">So we cannot measure everything directly.</p>
-          <p className="mb-2">However: if activity in the part we <strong className="text-white">can</strong> see increases, it usually indicates real growth somewhere in the system.</p>
-          <p>The index should be interpreted as a <strong className="text-white">directional signal</strong>, not a complete measurement.</p>
+          <p className="mb-2">Imagine a large company with many departments. We only have detailed reports from one department — the main blockchain (settlement layer).</p>
+          <p className="mb-2">But Theta&apos;s ecosystem also includes video delivery, AI compute, and subchains where detailed public data is not yet available.</p>
+          <p className="mb-2">So we measure what we can — main-chain transactions, staking, wallet activity, and TFUEL volume. This is real, reliable data from Theta&apos;s foundation layer.</p>
+          <p>Treat the score as a <strong className="text-white">directional signal for main-chain activity</strong>. When subchain data becomes available, we will expand it into a full network index.</p>
         </SimplifyThis>
         </LearnMore>
       </div>
@@ -476,27 +469,28 @@ export default function NetworkActivityIndex({
           Why this index is still useful
         </h3>
         <p className="text-sm text-[#B0B8C4]">
-          Even partial data can show real trends. If observable activity increases consistently, it usually means real adoption is increasing somewhere in the ecosystem.
+          The main chain is Theta&apos;s settlement layer — where staking, governance, cross-chain transfers, and native token movement happen. Even partial data can show real trends. When observable activity increases consistently, it signals growing usage of Theta&apos;s foundation layer.
         </p>
         <LearnMore>
         <p className="text-xs text-[#D1D5DB] leading-relaxed mb-5">
-          Think of it like measuring electricity usage in part of a city. You may not see every building, but rising consumption still signals growth.
+          Think of it like measuring traffic on a highway. You may not see every building in the city, but rising traffic still signals growth. And some things <em>only</em> happen on this highway — staking, subchain registration, cross-chain bridging.
         </p>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="bg-[#0D1117] rounded-xl p-4">
             <p className="text-sm font-medium text-[#10B981] mb-2">Most useful for</p>
             <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
-              <li>• Detecting growth trends</li>
-              <li>• Identifying acceleration or slowdown</li>
-              <li>• Comparing activity over time</li>
-              <li>• Spotting structural changes in usage</li>
+              <li>• Detecting growth trends on the settlement layer</li>
+              <li>• Tracking staking and validator participation</li>
+              <li>• Comparing main-chain activity over time</li>
+              <li>• Spotting structural changes in on-chain usage</li>
             </ul>
           </div>
           <div className="bg-[#0D1117] rounded-xl p-4">
             <p className="text-sm font-medium text-[#F59E0B] mb-2">Less useful for</p>
             <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
-              <li>• Calculating total market size</li>
+              <li>• Measuring total network utility (video, AI, compute)</li>
+              <li>• Capturing subchain activity (not yet available)</li>
               <li>• Predicting price</li>
               <li>• Estimating total revenue of the network</li>
             </ul>
@@ -516,28 +510,28 @@ export default function NetworkActivityIndex({
             <span className="text-[#10B981] text-lg mt-0.5">↑</span>
             <div>
               <p className="text-sm font-medium text-white mb-0.5">Increases steadily over months</p>
-              <p className="text-xs text-[#D1D5DB] leading-relaxed">Likely increasing ecosystem activity</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Likely increasing ecosystem activity on the settlement layer</p>
             </div>
           </div>
           <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
             <span className="text-[#2AB8E6] text-lg mt-0.5">↑</span>
             <div>
               <p className="text-sm font-medium text-white mb-0.5">Increases suddenly</p>
-              <p className="text-xs text-[#D1D5DB] leading-relaxed">Possible new application, partner launch or usage spike</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Possible new application, partner launch, or usage spike</p>
             </div>
           </div>
           <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
             <span className="text-[#F59E0B] text-lg mt-0.5">→</span>
             <div>
               <p className="text-sm font-medium text-white mb-0.5">Remains stable</p>
-              <p className="text-xs text-[#D1D5DB] leading-relaxed">Steady baseline usage</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Steady baseline usage on the main chain</p>
             </div>
           </div>
           <div className="flex gap-3 bg-[#0D1117] rounded-xl p-4">
             <span className="text-[#EF4444] text-lg mt-0.5">↓</span>
             <div>
               <p className="text-sm font-medium text-white mb-0.5">Declines gradually</p>
-              <p className="text-xs text-[#D1D5DB] leading-relaxed">Reduced visible on-chain activity</p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">Reduced visible on-chain activity — does not mean the network is less useful</p>
             </div>
           </div>
         </div>
@@ -567,15 +561,15 @@ export default function NetworkActivityIndex({
         <ul className="space-y-3">
           <li className="flex gap-3 text-sm text-[#D1D5DB] leading-relaxed">
             <span className="text-[#2AB8E6] mt-0.5 shrink-0">1.</span>
-            <span>It helps you see whether the network is being used more or less over time — without needing to interpret raw blockchain data yourself.</span>
+            <span>It tracks activity on Theta&apos;s <strong className="text-white">settlement layer</strong> — the foundation where staking, governance, cross-chain transfers, and native token movement happen.</span>
           </li>
           <li className="flex gap-3 text-sm text-[#D1D5DB] leading-relaxed">
             <span className="text-[#2AB8E6] mt-0.5 shrink-0">2.</span>
-            <span>It gives you a baseline to compare against. When something changes — a new partnership, a product launch, a market shift — you can see if it shows up in actual usage.</span>
+            <span>It gives you a baseline to compare against. When something changes — a new partnership, a product launch, a market shift — you can see if it shows up in on-chain activity.</span>
           </li>
           <li className="flex gap-3 text-sm text-[#D1D5DB] leading-relaxed">
             <span className="text-[#2AB8E6] mt-0.5 shrink-0">3.</span>
-            <span>It separates what is happening on the network from what people are saying about it. Activity data does not have opinions.</span>
+            <span>Theta&apos;s full ecosystem includes subchains (250K+ txs/day) and off-chain services not captured here. <strong className="text-white">When subchain APIs become publicly available, we will expand this into a full network index.</strong></span>
           </li>
         </ul>
       </div>
@@ -636,7 +630,7 @@ export default function NetworkActivityIndex({
           Why a low Main Chain Activity Index does not mean the network is inactive
         </h3>
         <p className="text-xs text-[#B0B8C4]">
-          This index only captures on-chain signals. Much of Theta&apos;s real-world usage is invisible to it.
+          This index only captures main-chain signals. Much of Theta&apos;s real-world usage happens on subchains and off-chain.
         </p>
         <LearnMore>
         <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -683,7 +677,7 @@ export default function NetworkActivityIndex({
               </span>
             </div>
             <ul className="space-y-1.5 text-sm text-[#B0B8C4] leading-relaxed">
-              <li>More transactions are happening on-chain</li>
+              <li>More transactions are happening on the main chain</li>
               <li>More wallets may be interacting with the network</li>
               <li>Demand for TFUEL may be increasing</li>
             </ul>
@@ -697,16 +691,15 @@ export default function NetworkActivityIndex({
             </div>
             <ul className="space-y-1.5 text-sm text-[#B0B8C4] leading-relaxed">
               <li>On-chain activity may not be growing visibly</li>
-              <li>Usage could be happening off-chain (video delivery, EdgeCloud)</li>
-              <li>This index only measures what&apos;s visible on the blockchain</li>
+              <li>Usage could be happening on subchains or off-chain (video, EdgeCloud)</li>
+              <li>This index only measures what&apos;s visible on the main chain</li>
               <li>A flat index with stable staking = healthy infrastructure waiting for adoption</li>
             </ul>
           </div>
         </div>
         <p className="text-xs text-[#B0B8C4] mt-6">
-          Important: some Theta network activity (video relay, edge compute
-          jobs) may not produce visible on-chain transactions. This index
-          captures blockchain activity only — it may undercount real usage.
+          This index captures main-chain activity only. Subchain transactions,
+          video delivery, and AI compute are not reflected here — yet.
         </p>
       </div>
 

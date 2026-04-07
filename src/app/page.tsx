@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import SimplifyThis from "../components/SimplifyThis";
+import WeeklySummary from "../components/WeeklySummary";
 
 /* ─── Animation helpers ─── */
 const fadeUp = {
@@ -222,6 +223,9 @@ export default function Home() {
           <Stat value="300K+" label="Metachain txs/day" delay={0.3} />
         </div>
       </motion.section>
+
+      {/* ━━━ WEEKLY SUMMARY ━━━ */}
+      <WeeklySummary />
 
       {/* ━━━ THE PROBLEM ━━━ */}
       <section className="py-16 sm:py-32 px-4 sm:px-6">

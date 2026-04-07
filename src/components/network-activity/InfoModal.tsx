@@ -193,9 +193,10 @@ export default function InfoModal({
               {/* Explanation */}
               <div className="space-y-4 text-sm text-[#D1D5DB] leading-relaxed">
                 <p>
-                  The Main Chain Activity Index is a relative measure of observable on-chain
-                  activity on the Theta main chain. It combines four metrics into
-                  a score between 0 and 100.
+                  The Main Chain Activity Index measures observable on-chain activity
+                  on Theta&apos;s settlement layer. It combines four metrics into a score
+                  between 0 and 100+. It tracks the main chain only — subchain and
+                  off-chain activity are not yet available via public API.
                 </p>
 
                 {/* What it measures */}
@@ -217,9 +218,10 @@ export default function InfoModal({
                     How to use it:
                   </p>
                   <p>
-                    This index is useful for one thing: <span className="text-white">tracking change over time</span>.
+                    This index is useful for <span className="text-white">tracking change over time</span> on the main chain.
                     If it trends upward, more on-chain activity is happening. If it
-                    trends downward, less is visible on-chain.
+                    trends downward, less is visible on-chain. It does not capture
+                    subchain or off-chain activity (video, AI, compute).
                   </p>
                 </div>
 
@@ -229,10 +231,11 @@ export default function InfoModal({
                     What it does NOT tell you:
                   </p>
                   <ul className="space-y-1.5 text-xs text-[#D1D5DB] leading-relaxed">
-                    <li>It does not predict token price or investment value</li>
+                    <li>It does not capture subchain activity (~250K+ txs/day), video delivery, or AI compute</li>
                     <li>A high score does not mean the project has &quot;succeeded&quot;</li>
                     <li>A low score does not mean the network is dead or failing</li>
-                    <li>It does not capture off-chain activity (video delivery, AI compute, subchain transactions)</li>
+                    <li>It does not predict token price or investment value</li>
+                    <li>When subchain APIs become available, we plan to expand this index</li>
                   </ul>
                 </div>
 
@@ -245,7 +248,7 @@ export default function InfoModal({
                     Unlike a fixed 0-100 scale, this index grows with the network.
                     When the score reaches a milestone, the next tier unlocks and
                     the ceiling expands. This means the index never caps out — it
-                    keeps scaling as Theta grows.
+                    keeps scaling as main-chain activity grows.
                   </p>
                   <div className="mt-2 bg-[#0D1117] rounded-lg p-3 text-xs text-[#B0B8C4] space-y-1">
                     <p>Each metric baseline (= score of 100):</p>
@@ -274,7 +277,7 @@ export default function InfoModal({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/15 text-[#F59E0B]">current tier</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-                        The network is functional with early adopters and stakers.
+                        The main chain is functional with early adopters and stakers.
                         Current activity scores around 50. Reaching 100 would mean roughly
                         doubling observable on-chain activity across all metrics.
                       </p>
@@ -311,9 +314,8 @@ export default function InfoModal({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                        The network consistently shows high on-chain activity across multiple
-                        metrics. Usage reflects sustained demand from applications and users,
-                        not short-term spikes.
+                        The main chain consistently shows high on-chain activity across multiple
+                        metrics. Usage reflects sustained demand, not short-term spikes.
                       </p>
                     </div>
 
@@ -332,7 +334,7 @@ export default function InfoModal({
                   </div>
 
                   <p className="text-xs text-[#B0B8C4] mt-3">
-                    These milestones describe what is mechanically happening on the network at each level.
+                    These milestones describe what is mechanically happening on the main chain at each level.
                     They are not predictions or targets — they are what the data would have to look like
                     for the index to reach that score.
                   </p>
@@ -351,14 +353,15 @@ export default function InfoModal({
                     Theta&apos;s full Metachain processes ~300K+ transactions/day
                     across subchains, but that data is not available via public API.
                     The real picture is significantly bigger than what we can show.
+                    When subchain APIs become available, we will expand this index.
                   </p>
                 </div>
 
                 <p className="text-xs text-[#B0B8C4] pt-2 border-t border-[#2A3548]">
                   This index is a transparent, best-effort tool — not a financial
                   indicator. We show exactly what we measure, how we measure it,
-                  and what we cannot see. Use it to follow trends, not to make
-                  absolute judgments.
+                  and what we cannot see. Use it to follow main-chain trends, not to make
+                  absolute judgments about the network.
                 </p>
               </div>
             </div>
