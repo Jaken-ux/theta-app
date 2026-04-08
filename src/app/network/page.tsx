@@ -81,6 +81,8 @@ export default async function NetworkPage() {
   await saveSnapshot(activity);
 
   let dailyAvg: number | null = null;
+  let theta7dChange: number | null = null;
+  let tfuel7dChange: number | null = null;
   try {
     const pool = await getPool();
     const today = new Date().toISOString().slice(0, 10);
@@ -90,6 +92,23 @@ export default async function NetworkPage() {
     );
     if (result.rows.length > 0) {
       dailyAvg = result.rows[0].average;
+    }
+
+    // 7-day price trend from history
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const priceResult = await pool.query(
+      `SELECT theta_price, tfuel_price FROM theta_activity_history
+       WHERE date <= $1 ORDER BY date DESC LIMIT 1`,
+      [sevenDaysAgo]
+    );
+    if (priceResult.rows.length > 0) {
+      const old = priceResult.rows[0];
+      if (old.theta_price > 0) {
+        theta7dChange = ((stats.thetaPrice.price - old.theta_price) / old.theta_price) * 100;
+      }
+      if (old.tfuel_price > 0) {
+        tfuel7dChange = ((stats.tfuelPrice.price - old.tfuel_price) / old.tfuel_price) * 100;
+      }
     }
   } catch {
     // Fall back to raw score
@@ -116,17 +135,21 @@ export default async function NetworkPage() {
         <MetricCard
           label="THETA Price"
           value={`$${stats.thetaPrice.price.toFixed(4)}`}
-          change={`MCap ${fmtUsd(stats.thetaPrice.marketCap)}`}
+          change={theta7dChange !== null
+            ? `7d ${theta7dChange >= 0 ? "↑" : "↓"} ${Math.abs(theta7dChange).toFixed(1)}%`
+            : "7d trend unavailable"}
         />
         <MetricCard
           label="TFUEL Price"
           value={`$${stats.tfuelPrice.price.toFixed(6)}`}
-          change={`24h Vol ${fmtUsd(stats.tfuelPrice.volume24h)}`}
+          change={tfuel7dChange !== null
+            ? `7d ${tfuel7dChange >= 0 ? "↑" : "↓"} ${Math.abs(tfuel7dChange).toFixed(1)}%`
+            : "7d trend unavailable"}
         />
         <MetricCard
           label="TFUEL 24h Volume"
           value={fmtUsd(stats.tfuelPrice.volume24h)}
-          change={`MCap ${fmtUsd(stats.tfuelPrice.marketCap)}`}
+          change="Trading activity"
         />
         <MetricCard
           label="TFUEL Supply"

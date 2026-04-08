@@ -84,7 +84,7 @@ export default function RootLayout({
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           {children}
         </main>
-        <footer className="max-w-6xl mx-auto px-4 sm:px-6 pb-6 pt-2">
+        <footer className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 pt-8 text-center">
           <Link
             href="/methodology"
             className="text-[13px] text-[#7D8694] hover:text-[#B0B8C4] transition-colors"
