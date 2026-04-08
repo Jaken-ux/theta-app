@@ -14,7 +14,7 @@ function computeIndex(snap: {
   const nodeScore = (snap.totalNodes / 22_000) * 100;
 
   return Math.round(
-    txScore * 0.3 + volumeScore * 0.3 + walletScore * 0.3 + nodeScore * 0.1
+    txScore * 0.4 + volumeScore * 0.15 + walletScore * 0.35 + nodeScore * 0.1
   );
 }
 

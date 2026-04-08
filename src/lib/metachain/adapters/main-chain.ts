@@ -24,9 +24,9 @@ const BASELINES = {
 };
 
 const WEIGHTS = {
-  txCount: 0.3,
-  volume: 0.3,
-  walletActivity: 0.3,
+  txCount: 0.4,
+  volume: 0.15,
+  walletActivity: 0.35,
   stakingNodes: 0.1,
 };
 

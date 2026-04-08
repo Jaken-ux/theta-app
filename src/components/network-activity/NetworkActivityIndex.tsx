@@ -31,9 +31,9 @@ function fmt(n: number): string {
  *
  * Each metric is scored as (value / baseline) * 100 with NO cap.
  *
- *   Transactions:    42,000 / day  (main chain)  — 30%
- *   TFUEL volume:    $12M / 24h                  — 30%
- *   Wallet activity: 100% of blocks with user txs — 30%
+ *   Transactions:    42,000 / day  (main chain)  — 40%
+ *   TFUEL volume:    $12M / 24h                  — 15%
+ *   Wallet activity: 100% of blocks with user txs — 35%
  *   Staking:         22,000 participants           — 10%
  */
 function computeIndex(snap: ActivitySnapshot): number {
@@ -42,7 +42,7 @@ function computeIndex(snap: ActivitySnapshot): number {
   const walletScore = (snap.userTxRate / 100) * 100;
   const nodeScore = (snap.totalNodes / 22_000) * 100;
 
-  return txScore * 0.3 + volumeScore * 0.3 + walletScore * 0.3 + nodeScore * 0.1;
+  return txScore * 0.4 + volumeScore * 0.15 + walletScore * 0.35 + nodeScore * 0.1;
 }
 
 /**
@@ -592,7 +592,7 @@ export default function NetworkActivityIndex({
           value={fmt(snapshot.estimatedDailyTxs)}
           subValue="main-chain txs in last 24h"
           description="On-chain transactions on Theta's main chain in the last 24 hours. The full Metachain (including subchains) processes significantly more — but subchain data is not available via public API."
-          weight="30%"
+          weight="40%"
           tooltip="Theta's Metachain processes ~300K+ txs/day across all subchains. This metric only captures the main chain (~14K/day)."
           history={txHistory}
           historyColor="#2AB8E6"
@@ -603,7 +603,7 @@ export default function NetworkActivityIndex({
           value={fmtUsd(snapshot.tfuelVolume24h)}
           subValue="24h trading volume"
           description="Total TFUEL trading volume across major exchanges and on-chain transfers. Market activity may indicate interest in the network but does not necessarily reflect real application usage."
-          weight="30%"
+          weight="15%"
           tooltip="Market activity can signal ecosystem attention, liquidity and participation, but should be interpreted together with on-chain metrics."
           history={volumeHistory}
           historyColor="#10B981"
@@ -613,8 +613,10 @@ export default function NetworkActivityIndex({
           title="Wallet Activity"
           value={`${snapshot.userTxRate.toFixed(1)}%`}
           subValue="of blocks contain user txs"
+          secondaryValue={`Baseline: 100% — headroom: ${(100 - snapshot.userTxRate).toFixed(0)}pp`}
+          secondaryNote="Score reaches 100 when every block contains at least one user transaction."
           description="Percentage of blocks that include at least one real user transaction beyond the block proposal. Higher values suggest more independent wallets interacting with the network rather than only validators producing blocks. A healthy network typically shows consistent participation from multiple wallets or applications."
-          weight="30%"
+          weight="35%"
           tooltip="Proxy for how often real users or apps interact with the chain."
           history={walletHistory}
           historyColor="#F59E0B"

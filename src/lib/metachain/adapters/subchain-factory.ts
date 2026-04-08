@@ -20,6 +20,8 @@ interface SubchainConfig {
   description: string;
   /** Relative weight in composite score. */
   weight: number;
+  /** If set, marks chain as inactive since this date. */
+  inactiveSince?: string;
   /** Baseline daily tx count for score normalization. */
   baselineTxPerDay: number;
 }
@@ -35,6 +37,7 @@ export function createSubchainAdapter(config: SubchainConfig): ChainAdapter {
     name: config.name,
     description: config.description,
     weight: config.weight,
+    inactiveSince: config.inactiveSince,
 
     async fetchMetrics(): Promise<ChainMetrics> {
       // Fetch tx count and recent blocks in parallel

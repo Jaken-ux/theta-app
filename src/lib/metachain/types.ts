@@ -29,6 +29,8 @@ export interface ChainScore {
   metrics: ChainMetrics;
   available: boolean;
   error?: string;
+  /** If set, chain is known to be inactive since this date (e.g. "March 2026"). */
+  inactiveSince?: string;
 }
 
 /** Composite result across all chains. */
@@ -55,6 +57,8 @@ export interface ChainAdapter {
   description: string;
   /** Relative weight in composite score (0–1). */
   weight: number;
+  /** If set, marks the chain as inactive since this date string (e.g. "March 2026"). */
+  inactiveSince?: string;
 
   /** Fetch current metrics from external APIs. */
   fetchMetrics(): Promise<ChainMetrics>;

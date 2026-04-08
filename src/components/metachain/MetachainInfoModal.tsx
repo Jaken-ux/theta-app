@@ -187,6 +187,7 @@ export default function MetachainInfoModal({
                     <li>EdgeCloud GPU compute jobs (only the logs on TPulse)</li>
                     <li>Transaction quality — cannot distinguish bots from real users</li>
                     <li>Subchains without public explorer APIs</li>
+                    <li>Inactive chains (e.g. POGS, inactive since March 2026) still contribute to the composite with their last known data and lower weight — they are not excluded</li>
                   </ul>
                 </div>
 

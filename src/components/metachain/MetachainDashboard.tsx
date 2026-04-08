@@ -27,6 +27,7 @@ interface ChainScore {
   weight: number;
   available: boolean;
   error?: string;
+  inactiveSince?: string;
   metrics: {
     txCount24h: number;
     volume24h?: number;
@@ -150,6 +151,25 @@ function getMetachainTier(score: number) {
   }
   const last = METACHAIN_TIERS[METACHAIN_TIERS.length - 1];
   return { tier: last, progress: 100, tierIndex: METACHAIN_TIERS.length - 1 };
+}
+
+/* ── Momentum Row ──────────────────────────────────────────── */
+
+function MomentumRow({ label, delta, suffix = "" }: { label: string; delta: number; suffix?: string }) {
+  const isPositive = delta > 0;
+  const isZero = delta === 0;
+  return (
+    <p className="text-[10px] flex items-center gap-1.5">
+      <span className="text-[#7D8694] w-16">{label}</span>
+      <span
+        className={`font-medium ${
+          isZero ? "text-[#7D8694]" : isPositive ? "text-[#10B981]" : "text-[#EF4444]"
+        }`}
+      >
+        {isZero ? "—" : `${isPositive ? "+" : ""}${delta.toLocaleString()}${suffix}`}
+      </span>
+    </p>
+  );
 }
 
 /* ── Sparkline ─────────────────────────────────────────────── */
@@ -702,7 +722,11 @@ export default function MetachainDashboard({
                   </p>
                   <div className="flex items-center gap-2">
                     <WeeklyChange current={chain.score} history={hist} />
-                    {chain.available ? (
+                    {chain.inactiveSince ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#7D8694]/10 text-[#5C6675]">
+                        inactive since {chain.inactiveSince}
+                      </span>
+                    ) : chain.available ? (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#10B981]/15 text-[#10B981]">
                         live
                       </span>
@@ -726,6 +750,16 @@ export default function MetachainDashboard({
                       <p>Subchains: {chain.metrics.custom?.subchainCount ?? "—"}</p>
                       <p>Cross-chain txs: {fmtNum(chain.metrics.custom?.crossChainTxs ?? 0)}</p>
                       <p>Registrar txs: {fmtNum(chain.metrics.custom?.collateralActivity ?? 0)}</p>
+                      {chain.metrics.custom?.hasMomentum === 1 && (
+                        <div className="mt-2 pt-2 border-t border-[#2A3548]">
+                          <p className="text-[10px] text-[#7D8694] mb-1">7-day momentum</p>
+                          <div className="space-y-0.5">
+                            <MomentumRow label="Subchains" delta={chain.metrics.custom.subchainDelta ?? 0} />
+                            <MomentumRow label="Cross-chain" delta={chain.metrics.custom.crossChainDelta ?? 0} suffix=" txs" />
+                            <MomentumRow label="Registrar" delta={chain.metrics.custom.collateralDelta ?? 0} suffix=" txs" />
+                          </div>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>

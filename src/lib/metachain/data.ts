@@ -147,6 +147,32 @@ export async function fetchMetachainData() {
     );
   }
 
+  // Calculate 7-day momentum for proxy-indicators
+  const proxyChain = result.chains.find((c) => c.chainId === "proxy-indicators");
+  if (proxyChain?.available && proxyChain.metrics.custom) {
+    try {
+      const { rows: prevRows } = await pool.query(
+        `SELECT custom_metrics FROM metachain_metrics
+         WHERE chain_id = 'proxy-indicators'
+           AND date <= CURRENT_DATE - INTERVAL '6 days'
+         ORDER BY date DESC LIMIT 1`
+      );
+      if (prevRows.length > 0) {
+        const prev = prevRows[0].custom_metrics;
+        const cur = proxyChain.metrics.custom;
+        proxyChain.metrics.custom.subchainDelta =
+          (cur.subchainCount ?? 0) - (prev.subchainCount ?? 0);
+        proxyChain.metrics.custom.crossChainDelta =
+          (cur.crossChainTxs ?? 0) - (prev.crossChainTxs ?? 0);
+        proxyChain.metrics.custom.collateralDelta =
+          (cur.collateralActivity ?? 0) - (prev.collateralActivity ?? 0);
+        proxyChain.metrics.custom.hasMomentum = 1;
+      }
+    } catch {
+      // No historical data yet — deltas unavailable
+    }
+  }
+
   // Save daily composite score (running average)
   await pool.query(
     `INSERT INTO metachain_daily_scores

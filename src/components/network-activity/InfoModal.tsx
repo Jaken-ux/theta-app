@@ -56,11 +56,11 @@ function AlgorithmDropdown() {
                 <p>nodeScore = (stakingNodes / 22,000) &times; 100</p>
                 <p className="text-[#B0B8C4] pt-2">{'// Step 2: Weighted sum'}</p>
                 <p className="text-white">
-                  index = txScore &times; 0.30
+                  index = txScore &times; 0.40
                   <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ volumeScore &times; 0.30
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ volumeScore &times; 0.15
                   <br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ walletScore &times; 0.30
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ walletScore &times; 0.35
                   <br />
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ nodeScore &times; 0.10
                 </p>
@@ -86,17 +86,17 @@ function AlgorithmDropdown() {
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Daily transactions</td>
                       <td className="py-1.5 font-mono">42,000</td>
-                      <td className="py-1.5">30%</td>
+                      <td className="py-1.5">40%</td>
                     </tr>
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">TFUEL 24h volume</td>
                       <td className="py-1.5 font-mono">$12,000,000</td>
-                      <td className="py-1.5">30%</td>
+                      <td className="py-1.5">15%</td>
                     </tr>
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Wallet activity</td>
                       <td className="py-1.5 font-mono">100%</td>
-                      <td className="py-1.5">30%</td>
+                      <td className="py-1.5">35%</td>
                     </tr>
                     <tr className="border-t border-[#2A3548]">
                       <td className="py-1.5">Staking participants</td>
@@ -205,9 +205,9 @@ export default function InfoModal({
                     What it measures:
                   </p>
                   <ul className="space-y-1.5 list-disc list-inside text-[#D1D5DB]">
-                    <li>Main-chain transactions in the last 24h (30% weight)</li>
-                    <li>TFUEL 24h trading volume (30% weight)</li>
-                    <li>Percentage of blocks with user transactions (30% weight)</li>
+                    <li>Main-chain transactions in the last 24h (40% weight)</li>
+                    <li>TFUEL 24h trading volume (15% weight)</li>
+                    <li>Percentage of blocks with user transactions (35% weight)</li>
                     <li>Number of staking participants (10% weight)</li>
                   </ul>
                 </div>

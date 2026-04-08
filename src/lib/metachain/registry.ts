@@ -44,6 +44,7 @@ export async function fetchAllChains(): Promise<CompositeResult> {
         weight: normalizedWeight,
         metrics,
         available: true,
+        inactiveSince: adapter.inactiveSince,
       };
     })
   );
