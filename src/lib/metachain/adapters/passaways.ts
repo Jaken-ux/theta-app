@@ -9,5 +9,5 @@ export const passawaysAdapter = createSubchainAdapter({
   name: "Passaways",
   description: "PLASM gaming and digital entertainment ecosystem.",
   weight: 0.5,
-  baselineTxPerDay: 200_000,
+  baselineTxPerDay: 100_000,
 });

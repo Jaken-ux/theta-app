@@ -10,6 +10,6 @@ export const pogsAdapter = createSubchainAdapter({
   subchainId: "9065",
   name: "POGS",
   description: "Digital entertainment and gaming collectibles.",
-  weight: 0.3,
+  weight: 0.3, // lower weight — inactive since March 2026
   baselineTxPerDay: 100_000,
 });

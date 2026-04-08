@@ -636,17 +636,29 @@ export default function MetachainDashboard({
                   width={100}
                 />
                 <Tooltip
+                  cursor={{ fill: "rgba(42,53,72,0.3)" }}
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     const d = payload[0].payload;
                     return (
-                      <div className="bg-[#151D2E] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
-                        <p className="text-white font-medium mb-1">
-                          {d.name}
-                        </p>
-                        <p className="text-[#B0B8C4]">
-                          Score: {d.score} — Weight: {d.weight}%
-                        </p>
+                      <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl px-4 py-3 shadow-2xl">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: d.color }}
+                          />
+                          <p className="text-sm font-medium text-white">
+                            {d.name}
+                          </p>
+                        </div>
+                        <div className="flex items-baseline gap-3">
+                          <span className="text-lg font-bold tabular-nums" style={{ color: d.color }}>
+                            {d.score}
+                          </span>
+                          <span className="text-[10px] text-[#7D8694]">
+                            {d.weight}% weight
+                          </span>
+                        </div>
                       </div>
                     );
                   }}

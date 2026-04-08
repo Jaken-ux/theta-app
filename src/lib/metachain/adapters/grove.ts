@@ -8,6 +8,6 @@ export const groveAdapter = createSubchainAdapter({
   subchainId: "47683",
   name: "Grove",
   description: "GroveWars Web3 gaming ecosystem.",
-  weight: 0.4,
+  weight: 0.5,
   baselineTxPerDay: 100_000,
 });

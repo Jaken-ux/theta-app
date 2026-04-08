@@ -8,6 +8,6 @@ export const lavitaAdapter = createSubchainAdapter({
   subchainId: "360890",
   name: "Lavita AI",
   description: "Health AI research and genomics data marketplace.",
-  weight: 0.8,
-  baselineTxPerDay: 200_000,
+  weight: 0.7,
+  baselineTxPerDay: 100_000,
 });
