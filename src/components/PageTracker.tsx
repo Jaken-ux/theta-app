@@ -17,6 +17,7 @@ export default function PageTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
+    if (window.location.hostname === "localhost") return;
     try {
       const visitorId = getVisitorId();
       fetch("/api/track", {
