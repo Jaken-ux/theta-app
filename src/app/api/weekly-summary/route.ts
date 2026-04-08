@@ -18,6 +18,7 @@ export async function GET() {
     const pool = await getPool();
 
     // Get the most recent entry and the entry ~7 days before it
+    // Main chain data
     const { rows } = await pool.query(`
       WITH recent AS (
         SELECT * FROM theta_activity_history ORDER BY date DESC LIMIT 1
@@ -34,23 +35,41 @@ export async function GET() {
         r.theta_price AS current_theta_price,
         r.tfuel_price AS current_tfuel_price,
         r.staking_nodes AS current_nodes,
-        r.tfuel_volume AS current_volume,
-        r.theta_staking_ratio AS current_theta_staking,
-        r.tfuel_staking_ratio AS current_tfuel_staking,
         w.date AS prev_date_val,
         w.average AS prev_score,
         w.daily_txs AS prev_txs,
         w.theta_price AS prev_theta_price,
         w.tfuel_price AS prev_tfuel_price,
-        w.staking_nodes AS prev_nodes,
-        w.tfuel_volume AS prev_volume,
-        w.theta_staking_ratio AS prev_theta_staking,
-        w.tfuel_staking_ratio AS prev_tfuel_staking
+        w.staking_nodes AS prev_nodes
       FROM recent r, week_ago w
     `);
 
     if (rows.length === 0) {
       return NextResponse.json({ available: false });
+    }
+
+    // Metachain composite score (current + 7 days ago)
+    let metachainCurrent: number | null = null;
+    let metachainPrev: number | null = null;
+    try {
+      const { rows: mcRows } = await pool.query(`
+        WITH recent AS (
+          SELECT composite_score, date FROM metachain_daily_scores ORDER BY date DESC LIMIT 1
+        ),
+        week_ago AS (
+          SELECT composite_score FROM metachain_daily_scores
+          WHERE date <= (SELECT date - INTERVAL '6 days' FROM recent)
+          ORDER BY date DESC LIMIT 1
+        )
+        SELECT r.composite_score AS current_mc, w.composite_score AS prev_mc
+        FROM recent r, week_ago w
+      `);
+      if (mcRows.length > 0) {
+        metachainCurrent = mcRows[0].current_mc;
+        metachainPrev = mcRows[0].prev_mc;
+      }
+    } catch {
+      // metachain table may not exist yet
     }
 
     const r = rows[0];
@@ -72,6 +91,12 @@ export async function GET() {
           current: r.current_tfuel_price,
           changePct: pctChange(r.current_tfuel_price, r.prev_tfuel_price),
         },
+        metachainIndex: {
+          current: metachainCurrent,
+          change: metachainCurrent != null && metachainPrev != null
+            ? absDiff(metachainCurrent, metachainPrev)
+            : null,
+        },
         dailyTxs: {
           current: r.current_txs,
           changePct: pctChange(r.current_txs, r.prev_txs),
@@ -79,10 +104,6 @@ export async function GET() {
         stakingNodes: {
           current: r.current_nodes,
           change: absDiff(r.current_nodes, r.prev_nodes),
-        },
-        tfuelVolume: {
-          current: r.current_volume,
-          changePct: pctChange(r.current_volume, r.prev_volume),
         },
       },
     });

@@ -17,9 +17,9 @@ interface WeeklyData {
     activityIndex: Metric;
     thetaPrice: Metric;
     tfuelPrice: Metric;
+    metachainIndex: Metric;
     dailyTxs: Metric;
     stakingNodes: Metric;
-    tfuelVolume: Metric;
   };
 }
 
@@ -170,12 +170,21 @@ export default function WeeklySummary() {
             delay={0.1}
           />
           <SummaryCard
+            label="Metachain Index"
+            value={m.metachainIndex.current != null ? `${Math.round(m.metachainIndex.current)}` : "—"}
+            change={m.metachainIndex.change}
+            changeSuffix=" pts"
+            icon="⬡"
+            color="#10B981"
+            delay={0.15}
+          />
+          <SummaryCard
             label="Daily Transactions"
             value={formatNumber(m.dailyTxs.current)}
             change={m.dailyTxs.changePct}
             icon="↗"
             color="#F59E0B"
-            delay={0.15}
+            delay={0.2}
           />
           <SummaryCard
             label="Staking Nodes"
@@ -184,14 +193,6 @@ export default function WeeklySummary() {
             changeSuffix=""
             icon="⬡"
             color="#8B5CF6"
-            delay={0.2}
-          />
-          <SummaryCard
-            label="TFUEL Volume (24h)"
-            value={formatNumber(m.tfuelVolume.current)}
-            change={m.tfuelVolume.changePct}
-            icon="◎"
-            color="#10B981"
             delay={0.25}
           />
         </div>
