@@ -152,6 +152,58 @@ function getMetachainTier(score: number) {
   return { tier: last, progress: 100, tierIndex: METACHAIN_TIERS.length - 1 };
 }
 
+/* ── Sparkline ─────────────────────────────────────────────── */
+
+function Sparkline({
+  data,
+  color,
+}: {
+  data: { value: number }[];
+  color: string;
+}) {
+  if (data.length < 2) return null;
+  return (
+    <div className="h-8 w-full mt-2">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id={`spark-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke={color}
+            strokeWidth={1.5}
+            fill={`url(#spark-${color.replace("#", "")})`}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function WeeklyChange({ current, history }: { current: number; history: { score: number }[] }) {
+  if (history.length < 2) return null;
+  // Compare current to the oldest entry in history (up to 7 days back)
+  const oldest = history[history.length - 1];
+  const diff = current - oldest.score;
+  const isPositive = diff > 0;
+  const isZero = Math.abs(diff) < 0.5;
+
+  if (isZero) return null;
+
+  return (
+    <span className={`text-[10px] font-medium ${isPositive ? "text-[#10B981]" : "text-[#EF4444]"}`}>
+      {isPositive ? "+" : ""}{diff.toFixed(1)} pts
+    </span>
+  );
+}
+
 /* ── Tooltip ───────────────────────────────────────────────── */
 
 function ChartTooltip({
@@ -219,7 +271,7 @@ export default function MetachainDashboard({
     );
   }
 
-  const { current, history, registeredChains, coveragePct } = data;
+  const { current, history, registeredChains, coveragePct, chainHistory } = data;
   const coverage = coveragePct ?? 100;
   const chainsAvailable = current.chains.filter((c) => c.available).length;
   const chartData = [...history].reverse().map((h) => ({
@@ -614,60 +666,73 @@ export default function MetachainDashboard({
 
         {/* Chain detail cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {current.chains.map((chain) => (
-            <div
-              key={chain.chainId}
-              className="bg-[#0D1117] rounded-xl p-4 border-l-2"
-              style={{
-                borderLeftColor: chain.available
-                  ? getChainColor(chain.chainId)
-                  : "#2A3548",
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: getChainColor(chain.chainId) }}
-                >
-                  {chain.chainName}
-                </p>
-                {chain.available ? (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#10B981]/15 text-[#10B981]">
-                    live
-                  </span>
-                ) : (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EF4444]/15 text-[#EF4444]">
-                    error
-                  </span>
-                )}
-              </div>
-              <p className="text-2xl font-bold text-white tabular-nums">
-                {Math.round(chain.score)}
-              </p>
-              <div className="mt-2 space-y-1 text-xs text-[#B0B8C4]">
-                {chain.chainId === "proxy-indicators" ? (
-                  <>
-                    <p>Subchains: {chain.metrics.custom?.subchainCount ?? "—"}</p>
-                    <p>Cross-chain txs: {fmtNum(chain.metrics.custom?.crossChainTxs ?? 0)}</p>
-                    <p>Registrar txs: {fmtNum(chain.metrics.custom?.collateralActivity ?? 0)}</p>
-                  </>
-                ) : (
-                  <>
-                    <p>Txs/24h: {fmtNum(chain.metrics.txCount24h)}</p>
-                    {chain.metrics.volume24h != null && (
-                      <p>Volume: {fmtUsd(chain.metrics.volume24h)}</p>
+          {current.chains.map((chain) => {
+            const hist = chainHistory?.[chain.chainId] ?? [];
+            const sparkData = [...hist]
+              .reverse()
+              .map((h) => ({ value: h.score }));
+            const color = getChainColor(chain.chainId);
+
+            return (
+              <div
+                key={chain.chainId}
+                className="bg-[#0D1117] rounded-xl p-4 border-l-2"
+                style={{
+                  borderLeftColor: chain.available ? color : "#2A3548",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color }}
+                  >
+                    {chain.chainName}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <WeeklyChange current={chain.score} history={hist} />
+                    {chain.available ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#10B981]/15 text-[#10B981]">
+                        live
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EF4444]/15 text-[#EF4444]">
+                        error
+                      </span>
                     )}
-                  </>
-                )}
-                <p>Weight: {Math.round(chain.weight * 100)}%</p>
-              </div>
-              {chain.error && (
-                <p className="text-[10px] text-[#EF4444] mt-2 truncate">
-                  {chain.error}
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-white tabular-nums">
+                  {Math.round(chain.score)}
                 </p>
-              )}
-            </div>
-          ))}
+
+                {/* Sparkline */}
+                <Sparkline data={sparkData} color={color} />
+
+                <div className="mt-2 space-y-1 text-xs text-[#B0B8C4]">
+                  {chain.chainId === "proxy-indicators" ? (
+                    <>
+                      <p>Subchains: {chain.metrics.custom?.subchainCount ?? "—"}</p>
+                      <p>Cross-chain txs: {fmtNum(chain.metrics.custom?.crossChainTxs ?? 0)}</p>
+                      <p>Registrar txs: {fmtNum(chain.metrics.custom?.collateralActivity ?? 0)}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>Txs/24h: {fmtNum(chain.metrics.txCount24h)}</p>
+                      {chain.metrics.volume24h != null && (
+                        <p>Volume: {fmtUsd(chain.metrics.volume24h)}</p>
+                      )}
+                    </>
+                  )}
+                  <p>Weight: {Math.round(chain.weight * 100)}%</p>
+                </div>
+                {chain.error && (
+                  <p className="text-[10px] text-[#EF4444] mt-2 truncate">
+                    {chain.error}
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
           {/* Coming soon placeholder */}
           <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-dashed border-[#2A3548] flex flex-col items-center justify-center text-center">

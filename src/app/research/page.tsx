@@ -230,6 +230,7 @@ export default function ResearchPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<HistoryRow[]>([]);
+  const [mcData, setMcData] = useState<{ date: string; compositeScore: number }[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>("90d");
 
   // Auth check — reuse STATS_SECRET via /api/stats
@@ -244,9 +245,21 @@ export default function ResearchPage() {
       }
       localStorage.setItem("theta-research-key", secret);
       setAuthed(true);
-      // Fetch activity data
-      const histRes = await fetch("/api/activity-history");
+      // Fetch activity data + metachain data in parallel
+      const [histRes, mcRes] = await Promise.all([
+        fetch("/api/activity-history"),
+        fetch("/api/metachain"),
+      ]);
       if (histRes.ok) setData(await histRes.json());
+      if (mcRes.ok) {
+        const mc = await mcRes.json();
+        setMcData(
+          (mc.history ?? []).map((h: { date: string; compositeScore: number }) => ({
+            date: typeof h.date === "string" && h.date.length > 10 ? h.date.slice(0, 10) : h.date,
+            compositeScore: h.compositeScore,
+          }))
+        );
+      }
     } catch {
       setError("Kunde inte ansluta");
     } finally {
@@ -380,6 +393,47 @@ export default function ResearchPage() {
       priceNorm: priceNorm[i] ?? null,
     }));
   }, [rows, scores, thetaPrices]);
+
+  // ── Metachain combined data ──────────────────────────────────────────────
+  const mcByDate = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of mcData) map.set(m.date, m.compositeScore);
+    return map;
+  }, [mcData]);
+
+  const dualIndexData = useMemo(() => {
+    return rows
+      .filter((r) => mcByDate.has(r.date))
+      .map((r) => ({
+        date: formatDate(r.date),
+        fullDate: r.date,
+        mainChain: r.score,
+        metachain: mcByDate.get(r.date)!,
+        thetaPrice: r.metrics.thetaPrice,
+      }));
+  }, [rows, mcByDate]);
+
+  const mcScores = useMemo(
+    () => dualIndexData.map((d) => d.metachain),
+    [dualIndexData]
+  );
+  const mcPrices = useMemo(
+    () => dualIndexData.map((d) => d.thetaPrice!),
+    [dualIndexData]
+  );
+  const mcMainScores = useMemo(
+    () => dualIndexData.map((d) => d.mainChain),
+    [dualIndexData]
+  );
+
+  const corrMetachainPrice = useMemo(
+    () => (mcScores.length >= 3 ? pearson(mcScores, mcPrices) : 0),
+    [mcScores, mcPrices]
+  );
+  const corrMainVsMeta = useMemo(
+    () => (mcScores.length >= 3 ? pearson(mcMainScores, mcScores) : 0),
+    [mcMainScores, mcScores]
+  );
 
   // ── Scatter data ─────────────────────────────────────────────────────────
   const scatterData = useMemo(
@@ -859,10 +913,96 @@ export default function ResearchPage() {
         )}
       </Section>
 
-      {/* ── 6. Raw data table ────────────────────────────────────────── */}
+      {/* ── 6. Metachain vs Main Chain ─────────────────────────────── */}
+      {dualIndexData.length >= 2 && (
+        <Section
+          title="Metachain vs Main Chain"
+          subtitle="Ekosystemanvändning jämfört med settlement layer-aktivitet"
+        >
+          <Explainer
+            whatIsThis="Det här diagrammet visar båda indexen sida vid sida. Den gröna linjen (Metachain) mäter faktisk applikationsanvändning — gaming, AI, health data. Den blå linjen (Main Chain) mäter settlement layer-aktivitet — tokenhandel, staking, cross-chain."
+            howToRead="Om linjerna rör sig oberoende av varandra, drivs de av olika saker (bra — det visar att ekosystemet har eget liv). Om de rör sig ihop, kan det betyda att allt drivs av samma marknadskrafter. Om metachain stiger medan main chain är platt = appar växer oberoende av marknaden."
+            useCase="Hjälper dig förstå om Theta-ekosystemet skapar eget värde eller bara följer kryptomarknaden. En divergens där metachain stiger och main chain är platt är den starkaste bullish-signalen för nätverkets utility."
+          />
+          <div className="grid sm:grid-cols-3 gap-4 mb-6">
+            <div className="bg-[#0D1117] rounded-xl p-4">
+              <p className="text-xs text-[#7D8694] mb-1">Main Chain ↔ Metachain</p>
+              <p
+                className="text-2xl font-bold tabular-nums"
+                style={{ color: correlationLabel(corrMainVsMeta).color }}
+              >
+                {corrMainVsMeta.toFixed(3)}
+              </p>
+              <p className="text-xs mt-1" style={{ color: correlationLabel(corrMainVsMeta).color }}>
+                {correlationLabel(corrMainVsMeta).text} korrelation
+              </p>
+            </div>
+            <div className="bg-[#0D1117] rounded-xl p-4">
+              <p className="text-xs text-[#7D8694] mb-1">Metachain ↔ THETA-pris</p>
+              <p
+                className="text-2xl font-bold tabular-nums"
+                style={{ color: correlationLabel(corrMetachainPrice).color }}
+              >
+                {corrMetachainPrice.toFixed(3)}
+              </p>
+              <p className="text-xs mt-1" style={{ color: correlationLabel(corrMetachainPrice).color }}>
+                {correlationLabel(corrMetachainPrice).text} korrelation
+              </p>
+            </div>
+            <div className="bg-[#0D1117] rounded-xl p-4">
+              <p className="text-xs text-[#7D8694] mb-1">Datapunkter</p>
+              <p className="text-2xl font-bold tabular-nums text-white">
+                {dualIndexData.length}
+              </p>
+              <p className="text-xs text-[#7D8694] mt-1">
+                dagar med båda index
+              </p>
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={dualIndexData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                interval={Math.max(0, Math.floor(dualIndexData.length / 10))}
+              />
+              <YAxis
+                tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+              />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="mainChain"
+                name="Main Chain"
+                stroke="#2AB8E6"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="metachain"
+                name="Metachain"
+                stroke="#10B981"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Section>
+      )}
+
+      {/* ── 7. Raw data table ────────────────────────────────────────── */}
       <Section title="Rådata" subtitle={isAggregated ? `${rows.length} veckosnitt` : `Senaste ${rows.length} dagarna`}>
         <Explainer
-          whatIsThis="Rådata-tabellen visar de faktiska siffror som alla grafer och beräkningar ovan bygger på. Varje rad är en dag. Kolumnerna visar: Activity Index, THETA- och TFUEL-pris i dollar, antal transaktioner, TFUEL-handelsvolym (i miljoner), andel aktiva wallets (i procent), och antal staking-noder."
+          whatIsThis="Rådata-tabellen visar de faktiska siffror som alla grafer och beräkningar ovan bygger på. Varje rad är en dag. Kolumnerna visar: Main Chain Activity Index, Metachain Utilization Index (grön), THETA- och TFUEL-pris i dollar, antal transaktioner, andel aktiva wallets (i procent), och antal staking-noder."
           howToRead="Tabellen sorteras med nyaste datum överst. Du kan använda den för att dubbelkolla specifika datapunkter som sticker ut i graferna. Om en graf visar en ovanlig spike, kan du hitta det exakta datumet här och se alla metriker för just den dagen. Streck (–) betyder att data saknas för den dagen."
           useCase="Ger full transparens — du kan se exakt vilken data som matats in och granska den manuellt. Användbart för att identifiera dataproblem (saknade värden, orimliga siffror) och för att korskontrollera mot externa källor."
         />
@@ -871,11 +1011,11 @@ export default function ResearchPage() {
             <thead>
               <tr className="text-[#7D8694] border-b border-[#2A3548]">
                 <th className="py-2 pr-3">Datum</th>
-                <th className="py-2 pr-3 text-right">Index</th>
+                <th className="py-2 pr-3 text-right">Main Chain</th>
+                <th className="py-2 pr-3 text-right">Metachain</th>
                 <th className="py-2 pr-3 text-right">THETA ($)</th>
                 <th className="py-2 pr-3 text-right">TFUEL ($)</th>
                 <th className="py-2 pr-3 text-right">Txs</th>
-                <th className="py-2 pr-3 text-right">TFUEL Vol</th>
                 <th className="py-2 pr-3 text-right">Wallet %</th>
                 <th className="py-2 text-right">Noder</th>
               </tr>
@@ -893,6 +1033,9 @@ export default function ResearchPage() {
                     <td className="py-1.5 pr-3 text-right tabular-nums">
                       {r.score.toFixed(1)}
                     </td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums text-[#10B981]">
+                      {mcByDate.has(r.date) ? mcByDate.get(r.date)!.toFixed(1) : "–"}
+                    </td>
                     <td className="py-1.5 pr-3 text-right tabular-nums">
                       {r.metrics.thetaPrice != null
                         ? `$${r.metrics.thetaPrice.toFixed(4)}`
@@ -905,11 +1048,6 @@ export default function ResearchPage() {
                     </td>
                     <td className="py-1.5 pr-3 text-right tabular-nums">
                       {r.metrics.dailyTxs?.toLocaleString() ?? "–"}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right tabular-nums">
-                      {r.metrics.tfuelVolume != null
-                        ? `${(r.metrics.tfuelVolume / 1e6).toFixed(1)}M`
-                        : "–"}
                     </td>
                     <td className="py-1.5 pr-3 text-right tabular-nums">
                       {r.metrics.walletActivity != null
