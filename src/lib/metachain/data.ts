@@ -1,0 +1,223 @@
+import { fetchAllChains, getRegisteredChains } from "./registry";
+import { getPool } from "../db";
+import type { Pool } from "pg";
+
+/**
+ * Metachain time-series schema:
+ *
+ *   metachain_chains       — registered chain metadata (slowly changing)
+ *   metachain_metrics      — per-chain daily metrics (time series)
+ *   metachain_daily_scores — aggregated composite score per day
+ *
+ * Coverage confidence = (available chain weight / total weight) * 100
+ * This allows partial ecosystem coverage — if a chain goes offline,
+ * the composite still works with reduced confidence.
+ */
+
+let schemaInitialized = false;
+
+async function ensureSchema(pool: Pool) {
+  if (schemaInitialized) return;
+
+  // Chain registry — tracks known chains and when they were first/last seen
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS metachain_chains (
+      chain_id TEXT PRIMARY KEY,
+      chain_name TEXT NOT NULL,
+      description TEXT,
+      weight DOUBLE PRECISION NOT NULL DEFAULT 1,
+      first_seen DATE NOT NULL DEFAULT CURRENT_DATE,
+      last_seen DATE NOT NULL DEFAULT CURRENT_DATE,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE
+    )
+  `);
+
+  // Per-chain daily metrics — one row per chain per day
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS metachain_metrics (
+      chain_id TEXT NOT NULL,
+      date DATE NOT NULL,
+      score DOUBLE PRECISION NOT NULL DEFAULT 0,
+      tx_count_24h INTEGER DEFAULT 0,
+      volume_24h DOUBLE PRECISION,
+      active_wallets INTEGER,
+      custom_metrics JSONB DEFAULT '{}',
+      available BOOLEAN NOT NULL DEFAULT TRUE,
+      samples INTEGER NOT NULL DEFAULT 1,
+      total_score DOUBLE PRECISION NOT NULL DEFAULT 0,
+      PRIMARY KEY (chain_id, date)
+    )
+  `);
+
+  // Daily aggregated composite score
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS metachain_daily_scores (
+      date DATE PRIMARY KEY,
+      composite_score DOUBLE PRECISION NOT NULL,
+      chain_count INTEGER NOT NULL DEFAULT 0,
+      chains_available INTEGER NOT NULL DEFAULT 0,
+      coverage_pct DOUBLE PRECISION NOT NULL DEFAULT 0,
+      samples INTEGER NOT NULL DEFAULT 1,
+      total_score DOUBLE PRECISION NOT NULL DEFAULT 0
+    )
+  `);
+
+  // Migrate old metachain_history data if it exists
+  try {
+    const { rows } = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'metachain_history'
+      )
+    `);
+    if (rows[0].exists) {
+      await pool.query(`
+        INSERT INTO metachain_daily_scores (date, composite_score, chain_count, chains_available, coverage_pct, samples, total_score)
+        SELECT date, composite_score, chain_count, chain_count, 100, samples, total_score
+        FROM metachain_history
+        ON CONFLICT (date) DO NOTHING
+      `);
+    }
+  } catch {
+    // Migration failed silently — old table may not exist
+  }
+
+  schemaInitialized = true;
+}
+
+/**
+ * Fetch live data from all chain adapters, save to DB, return with history.
+ * Used by both the API route and the server-side page prefetch.
+ */
+export async function fetchMetachainData() {
+  const pool = await getPool();
+  await ensureSchema(pool);
+
+  // Fetch live data from all adapters
+  const result = await fetchAllChains();
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Compute coverage confidence
+  const totalWeight = result.chains.reduce((s, c) => s + c.weight, 0);
+  const availableWeight = result.chains
+    .filter((c) => c.available)
+    .reduce((s, c) => s + c.weight, 0);
+  const coveragePct =
+    totalWeight > 0 ? Math.round((availableWeight / totalWeight) * 100) : 0;
+
+  // Save chain registry (upsert)
+  for (const chain of result.chains) {
+    await pool.query(
+      `INSERT INTO metachain_chains (chain_id, chain_name, description, weight, first_seen, last_seen, is_active)
+       VALUES ($1, $2, $3, $4, $5, $5, $6)
+       ON CONFLICT (chain_id) DO UPDATE SET
+         chain_name = $2,
+         weight = $4,
+         last_seen = $5,
+         is_active = $6`,
+      [chain.chainId, chain.chainName, "", chain.weight, today, chain.available]
+    );
+  }
+
+  // Save per-chain daily metrics (running average per chain per day)
+  for (const chain of result.chains) {
+    await pool.query(
+      `INSERT INTO metachain_metrics
+         (chain_id, date, score, tx_count_24h, volume_24h, active_wallets, custom_metrics, available, samples, total_score)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, $3)
+       ON CONFLICT (chain_id, date) DO UPDATE SET
+         samples = metachain_metrics.samples + 1,
+         total_score = metachain_metrics.total_score + $3,
+         score = (metachain_metrics.total_score + $3) / (metachain_metrics.samples + 1),
+         tx_count_24h = $4,
+         volume_24h = $5,
+         active_wallets = $6,
+         custom_metrics = $7,
+         available = $8`,
+      [
+        chain.chainId,
+        today,
+        chain.score,
+        chain.metrics.txCount24h,
+        chain.metrics.volume24h ?? null,
+        chain.metrics.activeWallets ?? null,
+        JSON.stringify(chain.metrics.custom ?? {}),
+        chain.available,
+      ]
+    );
+  }
+
+  // Save daily composite score (running average)
+  await pool.query(
+    `INSERT INTO metachain_daily_scores
+       (date, composite_score, chain_count, chains_available, coverage_pct, samples, total_score)
+     VALUES ($1, $2, $3, $4, $5, 1, $2)
+     ON CONFLICT (date) DO UPDATE SET
+       samples = metachain_daily_scores.samples + 1,
+       total_score = metachain_daily_scores.total_score + $2,
+       composite_score = (metachain_daily_scores.total_score + $2) / (metachain_daily_scores.samples + 1),
+       chain_count = $3,
+       chains_available = $4,
+       coverage_pct = $5`,
+    [
+      today,
+      result.compositeScore,
+      result.chainCount,
+      result.chains.filter((c) => c.available).length,
+      coveragePct,
+    ]
+  );
+
+  // Fetch composite history (last 90 days)
+  const { rows: history } = await pool.query(
+    `SELECT date, composite_score, chain_count, chains_available, coverage_pct
+     FROM metachain_daily_scores
+     ORDER BY date DESC
+     LIMIT 90`
+  );
+
+  // Fetch per-chain history (last 30 days, all chains)
+  const { rows: chainHistory } = await pool.query(
+    `SELECT chain_id, date, score, tx_count_24h, available
+     FROM metachain_metrics
+     WHERE date >= CURRENT_DATE - INTERVAL '30 days'
+     ORDER BY date DESC`
+  );
+
+  // Group chain history by chain_id
+  const chainHistoryMap: Record<
+    string,
+    { date: string; score: number; txCount24h: number; available: boolean }[]
+  > = {};
+  for (const row of chainHistory) {
+    if (!chainHistoryMap[row.chain_id]) chainHistoryMap[row.chain_id] = [];
+    chainHistoryMap[row.chain_id].push({
+      date: row.date,
+      score: row.score,
+      txCount24h: row.tx_count_24h,
+      available: row.available,
+    });
+  }
+
+  return {
+    current: result,
+    registeredChains: getRegisteredChains(),
+    coveragePct,
+    history: history.map(
+      (r: {
+        date: string;
+        composite_score: number;
+        chain_count: number;
+        chains_available: number;
+        coverage_pct: number;
+      }) => ({
+        date: r.date,
+        compositeScore: r.composite_score,
+        chainCount: r.chain_count,
+        chainsAvailable: r.chains_available,
+        coveragePct: r.coverage_pct,
+      })
+    ),
+    chainHistory: chainHistoryMap,
+  };
+}

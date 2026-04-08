@@ -7,6 +7,7 @@ import { getTodaySampleCount, getHistory, type HistoryEntry } from "../../lib/ac
 import ActivityMetric, { type MetricHistoryPoint } from "./ActivityMetric";
 import ActivityTrendChart from "./ActivityTrendChart";
 import InfoModal, { InfoButton } from "./InfoModal";
+import Link from "next/link";
 import SimplifyThis from "../SimplifyThis";
 import LearnMore from "../LearnMore";
 
@@ -164,11 +165,28 @@ export default function NetworkActivityIndex({
           Observable activity on Theta&apos;s settlement layer.
         </p>
         <p className="text-xs text-[#B0B8C4] mt-1">
-          This index tracks main-chain transactions, TFUEL trading volume, wallet participation, and staking. It does <strong className="text-white">not</strong> include subchain activity, video delivery, or EdgeCloud compute — those APIs are not yet publicly available. When they are, we will expand this index.
+          This index tracks main-chain transactions, TFUEL trading volume, wallet participation, and staking. It answers the question: <strong className="text-white">&quot;Are people interested in Theta?&quot;</strong>
         </p>
         <SimplifyThis>
-          This measures how busy Theta&apos;s main blockchain is — the foundation layer where staking, token transfers, and cross-chain operations happen. The score goes up when more transactions occur and more people interact with the chain. But it does <strong className="text-white">not</strong> capture everything Theta does. Video streaming, AI compute, and subchain transactions (which make up the majority of Theta&apos;s actual usage) happen elsewhere. A low score here does not mean Theta is failing — it means the main chain is quiet.
+          <p className="mb-2">This measures how busy Theta&apos;s main blockchain is — the foundation layer where staking, token transfers, and trading happen.</p>
+          <p className="mb-2">Think of it like foot traffic on a main street. If the street is busy, people are actively moving tokens and trading. If it&apos;s quiet, the market is calm.</p>
+          <p>But this is just the main street. Most of Theta&apos;s actual work (gaming, AI, health data) happens on <strong className="text-white">subchains</strong> — separate blockchains for specific apps. To see that activity, check the <strong className="text-white">Metachain</strong> page.</p>
         </SimplifyThis>
+
+        {/* Cross-reference to Metachain */}
+        <div className="mt-4 bg-[#10B981]/5 border border-[#10B981]/20 rounded-xl p-4 flex items-start gap-3">
+          <span className="text-[#10B981] text-lg mt-0.5 shrink-0">→</span>
+          <div>
+            <p className="text-sm text-[#D1D5DB]">
+              <strong className="text-white">Looking for the bigger picture?</strong>{" "}
+              This page only shows the main chain. The{" "}
+              <Link href="/metachain" className="text-[#10B981] hover:underline font-medium">
+                Metachain Utilization Index
+              </Link>{" "}
+              combines data from all 6 Theta chains — including gaming, AI, and health data subchains.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Box 1: Activity Index score + trend chart side by side */}
