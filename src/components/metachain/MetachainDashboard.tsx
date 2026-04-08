@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import SimplifyThis from "../SimplifyThis";
 import LearnMore from "../LearnMore";
+import MetachainInfoModal, { InfoButton } from "./MetachainInfoModal";
 import {
   AreaChart,
   Area,
@@ -89,6 +90,68 @@ function getChainColor(id: string): string {
   return CHAIN_COLORS[id] ?? "#7D8694";
 }
 
+/* ── Metachain Milestones ──────────────────────────────────── */
+
+interface MetachainTier {
+  name: string;
+  ceiling: number;
+  color: string;
+  label: string;
+  description: string;
+}
+
+const METACHAIN_TIERS: MetachainTier[] = [
+  {
+    name: "Early Ecosystem",
+    ceiling: 50,
+    color: "#F59E0B",
+    label: "First chains online",
+    description:
+      "A handful of subchains are active alongside the main chain. Real applications exist but usage is still building. The foundation of the multi-chain ecosystem is in place.",
+  },
+  {
+    name: "Growing Ecosystem",
+    ceiling: 100,
+    color: "#2AB8E6",
+    label: "Chains hitting their baselines",
+    description:
+      "Multiple subchains are consistently active. Applications across gaming, AI, and health data are generating sustained transaction volume. The ecosystem is delivering real utility.",
+  },
+  {
+    name: "Thriving Ecosystem",
+    ceiling: 250,
+    color: "#10B981",
+    label: "Broad adoption across chains",
+    description:
+      "Most subchains exceed their baselines. New chains are registering regularly. Cross-chain activity is high, showing an interconnected ecosystem with diverse use cases.",
+  },
+  {
+    name: "Mature Ecosystem",
+    ceiling: 500,
+    color: "#8B5CF6",
+    label: "Full-scale multi-chain network",
+    description:
+      "The Theta Metachain operates at scale — dozens of active subchains, high cross-chain bridging, and off-chain metrics (video, AI compute) becoming measurable.",
+  },
+];
+
+function getMetachainTier(score: number) {
+  for (let i = 0; i < METACHAIN_TIERS.length; i++) {
+    if (score < METACHAIN_TIERS[i].ceiling) {
+      const floor = i === 0 ? 0 : METACHAIN_TIERS[i - 1].ceiling;
+      const range = METACHAIN_TIERS[i].ceiling - floor;
+      const progress = ((score - floor) / range) * 100;
+      return {
+        tier: METACHAIN_TIERS[i],
+        progress: Math.min(progress, 100),
+        tierIndex: i,
+      };
+    }
+  }
+  const last = METACHAIN_TIERS[METACHAIN_TIERS.length - 1];
+  return { tier: last, progress: 100, tierIndex: METACHAIN_TIERS.length - 1 };
+}
+
 /* ── Tooltip ───────────────────────────────────────────────── */
 
 function ChartTooltip({
@@ -119,6 +182,7 @@ export default function MetachainDashboard({
   const [data, setData] = useState<MetachainData | null>(serverData ?? null);
   const [loading, setLoading] = useState(!serverData);
   const [error, setError] = useState<string | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   // Only fetch client-side if no server data was provided
   useEffect(() => {
@@ -187,25 +251,88 @@ export default function MetachainDashboard({
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Score */}
           <div>
-            <p className="text-xs text-[#B0B8C4] uppercase tracking-wide mb-1">
-              Metachain Utilization Index
-            </p>
-            <div className="flex items-end gap-3">
-              <span className="text-[64px] sm:text-[80px] leading-none font-semibold tabular-nums text-white">
-                {Math.round(current.compositeScore)}
-              </span>
-              <span className="text-2xl text-[#B0B8C4] mb-3">/100</span>
-            </div>
-            <p className="text-sm text-[#B0B8C4] mt-2">
-              Weighted average across {current.chainCount} chain
-              {current.chainCount !== 1 ? "s" : ""}. A score of 100 means
-              all chains are hitting their activity baselines.
-            </p>
-            <SimplifyThis>
-              <p className="mb-2">Think of this number as a &quot;how busy is Theta?&quot; score.</p>
-              <p className="mb-2">We check each chain in the Theta ecosystem — are games being played? Are AI jobs running? Are tokens being moved? Each chain gets its own score, and we combine them into this one number.</p>
-              <p>A higher number means more real activity is happening across the ecosystem. A lower number means things are quieter. Unlike the <strong className="text-white">Main Chain Activity Index</strong> on the Network page, this is not about trading or market hype — it is about whether applications are actually being used.</p>
-            </SimplifyThis>
+            {(() => {
+              const { tier, progress, tierIndex } = getMetachainTier(current.compositeScore);
+              return (
+                <>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs text-[#B0B8C4] uppercase tracking-wide">
+                      Metachain Utilization Index
+                    </p>
+                    <InfoButton onClick={() => setInfoOpen(true)} />
+                  </div>
+                  <div className="flex items-end gap-3">
+                    <span className="text-[64px] sm:text-[80px] leading-none font-semibold tabular-nums text-white">
+                      {Math.round(current.compositeScore)}
+                    </span>
+                    <span className="text-2xl text-[#B0B8C4] mb-3">/{tier.ceiling}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-1 mb-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tier.color }} />
+                    <span className="text-sm font-medium" style={{ color: tier.color }}>{tier.name}</span>
+                    <span className="text-xs text-[#7D8694]">— {tier.label}</span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mb-3">
+                    <div className="h-2.5 bg-[#2A3548] rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: tier.color }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-[#7D8694]">
+                        {tierIndex === 0 ? "0" : METACHAIN_TIERS[tierIndex - 1].ceiling}
+                      </span>
+                      <span className="text-[10px] font-medium" style={{ color: tier.color }}>
+                        {tier.ceiling}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-[#B0B8C4] leading-relaxed mb-2">
+                    {tier.description}
+                  </p>
+
+                  {/* Tier roadmap dots */}
+                  <div className="flex gap-1.5 mb-3">
+                    {METACHAIN_TIERS.map((t, i) => (
+                      <div
+                        key={t.name}
+                        className="flex-1 group relative"
+                        title={i <= tierIndex ? `${t.name} — reached` : `${t.name} — reach ${t.ceiling}`}
+                      >
+                        <div
+                          className="h-1.5 rounded-full"
+                          style={{
+                            backgroundColor: i <= tierIndex ? t.color : "#2A3548",
+                            opacity: i <= tierIndex ? 1 : 0.3,
+                          }}
+                        />
+                        <p
+                          className="text-[9px] mt-1 text-center"
+                          style={{ color: i <= tierIndex ? t.color : "#5C6675" }}
+                        >
+                          {i <= tierIndex ? t.name : "?"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <SimplifyThis>
+                    <p className="mb-2">Think of this number as a &quot;how busy is Theta?&quot; score.</p>
+                    <p className="mb-2">We check each chain in the Theta ecosystem — are games being played? Are AI jobs running? Are tokens being moved? Each chain gets its own score, and we combine them into this one number.</p>
+                    <p className="mb-2">The milestones (&quot;Early Ecosystem&quot; → &quot;Mature Ecosystem&quot;) reflect real ecosystem growth — more active chains, more applications, more cross-chain activity. Unlike the main chain index, these milestones are about <strong className="text-white">whether Theta is being used</strong>, not whether the market is excited.</p>
+                    <p>A higher number means more real activity is happening. A lower number means things are quieter.</p>
+                  </SimplifyThis>
+                </>
+              );
+            })()}
 
             {/* Chain pills */}
             <div className="flex flex-wrap gap-2 mt-4">
@@ -636,6 +763,9 @@ export default function MetachainDashboard({
         </div>
         </LearnMore>
       </motion.div>
+
+      {/* Info modal */}
+      <MetachainInfoModal open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   );
 }

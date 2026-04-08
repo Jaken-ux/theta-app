@@ -266,77 +266,59 @@ export default function InfoModal({
                 {/* Tier milestones */}
                 <div>
                   <p className="text-white font-medium mb-3">
-                    Milestones — tiers that unlock as the network grows:
+                    Settlement layer tiers:
                   </p>
                   <div className="space-y-3">
-                    {/* Foundation 0-100 */}
+                    {/* Quiet 0-50 */}
                     <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#F59E0B]">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-[#F59E0B]">0 — 100</span>
-                        <span className="text-xs text-[#F59E0B] font-medium">Foundation</span>
+                        <span className="text-xs font-mono text-[#F59E0B]">0 — 50</span>
+                        <span className="text-xs text-[#F59E0B] font-medium">Quiet</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/15 text-[#F59E0B]">current tier</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-                        The main chain is functional with early adopters and stakers.
-                        Current activity scores around 50. Reaching 100 would mean roughly
-                        doubling observable on-chain activity across all metrics.
+                        Baseline settlement layer activity. The chain handles governance,
+                        staking, and cross-chain transfers at a steady pace. This is
+                        expected for a layer designed to be lean while subchains do the
+                        heavy lifting.
                       </p>
                       <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
-                        <p>Current (~50): ~20K txs/day, ~$5M volume, ~12K stakers</p>
-                        <p>At 75: ~30K txs/day, ~$9M volume — noticeable increase in usage</p>
-                        <p>At 100: all metrics at baseline — first milestone reached</p>
+                        <p>Current (~23): ~14K txs/day, ~$2M volume, ~12K stakers</p>
+                        <p>At 50: ~21K txs/day, ~$6M volume — moderate increase</p>
                       </div>
                     </div>
 
-                    {/* Growth 100-500 */}
+                    {/* Active 50-100 */}
                     <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#2AB8E6]">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-[#2AB8E6]">100 — 500</span>
-                        <span className="text-xs text-[#2AB8E6] font-medium">Growth</span>
+                        <span className="text-xs font-mono text-[#2AB8E6]">50 — 100</span>
+                        <span className="text-xs text-[#2AB8E6] font-medium">Active</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
-                      <p className="text-xs text-[#D1D5DB] leading-relaxed mb-2">
-                        Observable activity has surpassed its initial baselines. Transaction
-                        volume, trading activity, and network participation are all significantly
-                        above today&apos;s levels.
+                      <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                        Settlement activity has increased — likely more cross-chain
+                        transfers, new subchain registrations, or increased TFUEL trading.
+                        All metrics are at or near their baselines.
                       </p>
-                      <div className="text-[10px] text-[#B0B8C4] space-y-0.5">
-                        <p>At 200: ~84K txs/day, ~$24M volume — 2x all baselines</p>
-                        <p>At 500: ~210K txs/day, ~$60M volume — major sustained usage</p>
-                      </div>
                     </div>
 
-                    {/* Scale 500-2500 */}
+                    {/* Elevated 100-300 */}
                     <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#10B981]">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-[#10B981]">500 — 2,500</span>
-                        <span className="text-xs text-[#10B981] font-medium">Scale</span>
+                        <span className="text-xs font-mono text-[#10B981]">100 — 300</span>
+                        <span className="text-xs text-[#10B981] font-medium">Elevated</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                        The main chain consistently shows high on-chain activity across multiple
-                        metrics. Usage reflects sustained demand, not short-term spikes.
-                      </p>
-                    </div>
-
-                    {/* Dominance 2500-10000 */}
-                    <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-[#8B5CF6]">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-[#8B5CF6]">2,500 — 10,000</span>
-                        <span className="text-xs text-[#8B5CF6] font-medium">Dominance</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A3548] text-[#7D8694]">locked</span>
-                      </div>
-                      <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                        Observable on-chain activity is comparable to established high-traffic
-                        networks. All metrics are many multiples above current levels.
+                        Sustained high activity. Likely reflects ecosystem growth — more
+                        subchains registering, heavy cross-chain bridging, broad staking.
                       </p>
                     </div>
                   </div>
 
                   <p className="text-xs text-[#B0B8C4] mt-3">
-                    These milestones describe what is mechanically happening on the main chain at each level.
-                    They are not predictions or targets — they are what the data would have to look like
-                    for the index to reach that score.
+                    The main chain is a settlement layer — it is designed to be lean.
+                    For ecosystem-wide milestones, see the Metachain Utilization Index.
                   </p>
                 </div>
 

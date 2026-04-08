@@ -60,32 +60,25 @@ interface Tier {
 
 const TIERS: Tier[] = [
   {
-    name: "Foundation",
-    ceiling: 100,
+    name: "Quiet",
+    ceiling: 50,
     color: "#F59E0B",
-    label: "Building the base",
-    description: "The main chain is functional with active stakers and regular transactions. Reaching 100 would mean roughly doubling current on-chain activity across all metrics.",
+    label: "Baseline activity",
+    description: "The settlement layer is operational with steady staking and regular token movement. This is normal for a chain designed to handle governance and cross-chain operations, not high-throughput applications.",
   },
   {
-    name: "Growth",
-    ceiling: 500,
+    name: "Active",
+    ceiling: 100,
     color: "#2AB8E6",
-    label: "Ecosystem expanding",
-    description: "Main-chain activity has surpassed its initial baselines. Transaction volume, staking participation, and TFUEL usage are all significantly above today's levels.",
+    label: "Growing settlement activity",
+    description: "Main-chain activity has increased — more cross-chain transfers, new subchain registrations, or broader TFUEL trading. The settlement layer is busier than its baseline.",
   },
   {
-    name: "Scale",
-    ceiling: 2500,
+    name: "Elevated",
+    ceiling: 300,
     color: "#10B981",
-    label: "Sustained high usage",
-    description: "The main chain consistently shows high on-chain activity. Usage reflects sustained demand — though subchain and off-chain activity are not captured here.",
-  },
-  {
-    name: "Dominance",
-    ceiling: 10000,
-    color: "#8B5CF6",
-    label: "Major infrastructure",
-    description: "Main-chain activity is comparable to established high-traffic networks. All metrics are many multiples above current levels.",
+    label: "High settlement demand",
+    description: "Sustained high activity on the settlement layer. Likely driven by ecosystem growth — more subchains, more cross-chain bridging, more staking participation.",
   },
 ];
 
