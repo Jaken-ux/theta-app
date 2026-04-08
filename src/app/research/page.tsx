@@ -230,7 +230,9 @@ export default function ResearchPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<HistoryRow[]>([]);
-  const [mcData, setMcData] = useState<{ date: string; compositeScore: number }[]>([]);
+  const [mcData, setMcData] = useState<{ date: string; compositeScore: number; chainsAvailable?: number; coveragePct?: number }[]>([]);
+  const [mcChainHistory, setMcChainHistory] = useState<Record<string, { date: string; score: number }[]>>({});
+  const [warningDismissed, setWarningDismissed] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("90d");
 
   // Auth check — reuse STATS_SECRET via /api/stats
@@ -254,11 +256,25 @@ export default function ResearchPage() {
       if (mcRes.ok) {
         const mc = await mcRes.json();
         setMcData(
-          (mc.history ?? []).map((h: { date: string; compositeScore: number }) => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (mc.history ?? []).map((h: any) => ({
             date: typeof h.date === "string" && h.date.length > 10 ? h.date.slice(0, 10) : h.date,
             compositeScore: h.compositeScore,
+            chainsAvailable: h.chainsAvailable ?? null,
+            coveragePct: h.coveragePct ?? null,
           }))
         );
+        // Per-chain history for correlation analysis
+        if (mc.chainHistory) {
+          const normalized: Record<string, { date: string; score: number }[]> = {};
+          for (const [chainId, entries] of Object.entries(mc.chainHistory)) {
+            normalized[chainId] = (entries as { date: string; score: number }[]).map((e) => ({
+              date: typeof e.date === "string" && e.date.length > 10 ? e.date.slice(0, 10) : e.date,
+              score: e.score,
+            }));
+          }
+          setMcChainHistory(normalized);
+        }
       }
     } catch {
       setError("Kunde inte ansluta");
@@ -394,10 +410,25 @@ export default function ResearchPage() {
     }));
   }, [rows, scores, thetaPrices]);
 
+  // ── Data sufficiency ─────────────────────────────────────────────────────
+  const dataDays = useMemo(() => {
+    if (rows.length === 0) return 0;
+    const earliest = new Date(rows[0].date + "T00:00:00");
+    const latest = new Date(rows[rows.length - 1].date + "T00:00:00");
+    return Math.round((latest.getTime() - earliest.getTime()) / 86400000) + 1;
+  }, [rows]);
+
+  const dataReadyDate = useMemo(() => {
+    if (rows.length === 0 || dataDays >= 30) return null;
+    const earliest = new Date(rows[0].date + "T00:00:00");
+    earliest.setDate(earliest.getDate() + 30);
+    return earliest.toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" });
+  }, [rows, dataDays]);
+
   // ── Metachain combined data ──────────────────────────────────────────────
   const mcByDate = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const m of mcData) map.set(m.date, m.compositeScore);
+    const map = new Map<string, { score: number; chainsAvailable?: number; coveragePct?: number }>();
+    for (const m of mcData) map.set(m.date, { score: m.compositeScore, chainsAvailable: m.chainsAvailable, coveragePct: m.coveragePct });
     return map;
   }, [mcData]);
 
@@ -408,7 +439,7 @@ export default function ResearchPage() {
         date: formatDate(r.date),
         fullDate: r.date,
         mainChain: r.score,
-        metachain: mcByDate.get(r.date)!,
+        metachain: mcByDate.get(r.date)!.score,
         thetaPrice: r.metrics.thetaPrice,
       }));
   }, [rows, mcByDate]);
@@ -434,6 +465,69 @@ export default function ResearchPage() {
     () => (mcScores.length >= 3 ? pearson(mcMainScores, mcScores) : 0),
     [mcMainScores, mcScores]
   );
+
+  // ── Per-chain correlations with THETA price ──────────────────────────────
+  const CHAIN_NAMES: Record<string, string> = {
+    "main-chain": "Main Chain",
+    tsub360890: "Lavita AI",
+    tsub68967: "TPulse",
+    tsub7734: "Passaways",
+    tsub47683: "Grove",
+    tsub9065: "POGS",
+    "proxy-indicators": "Ecosystem Growth",
+  };
+  const CHAIN_COLORS_RESEARCH: Record<string, string> = {
+    "main-chain": "#2AB8E6",
+    tsub360890: "#10B981",
+    tsub68967: "#8B5CF6",
+    tsub7734: "#F59E0B",
+    tsub47683: "#EF4444",
+    tsub9065: "#7D8694",
+    "proxy-indicators": "#E879F9",
+  };
+
+  const chainCorrelations = useMemo(() => {
+    const results: { name: string; chainId: string; r: number; n: number; color: string }[] = [];
+    for (const [chainId, entries] of Object.entries(mcChainHistory)) {
+      const byDate = new Map(entries.map((e) => [e.date, e.score]));
+      const paired = rows.filter((r) => byDate.has(r.date) && r.metrics.thetaPrice != null);
+      if (paired.length < 3) continue;
+      const chainScoresArr = paired.map((r) => byDate.get(r.date)!);
+      const pricesArr = paired.map((r) => r.metrics.thetaPrice!);
+      results.push({
+        name: CHAIN_NAMES[chainId] ?? chainId,
+        chainId,
+        r: pearson(chainScoresArr, pricesArr),
+        n: paired.length,
+        color: CHAIN_COLORS_RESEARCH[chainId] ?? "#7D8694",
+      });
+    }
+    return results.sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+  }, [mcChainHistory, rows]);
+
+  // ── Metachain lead/lag analysis ─────────────────────────────────────────
+  const mcLeadLag = useMemo(() => {
+    if (mcScores.length < 10) return [];
+    const mcChanges = pctChange(mcScores);
+    const priceChanges = pctChange(mcPrices);
+    const results: { lag: number; r: number }[] = [];
+    for (let lag = -7; lag <= 7; lag++) {
+      const n = Math.min(mcChanges.length, priceChanges.length) - Math.abs(lag);
+      if (n < 5) continue;
+      const x: number[] = [];
+      const y: number[] = [];
+      for (let i = 0; i < n; i++) {
+        const si = lag >= 0 ? i : i - lag;
+        const pi = lag >= 0 ? i + lag : i;
+        if (si < mcChanges.length && pi < priceChanges.length) {
+          x.push(mcChanges[si]);
+          y.push(priceChanges[pi]);
+        }
+      }
+      results.push({ lag, r: pearson(x, y) });
+    }
+    return results;
+  }, [mcScores, mcPrices]);
 
   // ── Scatter data ─────────────────────────────────────────────────────────
   const scatterData = useMemo(
@@ -531,6 +625,26 @@ export default function ResearchPage() {
         </div>
       </div>
 
+      {/* ── Data insufficiency warning ──────────────────────────────── */}
+      {dataDays < 30 && dataDays > 0 && !warningDismissed && (
+        <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 flex items-start gap-3">
+          <span className="text-[#F59E0B] text-lg mt-0.5 shrink-0">⚠</span>
+          <div className="flex-1">
+            <p className="text-sm text-[#D1D5DB]">
+              <strong className="text-[#F59E0B]">Statistiken är preliminär</strong> — endast {dataDays} dagars data tillgänglig.
+              Korrelationer och lead/lag-analys kräver minst 30 dagar för att vara tillförlitliga.
+              {dataReadyDate && <> Återkom <strong className="text-white">{dataReadyDate}</strong>.</>}
+            </p>
+          </div>
+          <button
+            onClick={() => setWarningDismissed(true)}
+            className="text-[#7D8694] hover:text-white transition-colors text-lg leading-none shrink-0"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* ── Summary cards ─────────────────────────────────────────────── */}
       <Explainer
         whatIsThis="De fyra korten visar en snabb överblick av den viktigaste statistiken. Korrelationsvärdena (de två första korten) mäter hur starkt vårt Activity Index hänger ihop med THETA- respektive TFUEL-priset. De två sista korten visar genomsnittet av indexet och priset under hela den period vi har data för."
@@ -549,6 +663,7 @@ export default function ResearchPage() {
           <p className="text-xs mt-1" style={{ color: correlationLabel(corrIndexTheta).color }}>
             {correlationLabel(corrIndexTheta).text} korrelation
           </p>
+          <p className="text-[10px] text-[#5C6675] mt-0.5">n={scores.length} dagar</p>
         </div>
         <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
           <p className="text-xs text-[#7D8694] mb-1">Index &harr; TFUEL-pris</p>
@@ -561,6 +676,7 @@ export default function ResearchPage() {
           <p className="text-xs mt-1" style={{ color: correlationLabel(corrIndexTfuel).color }}>
             {correlationLabel(corrIndexTfuel).text} korrelation
           </p>
+          <p className="text-[10px] text-[#5C6675] mt-0.5">n={scores.length} dagar</p>
         </div>
         <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
           <p className="text-xs text-[#7D8694] mb-1">Snitt Index</p>
@@ -936,6 +1052,7 @@ export default function ResearchPage() {
               <p className="text-xs mt-1" style={{ color: correlationLabel(corrMainVsMeta).color }}>
                 {correlationLabel(corrMainVsMeta).text} korrelation
               </p>
+              <p className="text-[10px] text-[#5C6675] mt-0.5">n={dualIndexData.length} dagar</p>
             </div>
             <div className="bg-[#0D1117] rounded-xl p-4">
               <p className="text-xs text-[#7D8694] mb-1">Metachain ↔ THETA-pris</p>
@@ -948,6 +1065,7 @@ export default function ResearchPage() {
               <p className="text-xs mt-1" style={{ color: correlationLabel(corrMetachainPrice).color }}>
                 {correlationLabel(corrMetachainPrice).text} korrelation
               </p>
+              <p className="text-[10px] text-[#5C6675] mt-0.5">n={dualIndexData.length} dagar</p>
             </div>
             <div className="bg-[#0D1117] rounded-xl p-4">
               <p className="text-xs text-[#7D8694] mb-1">Datapunkter</p>
@@ -999,10 +1117,121 @@ export default function ResearchPage() {
         </Section>
       )}
 
-      {/* ── 7. Raw data table ────────────────────────────────────────── */}
+      {/* ── 7. Per-chain correlations with THETA price ────────────── */}
+      {chainCorrelations.length >= 2 && (
+        <Section
+          title="Kedje-korrelationer med THETA-pris"
+          subtitle="Vilka subchains korrelerar starkast med priset?"
+        >
+          <Explainer
+            whatIsThis="Varje stapel visar hur starkt en enskild kedjas aktivitetsscore korrelerar med THETA-priset. Till skillnad från komponentkorrelationerna (sektion 4) som bryter ner main chain-indexet, visar detta hur varje kedja i hela Metachain-ekosystemet hänger ihop med priset — inklusive subchains som Lavita, TPulse, och gaming-kedjor."
+            howToRead="Längre stapel = starkare samband. Positiv korrelation (+) betyder att kedjans aktivitet och priset rör sig i samma riktning. En subchain med svag korrelation kan röra sig oberoende av marknaden — det är ofta ett tecken på att den drivs av riktig applikationsanvändning snarare än spekulativt intresse."
+            useCase="Avslöjar vilka kedjor som mest påverkas av kryptomarknaden och vilka som lever sitt eget liv. En gaming-kedja med låg priskorrelation men hög aktivitet är ett starkt tecken på reell utility. En kedja som bara rör sig med priset kanske mest reflekterar sentiment."
+          />
+          <ResponsiveContainer width="100%" height={Math.max(120, chainCorrelations.length * 50)}>
+            <BarChart data={chainCorrelations} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" horizontal={false} />
+              <XAxis
+                type="number"
+                domain={[-1, 1]}
+                tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fill: "#B0B8C4", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                width={120}
+              />
+              <ReferenceLine x={0} stroke="#2A3548" />
+              <Tooltip
+                contentStyle={CHART_TOOLTIP_STYLE}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(v: any) => [Number(v).toFixed(3), "r"]}
+              />
+              <Bar dataKey="r" radius={[0, 6, 6, 0]} barSize={20}>
+                {chainCorrelations.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex flex-wrap gap-3 mt-4 text-[10px] text-[#B0B8C4]">
+            {chainCorrelations.map((c) => (
+              <span key={c.chainId}>
+                <span style={{ color: c.color }}>{c.name}</span>: r={c.r.toFixed(3)} ({c.n} dagar)
+              </span>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ── 8. Metachain lead/lag analysis ──────────────────────────── */}
+      {mcLeadLag.length > 0 && (() => {
+        const peakLag = mcLeadLag.reduce((best, curr) =>
+          Math.abs(curr.r) > Math.abs(best.r) ? curr : best
+        );
+        return (
+          <Section
+            title="Metachain Lead/Lag-analys"
+            subtitle={`Leder eller följer ekosystemaktiviteten priset? Starkast: lag ${peakLag.lag} (r = ${peakLag.r.toFixed(3)})`}
+          >
+            <Explainer
+              whatIsThis="Samma metod som lead/lag-analysen för main chain (sektion 5), men här testar vi om Metachain Utilization Index — det vill säga den samlade aktiviteten över alla subchains — leder eller följer THETA-priset. Vi beräknar korrelation mellan daglig procentuell förändring i metachain-indexet och priset, med offset -7 till +7 dagar."
+              howToRead="Negativa lag-värden (t.ex. -3) betyder att ekosystemaktiviteten rörde sig 3 dagar FÖRE priset. Om den starkaste korrelationen ligger på ett negativt lag, kan det tyda på att ekosystemanvändning leder prisrörelser — en potentiellt starkare signal än main chain som ofta drivs av handel. Positiva lag-värden betyder att priset rörde sig först."
+              useCase="Om metachain-indexet leder priset är det en starkare indikator än main chain (som till stor del mäter handelssentiment). Det skulle betyda att riktiga applikationsmetriker — gaming, AI, health data — föregår prisrörelser. Det är den typ av ledande indikator som är mest intressant för fundamental analys."
+            />
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={mcLeadLag}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" />
+                <XAxis
+                  dataKey="lag"
+                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  label={{
+                    value: "← Metachain leder | Priset leder →",
+                    position: "insideBottom",
+                    offset: -5,
+                    style: { fill: "#7D8694", fontSize: 10 },
+                  }}
+                />
+                <YAxis
+                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                  domain={[-1, 1]}
+                />
+                <ReferenceLine y={0} stroke="#2A3548" />
+                <Tooltip
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(v: any) => [Number(v).toFixed(3), "r"]}
+                  labelFormatter={(l) => `Lag: ${l} dagar`}
+                />
+                <Bar dataKey="r" radius={[4, 4, 0, 0]}>
+                  {mcLeadLag.map((entry) => (
+                    <Cell
+                      key={entry.lag}
+                      fill={entry.lag === peakLag.lag ? "#10B981" : "#2AB8E6"}
+                      opacity={entry.lag === peakLag.lag ? 1 : 0.5}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Section>
+        );
+      })()}
+
+      {/* ── 9. Raw data table ────────────────────────────────────────── */}
       <Section title="Rådata" subtitle={isAggregated ? `${rows.length} veckosnitt` : `Senaste ${rows.length} dagarna`}>
         <Explainer
-          whatIsThis="Rådata-tabellen visar de faktiska siffror som alla grafer och beräkningar ovan bygger på. Varje rad är en dag. Kolumnerna visar: Main Chain Activity Index, Metachain Utilization Index (grön), THETA- och TFUEL-pris i dollar, antal transaktioner, andel aktiva wallets (i procent), och antal staking-noder."
+          whatIsThis="Rådata-tabellen visar de faktiska siffror som alla grafer och beräkningar ovan bygger på. Varje rad är en dag. Kolumnerna visar: Main Chain Activity Index, Metachain Utilization Index (grön), THETA- och TFUEL-pris, transaktioner, wallet-aktivitet, staking-noder, antal aktiva kedjor och coverage-procent."
           howToRead="Tabellen sorteras med nyaste datum överst. Du kan använda den för att dubbelkolla specifika datapunkter som sticker ut i graferna. Om en graf visar en ovanlig spike, kan du hitta det exakta datumet här och se alla metriker för just den dagen. Streck (–) betyder att data saknas för den dagen."
           useCase="Ger full transparens — du kan se exakt vilken data som matats in och granska den manuellt. Användbart för att identifiera dataproblem (saknade värden, orimliga siffror) och för att korskontrollera mot externa källor."
         />
@@ -1017,7 +1246,9 @@ export default function ResearchPage() {
                 <th className="py-2 pr-3 text-right">TFUEL ($)</th>
                 <th className="py-2 pr-3 text-right">Txs</th>
                 <th className="py-2 pr-3 text-right">Wallet %</th>
-                <th className="py-2 text-right">Noder</th>
+                <th className="py-2 pr-3 text-right">Noder</th>
+                <th className="py-2 pr-3 text-right">Kedjor</th>
+                <th className="py-2 text-right">Coverage</th>
               </tr>
             </thead>
             <tbody>
@@ -1034,7 +1265,7 @@ export default function ResearchPage() {
                       {r.score.toFixed(1)}
                     </td>
                     <td className="py-1.5 pr-3 text-right tabular-nums text-[#10B981]">
-                      {mcByDate.has(r.date) ? mcByDate.get(r.date)!.toFixed(1) : "–"}
+                      {mcByDate.has(r.date) ? mcByDate.get(r.date)!.score.toFixed(1) : "–"}
                     </td>
                     <td className="py-1.5 pr-3 text-right tabular-nums">
                       {r.metrics.thetaPrice != null
@@ -1054,8 +1285,18 @@ export default function ResearchPage() {
                         ? `${r.metrics.walletActivity.toFixed(1)}%`
                         : "–"}
                     </td>
-                    <td className="py-1.5 text-right tabular-nums">
+                    <td className="py-1.5 pr-3 text-right tabular-nums">
                       {r.metrics.stakingNodes?.toLocaleString() ?? "–"}
+                    </td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums">
+                      {mcByDate.has(r.date) && mcByDate.get(r.date)!.chainsAvailable != null
+                        ? mcByDate.get(r.date)!.chainsAvailable
+                        : "–"}
+                    </td>
+                    <td className="py-1.5 text-right tabular-nums">
+                      {mcByDate.has(r.date) && mcByDate.get(r.date)!.coveragePct != null
+                        ? `${mcByDate.get(r.date)!.coveragePct}%`
+                        : "–"}
                     </td>
                   </tr>
                 ))}
