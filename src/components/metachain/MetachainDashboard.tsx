@@ -239,7 +239,7 @@ export default function MetachainDashboard({
               })}
               {/* Placeholder for future chains */}
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-[#2A3548] text-xs text-[#5C6675]">
-                + more chains coming
+                + we monitor for new chains
               </div>
             </div>
           </div>
@@ -546,8 +546,8 @@ export default function MetachainDashboard({
           <div className="bg-[#0D1117] rounded-xl p-4 border-l-2 border-dashed border-[#2A3548] flex flex-col items-center justify-center text-center">
             <p className="text-sm text-[#5C6675] mb-1">More chains coming</p>
             <p className="text-xs text-[#3D4654]">
-              When subchain APIs become available, they will appear here
-              automatically.
+              We monitor for new subchain APIs and integrate them as they
+              become available.
             </p>
           </div>
         </div>
@@ -602,8 +602,8 @@ export default function MetachainDashboard({
             </p>
             <p className="text-xs text-[#B0B8C4] leading-relaxed">
               Scores are combined using each chain&apos;s weight. The main chain
-              and Lavita weigh most. Adding a chain automatically adjusts the
-              composite.
+              and Lavita weigh most. When we add a new chain, weights
+              re-normalize so the composite adjusts.
             </p>
           </div>
         </div>

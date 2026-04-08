@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPool } from "../../../lib/db";
 
+export const dynamic = "force-dynamic"; // never cache stats
+
 export async function GET(request: Request) {
   // Secret key to protect stats
   const { searchParams } = new URL(request.url);

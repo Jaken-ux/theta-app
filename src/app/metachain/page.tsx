@@ -172,9 +172,8 @@ export default async function MetachainPage() {
           ))}
         </div>
         <p className="text-xs text-[#5C6675] mt-4">
-          All chains use the Theta explorer API pattern
-          (tsub[ID]-explorer-api.thetatoken.org). New subchains can be added
-          with a single config file.
+          We monitor for new Theta subchains and integrate them as their
+          explorer APIs become available.
         </p>
       </div>
     </div>
