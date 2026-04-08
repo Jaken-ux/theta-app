@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 function Chevron({ open }: { open: boolean }) {
@@ -345,6 +346,13 @@ export default function InfoModal({
                   and what we cannot see. Use it to follow main-chain trends, not to make
                   absolute judgments about the network.
                 </p>
+
+                <Link
+                  href="/methodology"
+                  className="inline-block text-xs text-[#7D8694] hover:text-[#B0B8C4] transition-colors mt-1"
+                >
+                  Read full methodology &rarr;
+                </Link>
               </div>
             </div>
           </motion.div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function InfoButton({ onClick }: { onClick: () => void }) {
@@ -197,6 +198,13 @@ export default function MetachainInfoModal({
                   and what we cannot see. Use it to track whether Theta is being
                   used — not to predict prices.
                 </p>
+
+                <Link
+                  href="/methodology"
+                  className="inline-block text-xs text-[#7D8694] hover:text-[#B0B8C4] transition-colors mt-1"
+                >
+                  Read full methodology &rarr;
+                </Link>
               </div>
             </div>
           </motion.div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Link from "next/link";
 import Nav from "../components/Nav";
 import PageTracker from "../components/PageTracker";
 
@@ -83,6 +84,14 @@ export default function RootLayout({
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           {children}
         </main>
+        <footer className="max-w-6xl mx-auto px-4 sm:px-6 pb-6 pt-2">
+          <Link
+            href="/methodology"
+            className="text-[13px] text-[#7D8694] hover:text-[#B0B8C4] transition-colors"
+          >
+            How we calculate this &rarr;
+          </Link>
+        </footer>
       </body>
     </html>
   );
