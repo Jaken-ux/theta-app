@@ -707,9 +707,17 @@ export default function MetachainDashboard({
 
               {/* Burned today */}
               <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
-                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
-                  Burned today
-                </p>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <p className="text-[10px] text-[#7D8694] uppercase tracking-wide">
+                    Burned today
+                  </p>
+                  <span
+                    title="Estimate based on yesterday's transaction count combined with the current average gas fee. May lag real burn by up to one day."
+                    className="w-3.5 h-3.5 rounded-full border border-[#5C6675] text-[#7D8694] flex items-center justify-center text-[8px] font-medium leading-none cursor-help"
+                  >
+                    i
+                  </span>
+                </div>
                 {hasBurnData ? (
                   <>
                     <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
@@ -737,7 +745,7 @@ export default function MetachainDashboard({
                     <p
                       className="text-lg font-semibold tabular-nums"
                       style={{
-                        color: isDeflationary ? "#10B981" : "#EF4444",
+                        color: isDeflationary ? "#10B981" : "#B0B8C4",
                       }}
                     >
                       {isDeflationary ? "+" : ""}
@@ -801,11 +809,13 @@ export default function MetachainDashboard({
                 <strong className="text-white">Hur tolkar jag det?</strong>
               </p>
               <p className="mb-3">
-                <span className="text-[#10B981]">Grönt</span> = nätverket
-                bränner mer än det skapar. Positivt för TFUEL-priset.
+                <span className="text-[#10B981]">Grönt (deflation)</span> =
+                nätverket bränner mer än det skapar. Positivt för TFUEL-priset
+                och något att fira — men det är ovanligt.
                 <br />
-                <span className="text-[#EF4444]">Rött</span> = inflationen
-                överstiger burns. Normalt vid nuvarande aktivitetsnivå.
+                <span className="text-[#B0B8C4]">Neutralt (inflation)</span> =
+                mer skapas än bränns. Detta är Thetas normala tillstånd — inte
+                en varning, utan hur protokollet är designat.
                 <br />
                 &quot;Break-even&quot;-siffran visar hur mycket aktivitet som
                 krävs för att nå deflation.

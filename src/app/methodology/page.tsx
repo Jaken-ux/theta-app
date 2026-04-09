@@ -583,7 +583,99 @@ export default function MethodologyPage() {
               Theta is currently deeply inflationary (burn &lt; issuance by
               orders of magnitude) is unchanged.
             </li>
+            <li>
+              <span className="text-white">
+                Edge Network flows are not captured.
+              </span>{" "}
+              Edge Node operators earn additional TFUEL for video delivery
+              and compute work — this issuance is not fixed per block and
+              is not included in our daily issuance figure. Additionally,
+              at least 25% of all Edge Network payments are burned. Both
+              streams are unknown without access to off-chain EdgeCloud
+              payment data. Our net flow calculation therefore understates
+              both total issuance and total burn. The directional
+              conclusion (deeply inflationary at current levels) remains
+              valid, but the exact magnitude is unknown.
+            </li>
           </ul>
+        </div>
+
+        {/* Error margin estimate */}
+        <div>
+          <p className="text-sm text-white font-medium mb-3">
+            Estimated error margin
+          </p>
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-3">
+            <p>
+              The daily burn number carries a{" "}
+              <span className="text-white font-medium">
+                realistic error margin of roughly ±25%
+              </span>{" "}
+              and a{" "}
+              <span className="text-white">conservative bound of ±40%</span>.
+              The main contributors:
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-[#B0B8C4] text-left border-b border-[#2A3548]">
+                    <th className="py-1.5 pr-3 font-medium">Source</th>
+                    <th className="py-1.5 pr-3 font-medium">Estimated impact</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[#D1D5DB]">
+                  <tr className="border-b border-[#2A3548]/50">
+                    <td className="py-1.5 pr-3">
+                      Sample size (~200 txs/chain)
+                    </td>
+                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
+                      ±7%
+                    </td>
+                  </tr>
+                  <tr className="border-b border-[#2A3548]/50">
+                    <td className="py-1.5 pr-3">
+                      Temporal variation (current fee × yesterday&apos;s
+                      txs)
+                    </td>
+                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
+                      ±15–25%
+                    </td>
+                  </tr>
+                  <tr className="border-b border-[#2A3548]/50">
+                    <td className="py-1.5 pr-3">
+                      Per-chain fee mix uncertainty
+                    </td>
+                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
+                      ±10–15%
+                    </td>
+                  </tr>
+                  <tr className="border-b border-[#2A3548]/50">
+                    <td className="py-1.5 pr-3">
+                      Main chain approximation (≈ 0 burn)
+                    </td>
+                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
+                      &lt;3%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 text-white">
+                      Combined (quadrature sum)
+                    </td>
+                    <td className="py-1.5 pr-3 font-mono text-white">
+                      ≈ ±25%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-[#B0B8C4]">
+              A reported burn of e.g. 200 TFUEL/day means the real value
+              most likely sits between ~150 and ~250 TFUEL/day. Even at
+              10× the upper bound, the network would still be deeply
+              inflationary — the direction of net flow is robust even
+              when the magnitude is uncertain.
+            </p>
+          </div>
         </div>
       </section>
 
