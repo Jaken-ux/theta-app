@@ -7,6 +7,7 @@ interface Metric {
   current: number | null;
   change?: number | null;
   changePct?: number | null;
+  series?: (number | null)[];
 }
 
 interface WeeklyData {
@@ -35,6 +36,83 @@ function formatPrice(n: number | null | undefined): string {
   return `$${n.toFixed(4)}`;
 }
 
+/**
+ * Inline SVG sparkline. Auto-scales to the range of the data so the
+ * shape of the curve is always legible even when values are flat or
+ * wildly different across cards.
+ */
+function Sparkline({
+  data,
+  color,
+  width = 120,
+  height = 32,
+}: {
+  data: (number | null)[] | undefined;
+  color: string;
+  width?: number;
+  height?: number;
+}) {
+  const values = (data ?? []).filter(
+    (v): v is number => typeof v === "number" && Number.isFinite(v)
+  );
+  if (values.length < 2) {
+    return (
+      <div className="h-8 flex items-center text-[10px] text-[#5C6675]">
+        building history…
+      </div>
+    );
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const padTop = 2;
+  const padBot = 2;
+  const usableHeight = height - padTop - padBot;
+
+  // Re-map values to x/y coordinates
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * width;
+    const y = padTop + usableHeight - ((v - min) / range) * usableHeight;
+    return [x, y] as const;
+  });
+
+  const pathD = points
+    .map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(" ");
+  const areaD =
+    pathD +
+    ` L ${width.toFixed(2)} ${height} L 0 ${height} Z`;
+
+  const gradientId = `spark-grad-${color.replace("#", "")}`;
+
+  return (
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className="mt-3"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#${gradientId})`} />
+      <path
+        d={pathD}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function ChangeIndicator({ value, suffix = "%" }: { value: number | null | undefined; suffix?: string }) {
   if (value == null) return <span className="text-[#7D8694] text-sm">—</span>;
 
@@ -61,6 +139,7 @@ function SummaryCard({
   icon,
   color,
   delay,
+  series,
 }: {
   label: string;
   value: string;
@@ -69,6 +148,7 @@ function SummaryCard({
   icon: string;
   color: string;
   delay: number;
+  series?: (number | null)[];
 }) {
   return (
     <motion.div
@@ -90,6 +170,7 @@ function SummaryCard({
       </div>
       <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{value}</p>
       <p className="text-xs text-[#7D8694] mt-1">{label}</p>
+      <Sparkline data={series} color={color} />
     </motion.div>
   );
 }
@@ -152,6 +233,7 @@ export default function WeeklySummary() {
             icon="◈"
             color="#2AB8E6"
             delay={0}
+            series={m.activityIndex.series}
           />
           <SummaryCard
             label="THETA Price"
@@ -160,6 +242,7 @@ export default function WeeklySummary() {
             icon="Θ"
             color="#2AB8E6"
             delay={0.05}
+            series={m.thetaPrice.series}
           />
           <SummaryCard
             label="TFUEL Price"
@@ -168,6 +251,7 @@ export default function WeeklySummary() {
             icon="⚡"
             color="#10B981"
             delay={0.1}
+            series={m.tfuelPrice.series}
           />
           <SummaryCard
             label="Metachain Index"
@@ -177,6 +261,7 @@ export default function WeeklySummary() {
             icon="⬡"
             color="#10B981"
             delay={0.15}
+            series={m.metachainIndex.series}
           />
           <SummaryCard
             label="Daily Transactions"
@@ -185,6 +270,7 @@ export default function WeeklySummary() {
             icon="↗"
             color="#F59E0B"
             delay={0.2}
+            series={m.dailyTxs.series}
           />
           <SummaryCard
             label="Staking Nodes"
@@ -194,6 +280,7 @@ export default function WeeklySummary() {
             icon="⬡"
             color="#8B5CF6"
             delay={0.25}
+            series={m.stakingNodes.series}
           />
         </div>
       </div>

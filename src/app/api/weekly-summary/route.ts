@@ -13,97 +13,119 @@ function absDiff(current: number, prev: number): number | null {
   return current - prev;
 }
 
+interface ActivityRow {
+  date: string;
+  average: number | null;
+  daily_txs: number | null;
+  theta_price: number | null;
+  tfuel_price: number | null;
+  staking_nodes: number | null;
+}
+
+interface MetachainRow {
+  date: string;
+  composite_score: number | null;
+}
+
+function seriesOf<T>(rows: T[], key: keyof T): (number | null)[] {
+  return rows.map((r) => {
+    const v = r[key];
+    return typeof v === "number" ? v : v == null ? null : Number(v);
+  });
+}
+
 export async function GET() {
   try {
     const pool = await getPool();
 
-    // Get the most recent entry and the entry ~7 days before it
-    // Main chain data
-    const { rows } = await pool.query(`
-      WITH recent AS (
-        SELECT * FROM theta_activity_history ORDER BY date DESC LIMIT 1
-      ),
-      week_ago AS (
-        SELECT * FROM theta_activity_history
-        WHERE date <= (SELECT date - INTERVAL '6 days' FROM recent)
-        ORDER BY date DESC LIMIT 1
-      )
-      SELECT
-        r.date AS current_date_val,
-        r.average AS current_score,
-        r.daily_txs AS current_txs,
-        r.theta_price AS current_theta_price,
-        r.tfuel_price AS current_tfuel_price,
-        r.staking_nodes AS current_nodes,
-        w.date AS prev_date_val,
-        w.average AS prev_score,
-        w.daily_txs AS prev_txs,
-        w.theta_price AS prev_theta_price,
-        w.tfuel_price AS prev_tfuel_price,
-        w.staking_nodes AS prev_nodes
-      FROM recent r, week_ago w
+    // Fetch the last 7 days of main-chain history in chronological order
+    const { rows: activityRows } = await pool.query(`
+      SELECT date, average, daily_txs, theta_price, tfuel_price, staking_nodes
+      FROM theta_activity_history
+      ORDER BY date DESC
+      LIMIT 7
     `);
 
-    if (rows.length === 0) {
+    if (activityRows.length === 0) {
       return NextResponse.json({ available: false });
     }
 
-    // Metachain composite score (current + 7 days ago)
-    let metachainCurrent: number | null = null;
-    let metachainPrev: number | null = null;
+    // Oldest → newest for sparkline rendering
+    const activity: ActivityRow[] = (activityRows as ActivityRow[]).slice().reverse();
+    const latest = activity[activity.length - 1];
+    const earliest = activity[0];
+
+    // Metachain composite history over the same window
+    let metachain: MetachainRow[] = [];
     try {
       const { rows: mcRows } = await pool.query(`
-        WITH recent AS (
-          SELECT composite_score, date FROM metachain_daily_scores ORDER BY date DESC LIMIT 1
-        ),
-        week_ago AS (
-          SELECT composite_score FROM metachain_daily_scores
-          WHERE date <= (SELECT date - INTERVAL '6 days' FROM recent)
-          ORDER BY date DESC LIMIT 1
-        )
-        SELECT r.composite_score AS current_mc, w.composite_score AS prev_mc
-        FROM recent r, week_ago w
+        SELECT date, composite_score
+        FROM metachain_daily_scores
+        ORDER BY date DESC
+        LIMIT 7
       `);
-      if (mcRows.length > 0) {
-        metachainCurrent = mcRows[0].current_mc;
-        metachainPrev = mcRows[0].prev_mc;
-      }
+      metachain = (mcRows as MetachainRow[]).slice().reverse();
     } catch {
-      // metachain table may not exist yet
+      // table may not exist yet
     }
 
-    const r = rows[0];
+    const metachainCurrent =
+      metachain.length > 0 ? metachain[metachain.length - 1].composite_score : null;
+    const metachainPrev =
+      metachain.length > 0 ? metachain[0].composite_score : null;
 
     return NextResponse.json({
       available: true,
-      periodStart: r.prev_date_val,
-      periodEnd: r.current_date_val,
+      periodStart: earliest.date,
+      periodEnd: latest.date,
       metrics: {
         activityIndex: {
-          current: r.current_score,
-          change: absDiff(r.current_score, r.prev_score),
+          current: latest.average,
+          change:
+            latest.average != null && earliest.average != null
+              ? absDiff(latest.average, earliest.average)
+              : null,
+          series: seriesOf(activity, "average"),
         },
         thetaPrice: {
-          current: r.current_theta_price,
-          changePct: pctChange(r.current_theta_price, r.prev_theta_price),
+          current: latest.theta_price,
+          changePct:
+            latest.theta_price != null && earliest.theta_price != null
+              ? pctChange(latest.theta_price, earliest.theta_price)
+              : null,
+          series: seriesOf(activity, "theta_price"),
         },
         tfuelPrice: {
-          current: r.current_tfuel_price,
-          changePct: pctChange(r.current_tfuel_price, r.prev_tfuel_price),
+          current: latest.tfuel_price,
+          changePct:
+            latest.tfuel_price != null && earliest.tfuel_price != null
+              ? pctChange(latest.tfuel_price, earliest.tfuel_price)
+              : null,
+          series: seriesOf(activity, "tfuel_price"),
         },
         metachainIndex: {
           current: metachainCurrent,
-          change: metachainCurrent != null && metachainPrev != null
-            ? absDiff(metachainCurrent, metachainPrev)
-            : null,
+          change:
+            metachainCurrent != null && metachainPrev != null
+              ? absDiff(metachainCurrent, metachainPrev)
+              : null,
+          series: seriesOf(metachain, "composite_score"),
         },
         dailyTxs: {
-          current: r.current_txs,
-          changePct: pctChange(r.current_txs, r.prev_txs),
+          current: latest.daily_txs,
+          changePct:
+            latest.daily_txs != null && earliest.daily_txs != null
+              ? pctChange(latest.daily_txs, earliest.daily_txs)
+              : null,
+          series: seriesOf(activity, "daily_txs"),
         },
         stakingNodes: {
-          current: r.current_nodes,
-          change: absDiff(r.current_nodes, r.prev_nodes),
+          current: latest.staking_nodes,
+          change:
+            latest.staking_nodes != null && earliest.staking_nodes != null
+              ? absDiff(latest.staking_nodes, earliest.staking_nodes)
+              : null,
+          series: seriesOf(activity, "staking_nodes"),
         },
       },
     });
