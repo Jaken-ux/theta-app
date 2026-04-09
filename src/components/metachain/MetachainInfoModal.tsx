@@ -173,7 +173,10 @@ export default function MetachainInfoModal({
                     <p><span className="text-[#8B5CF6]">TPulse</span> — tsub68967-explorer-api (EdgeCloud job logs)</p>
                     <p><span className="text-[#F59E0B]">Passaways</span> — tsub7734-explorer-api (gaming txs)</p>
                     <p><span className="text-[#EF4444]">Grove</span> — tsub47683-explorer-api (gaming txs)</p>
-                    <p><span className="text-[#7D8694]">POGS</span> — tsub9065-explorer-api (collectibles)</p>
+                    <p>
+                      <span className="text-[#5C6675] line-through">POGS</span>
+                      <span className="text-[#5C6675]"> — offline since March 2026, currently excluded from composite</span>
+                    </p>
                     <p><span className="text-[#E879F9]">Ecosystem Growth</span> — ChainRegistrar + Token Bank contracts</p>
                   </div>
                 </div>
@@ -188,7 +191,7 @@ export default function MetachainInfoModal({
                     <li>EdgeCloud GPU compute jobs (only the logs on TPulse)</li>
                     <li>Transaction quality — cannot distinguish bots from real users</li>
                     <li>Subchains without public explorer APIs</li>
-                    <li>Inactive chains (e.g. POGS, inactive since March 2026) still contribute to the composite with their last known data and lower weight — they are not excluded</li>
+                    <li>Chains inactive for 30+ days (e.g. POGS, inactive since March 2026) are excluded from the composite. Their weight is redistributed among active chains until activity resumes.</li>
                   </ul>
                 </div>
 

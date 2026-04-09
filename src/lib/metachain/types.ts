@@ -31,6 +31,12 @@ export interface ChainScore {
   error?: string;
   /** If set, chain is known to be inactive since this date (e.g. "March 2026"). */
   inactiveSince?: string;
+  /** Runtime exclusion: chain is detected as offline and should not contribute. */
+  excludeFromComposite?: boolean;
+  /** Offline status — e.g. "offline" when latest block is older than threshold. */
+  status?: "active" | "offline";
+  /** Timestamp of the most recent block observed for this chain (ISO 8601). */
+  lastActiveDate?: string;
 }
 
 /** Composite result across all chains. */

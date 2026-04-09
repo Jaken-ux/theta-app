@@ -35,8 +35,10 @@ export async function fetchAllChains(): Promise<CompositeResult> {
   const settled = await Promise.allSettled(
     ADAPTERS.map(async (adapter): Promise<ChainScore> => {
       const metrics = await adapter.fetchMetrics();
-      const score = adapter.normalize(metrics);
+      const isOffline = metrics.custom?.isOffline === 1;
+      const score = isOffline ? 0 : adapter.normalize(metrics);
       const normalizedWeight = adapter.weight / totalWeight;
+      const lastBlockTs = metrics.custom?.lastBlockTs;
       return {
         chainId: adapter.id,
         chainName: adapter.name,
@@ -45,6 +47,12 @@ export async function fetchAllChains(): Promise<CompositeResult> {
         metrics,
         available: true,
         inactiveSince: adapter.inactiveSince,
+        status: isOffline ? "offline" : "active",
+        excludeFromComposite: isOffline,
+        lastActiveDate:
+          lastBlockTs && lastBlockTs > 0
+            ? new Date(lastBlockTs * 1000).toISOString()
+            : undefined,
       };
     })
   );
@@ -68,13 +76,20 @@ export async function fetchAllChains(): Promise<CompositeResult> {
     };
   });
 
-  // Composite = weighted average of available chains only
-  const availableChains = chains.filter((c) => c.available);
-  const availableWeight = availableChains.reduce((s, c) => s + c.weight, 0);
+  // Composite = weighted average of available, non-excluded chains.
+  // Excluded chains (e.g. offline for 30+ days) have their weight
+  // redistributed proportionally among the remaining active chains.
+  const contributingChains = chains.filter(
+    (c) => c.available && !c.excludeFromComposite
+  );
+  const contributingWeight = contributingChains.reduce(
+    (s, c) => s + c.weight,
+    0
+  );
   const compositeScore =
-    availableWeight > 0
-      ? availableChains.reduce(
-          (sum, c) => sum + c.score * (c.weight / availableWeight),
+    contributingWeight > 0
+      ? contributingChains.reduce(
+          (sum, c) => sum + c.score * (c.weight / contributingWeight),
           0
         )
       : 0;

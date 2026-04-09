@@ -256,13 +256,16 @@ export default function MethodologyPage() {
                     GroveWars Web3 gaming ecosystem
                   </td>
                 </tr>
-                <tr className="border-t border-[#2A3548]">
+                <tr className="border-t border-[#2A3548] opacity-60">
                   <td className="px-4 py-2.5 text-[#7D8694]">
-                    POGS <span className="text-[10px] text-[#7D8694]">(inactive since March 2026)</span>
+                    <span className="line-through">POGS</span>
+                    <span className="block text-[10px] text-[#5C6675] mt-0.5 not-italic">
+                      excluded — offline since March 2026
+                    </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono">0.3</td>
-                  <td className="px-4 py-2.5 font-mono">100,000 txs/day</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2.5 font-mono text-[#5C6675]">—</td>
+                  <td className="px-4 py-2.5 font-mono text-[#5C6675]">—</td>
+                  <td className="px-4 py-2.5 text-[#7D8694]">
                     Digital entertainment and gaming collectibles
                   </td>
                 </tr>
@@ -281,6 +284,17 @@ export default function MethodologyPage() {
             Raw weights are shown above. At runtime, all weights are normalized
             to sum to 1 (e.g., Main Chain 1.0 / 4.2 total ≈ 23.8%).
           </p>
+          <div className="mt-3 bg-[#0D1117] border border-[#2A3548] rounded-lg p-3">
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
+              <span className="text-white font-medium">Inactivity exclusion:</span>{" "}
+              When a subchain&apos;s most recent block is older than{" "}
+              <span className="text-white">30 days</span>, it is flagged as
+              offline and removed from the composite score. Its weight is
+              redistributed proportionally among the remaining active chains.
+              If activity resumes, the chain automatically rejoins the
+              composite. POGS is currently excluded under this rule.
+            </p>
+          </div>
         </div>
 
         {/* Subchain score calculation */}
@@ -379,8 +393,9 @@ export default function MethodologyPage() {
               transaction quality is unknown.
             </li>
             <li>
-              POGS has been inactive since March 2026. It still contributes to
-              the composite with its last known data and lower weight.
+              POGS has been inactive since March 2026 and is currently excluded
+              from the composite score under the 30-day inactivity rule. Its
+              weight is redistributed to the remaining active chains.
             </li>
             <li>
               Ecosystem Growth proxy metrics (subchain count, cross-chain
@@ -398,6 +413,175 @@ export default function MethodologyPage() {
               Subchain daily tx estimates are extrapolated from the 100 most
               recent blocks, which may not be representative during low-activity
               periods.
+            </li>
+          </ul>
+        </div>
+
+        {/* Coverage verification */}
+        <div>
+          <p className="text-sm text-white font-medium mb-3">
+            Coverage verification
+          </p>
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm">
+            <p>
+              We independently verified our coverage by comparing tracked
+              transactions against Theta Explorer&apos;s official transaction
+              history endpoint (<span className="font-mono text-xs text-[#B0B8C4]">/transactions/history</span>),
+              the same data source used by the official Theta Explorer graphs.
+              As of April 2026, our four tracked subchains (Lavita, TPulse,
+              Passaways, Grove) represent approximately{" "}
+              <span className="text-white font-medium">94%</span> of all
+              subchain activity. The remaining ~6% consists of inactive chains
+              (POGS) and minor developer/testnet activity. Main chain activity
+              is excluded from this comparison as it is tracked separately via
+              the Main Chain Activity Index.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 3: TFUEL Economics ── */}
+      <section className="space-y-6">
+        <h2 className="text-xl font-semibold text-white">
+          3. TFUEL Economics (burn vs issuance)
+        </h2>
+
+        <p className="text-sm">
+          The TFUEL Economics widget shows whether the network is creating
+          more TFUEL than it burns on a given day. It is derived from two
+          parts: a protocol constant (daily issuance) and an empirical
+          estimate (daily burn).
+        </p>
+
+        {/* Daily issuance */}
+        <div>
+          <p className="text-sm text-white font-medium mb-3">
+            Daily issuance — protocol constant
+          </p>
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-3">
+            <p>
+              TFUEL is created as block rewards at a fixed rate defined by
+              the Theta protocol. This number is a hard constant and does
+              not change unless Theta upgrades its protocol.
+            </p>
+            <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB]">
+              blocksPerDay = 86,400s / 6s = 14,400
+              <br />
+              tfuelPerBlock = 86 (38 TFUEL staking + 48 THETA staking)
+              <br />
+              <span className="text-white">
+                dailyIssuance = 14,400 × 86 = 1,238,400 TFUEL / day
+              </span>
+            </div>
+            <p className="text-xs text-[#B0B8C4]">
+              Source: Theta protocol block reward specification.
+            </p>
+          </div>
+        </div>
+
+        {/* Daily burn */}
+        <div>
+          <p className="text-sm text-white font-medium mb-3">
+            Daily burn — empirical estimate
+          </p>
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-3">
+            <p>
+              Every transaction on Theta consumes gas, and gas fees are{" "}
+              <span className="text-white">permanently burned</span>. We
+              estimate daily burn by sampling recent transactions on each
+              tracked chain and multiplying the average fee by that
+              chain&apos;s daily transaction count.
+            </p>
+            <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB] space-y-1">
+              <p>{/* eslint-disable-next-line */}{'// Per-chain sampling'}</p>
+              <p>
+                fee_per_tx = receipt.GasUsed × data.gas_price (TFuelWei)
+              </p>
+              <p>avgFee = Σ fees / count(sampled txs)</p>
+              <p>chainBurn = avgFee × chain.dailyTxs</p>
+              <p className="text-white mt-2">
+                dailyBurn = Σ chainBurn across all tracked chains
+              </p>
+            </div>
+            <p className="text-xs text-[#B0B8C4]">
+              We sample up to 20 pages (~200 transactions) per chain via
+              the <span className="font-mono">/transactions/range</span>{" "}
+              endpoint in parallel. Per-chain daily transaction counts come
+              from Theta Explorer&apos;s{" "}
+              <span className="font-mono">/transactions/history</span>{" "}
+              endpoint (the same source as the official explorer graph).
+            </p>
+          </div>
+        </div>
+
+        {/* Net and break-even */}
+        <div>
+          <p className="text-sm text-white font-medium mb-3">
+            Net flow and break-even
+          </p>
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-2">
+            <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB]">
+              <p>net = dailyBurn − dailyIssuance</p>
+              <p>breakEvenTxs = dailyIssuance / avgFeePerTx</p>
+            </div>
+            <ul className="text-xs text-[#B0B8C4] space-y-1 list-disc list-inside mt-2">
+              <li>
+                <span className="text-[#10B981]">Positive net</span> —
+                network is deflationary (burns exceed new issuance)
+              </li>
+              <li>
+                <span className="text-[#EF4444]">Negative net</span> —
+                network is inflationary (current state)
+              </li>
+              <li>
+                <span className="text-white">breakEvenTxs</span> is the
+                daily tx count required to burn exactly as much TFUEL as
+                is issued
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Known limitations */}
+        <div className="bg-[#0A0F1C] border border-[#1E3A5F] rounded-xl p-4">
+          <p className="text-sm text-white font-medium mb-2">
+            Known limitations — burn is an estimate, not a measurement
+          </p>
+          <ul className="space-y-1.5 text-xs text-[#D1D5DB] list-disc list-inside">
+            <li>
+              <span className="text-white">Small sample size.</span> We
+              sample ~200 recent transactions per chain, not every
+              transaction in the last 24 hours. Bursts of high-fee or
+              low-fee activity can skew the average.
+            </li>
+            <li>
+              <span className="text-white">
+                Sample reflects the current moment.
+              </span>{" "}
+              The average is computed from the most recent txs. Daily
+              averages may be higher or lower.
+            </li>
+            <li>
+              <span className="text-white">
+                Main chain burn is negligible.
+              </span>{" "}
+              Most main-chain txs are type-0 proposer transactions with
+              zero gas. Meaningful burn comes almost entirely from subchain
+              smart-contract activity.
+            </li>
+            <li>
+              <span className="text-white">Per-chain weighting.</span> Each
+              chain&apos;s daily tx count comes from the official history
+              endpoint, so high-activity chains dominate the total burn
+              calculation correctly.
+            </li>
+            <li>
+              <span className="text-white">Issuance is exact.</span> Daily
+              issuance is a protocol constant (1,238,400 TFUEL/day). The
+              net-flow direction is therefore more robust than its magnitude:
+              even if our burn estimate is off by 10×, the conclusion that
+              Theta is currently deeply inflationary (burn &lt; issuance by
+              orders of magnitude) is unchanged.
             </li>
           </ul>
         </div>

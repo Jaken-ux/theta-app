@@ -28,6 +28,9 @@ interface ChainScore {
   available: boolean;
   error?: string;
   inactiveSince?: string;
+  excludeFromComposite?: boolean;
+  status?: "active" | "offline";
+  lastActiveDate?: string;
   metrics: {
     txCount24h: number;
     volume24h?: number;
@@ -50,6 +53,25 @@ interface RegisteredChain {
   weight: number;
 }
 
+interface TfuelEconomicsData {
+  dailyIssuance: number;
+  dailyBurn: number | null;
+  netInflation: number | null;
+  avgFeePerTxTfuel: number | null;
+  breakEvenTxs: number | null;
+  totalDailyTxs: number | null;
+  perChain?: Record<
+    string,
+    {
+      dailyTxs: number;
+      sampledTxs: number;
+      txsWithFee: number;
+      avgFeePerTxTfuel: number;
+      dailyBurnTfuel: number;
+    }
+  >;
+}
+
 interface MetachainData {
   current: {
     compositeScore: number;
@@ -59,6 +81,11 @@ interface MetachainData {
   };
   registeredChains: RegisteredChain[];
   coveragePct?: number;
+  trackedSubchainTxs?: number;
+  trackedSubchainCount?: number;
+  totalMetachainTxs?: number | null;
+  totalMetachainSource?: string | null;
+  tfuelEconomics?: TfuelEconomicsData;
   history: HistoryEntry[];
   chainHistory?: Record<string, { date: string; score: number; txCount24h: number; available: boolean }[]>;
 }
@@ -292,8 +319,22 @@ export default function MetachainDashboard({
   }
 
   const { current, history, registeredChains, coveragePct, chainHistory } = data;
-  const coverage = coveragePct ?? 100;
-  const chainsAvailable = current.chains.filter((c) => c.available).length;
+  const contributingChainsCount = current.chains.filter(
+    (c) => !c.excludeFromComposite
+  ).length;
+  const chainsAvailable = current.chains.filter(
+    (c) => c.available && !c.excludeFromComposite
+  ).length;
+  // Recompute coverage based on contributing chains only
+  const contributingWeight = current.chains
+    .filter((c) => !c.excludeFromComposite)
+    .reduce((s, c) => s + c.weight, 0);
+  const availableContributingWeight = current.chains
+    .filter((c) => c.available && !c.excludeFromComposite)
+    .reduce((s, c) => s + c.weight, 0);
+  const coverage = contributingWeight > 0
+    ? Math.round((availableContributingWeight / contributingWeight) * 100)
+    : coveragePct ?? 100;
   const chartData = [...history].reverse().map((h) => ({
     date: new Date(h.date).toLocaleDateString("en-US", {
       month: "short",
@@ -303,7 +344,10 @@ export default function MetachainDashboard({
     coverage: h.coveragePct ?? 100,
   }));
 
-  const barData = current.chains.map((c) => ({
+  const activeChains = current.chains.filter((c) => !c.excludeFromComposite);
+  const excludedChains = current.chains.filter((c) => c.excludeFromComposite);
+
+  const barData = activeChains.map((c) => ({
     name: c.chainName,
     score: Math.round(c.score * 10) / 10,
     weight: Math.round(c.weight * 100),
@@ -408,7 +452,12 @@ export default function MetachainDashboard({
 
             {/* Chain pills */}
             <div className="flex flex-wrap gap-2 mt-4">
-              {registeredChains.map((chain) => {
+              {registeredChains
+                .filter((chain) => {
+                  const live = current.chains.find((c) => c.chainId === chain.id);
+                  return !live?.excludeFromComposite;
+                })
+                .map((chain) => {
                 const live = current.chains.find(
                   (c) => c.chainId === chain.id
                 );
@@ -507,6 +556,274 @@ export default function MetachainDashboard({
         </div>
       </motion.div>
 
+      {/* ── Transaction Coverage ────────────────────────── */}
+      <motion.div
+        className="bg-[#151D2E]/80 border border-[#2A3548]/80 rounded-2xl p-5 sm:p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.03 }}
+      >
+        <div className="flex items-start justify-between mb-4 gap-3">
+          <div>
+            <p className="text-xs text-[#B0B8C4] uppercase tracking-wide mb-1">
+              Transaction Coverage
+            </p>
+            <p className="text-[11px] text-[#7D8694] leading-relaxed max-w-lg">
+              Coverage shows what percentage of total Metachain activity our
+              tracked subchains represent.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Total Metachain activity */}
+          <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+            <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+              Total Metachain activity
+            </p>
+            {data.totalMetachainTxs != null ? (
+              <>
+                <p className="text-xl font-semibold text-[#B0B8C4] tabular-nums">
+                  {fmtNum(data.totalMetachainTxs)}
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-1">txs / 24h</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[#5C6675] italic">unavailable</p>
+                <p className="text-[10px] text-[#5C6675] mt-1">
+                  official API not publicly available
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* We track */}
+          <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+            <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+              We track
+            </p>
+            <p className="text-xl font-semibold text-white tabular-nums">
+              {fmtNum(data.trackedSubchainTxs ?? 0)}
+            </p>
+            <p className="text-[10px] text-[#5C6675] mt-1">
+              txs / 24h across {data.trackedSubchainCount ?? 0} subchains
+            </p>
+          </div>
+
+          {/* Coverage % */}
+          <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+            <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+              Coverage
+            </p>
+            {data.totalMetachainTxs != null && data.totalMetachainTxs > 0 ? (
+              <>
+                <p className="text-xl font-semibold text-[#2AB8E6] tabular-nums">
+                  {Math.round(
+                    ((data.trackedSubchainTxs ?? 0) / data.totalMetachainTxs) *
+                      100
+                  )}
+                  %
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-1">
+                  of total Metachain
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[#5C6675] italic">Unknown</p>
+                <p className="text-[10px] text-[#5C6675] mt-1">
+                  official API not publicly available
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {data.totalMetachainTxs != null ? (
+          <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
+            Both numbers come from the same source as Theta&apos;s official
+            explorer: /transactions/history summed across the main chain
+            and each registered subchain. Updated daily.
+          </p>
+        ) : (
+          <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
+            We are tracking {data.trackedSubchainCount ?? 0} subchains. If
+            you know of active subchains we&apos;re missing,{" "}
+            <a
+              href="/contact"
+              className="text-[#B0B8C4] underline hover:text-white"
+            >
+              contact us
+            </a>
+            .
+          </p>
+        )}
+      </motion.div>
+
+      {/* ── TFUEL Economics ─────────────────────────────── */}
+      {data.tfuelEconomics && (() => {
+        const eco = data.tfuelEconomics;
+        const isDeflationary = (eco.netInflation ?? 0) > 0;
+        const hasBurnData = eco.dailyBurn != null && eco.netInflation != null;
+        const txsNeeded =
+          eco.breakEvenTxs != null && eco.totalDailyTxs != null
+            ? Math.max(0, eco.breakEvenTxs - eco.totalDailyTxs)
+            : null;
+
+        const fmtTfuel = (n: number) =>
+          n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+
+        return (
+          <motion.div
+            className="bg-[#151D2E]/80 border border-[#2A3548]/80 rounded-2xl p-5 sm:p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.04 }}
+          >
+            <div className="flex items-start justify-between mb-4 gap-3">
+              <div>
+                <p className="text-xs text-[#B0B8C4] uppercase tracking-wide mb-1">
+                  TFUEL Economics
+                </p>
+                <p className="text-[11px] text-[#7D8694] leading-relaxed max-w-lg">
+                  Is the network creating more TFUEL than it burns, or the
+                  other way around?
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Created today */}
+              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+                  Created today
+                </p>
+                <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
+                  {fmtTfuel(eco.dailyIssuance)}
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-1">TFUEL issued</p>
+              </div>
+
+              {/* Burned today */}
+              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+                  Burned today
+                </p>
+                {hasBurnData ? (
+                  <>
+                    <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
+                      {fmtTfuel(eco.dailyBurn!)}
+                    </p>
+                    <p className="text-[10px] text-[#5C6675] mt-1">TFUEL gas</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-[#5C6675] italic">calculating…</p>
+                    <p className="text-[10px] text-[#5C6675] mt-1">
+                      sampling blocks
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Net */}
+              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+                  Net
+                </p>
+                {hasBurnData ? (
+                  <>
+                    <p
+                      className="text-lg font-semibold tabular-nums"
+                      style={{
+                        color: isDeflationary ? "#10B981" : "#EF4444",
+                      }}
+                    >
+                      {isDeflationary ? "+" : ""}
+                      {fmtTfuel(eco.netInflation!)}
+                    </p>
+                    <p className="text-[10px] text-[#5C6675] mt-1">
+                      {isDeflationary ? "deflationary" : "inflationary"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-[#5C6675] italic">—</p>
+                )}
+              </div>
+
+              {/* Break-even needs */}
+              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+                  Break-even needs
+                </p>
+                {eco.breakEvenTxs != null ? (
+                  <>
+                    <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
+                      {fmtNum(eco.breakEvenTxs)}
+                    </p>
+                    <p className="text-[10px] text-[#5C6675] mt-1">
+                      txs/day needed
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-[#5C6675] italic">—</p>
+                )}
+              </div>
+            </div>
+
+            {/* Context line */}
+            {hasBurnData && (
+              <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
+                {isDeflationary
+                  ? "Network is currently deflationary — burns exceed new issuance."
+                  : txsNeeded != null
+                  ? `At current activity, ~${fmtNum(
+                      txsNeeded
+                    )} more txs/day needed to offset new issuance.`
+                  : "At current activity, burns do not offset new issuance."}
+              </p>
+            )}
+
+            {/* Explainer — Swedish */}
+            <SimplifyThis>
+              <p className="mb-2">
+                <strong className="text-white">Vad är detta?</strong>
+              </p>
+              <p className="mb-3">
+                TFUEL skapas varje dag som belöning till validators och
+                node-operatörer. Samtidigt bränns TFUEL permanent när
+                transaktioner genomförs som gas. Om mer bränns än skapas
+                minskar totala utbudet — deflation. Om mer skapas än bränns
+                ökar utbudet — inflation.
+              </p>
+              <p className="mb-2">
+                <strong className="text-white">Hur tolkar jag det?</strong>
+              </p>
+              <p className="mb-3">
+                <span className="text-[#10B981]">Grönt</span> = nätverket
+                bränner mer än det skapar. Positivt för TFUEL-priset.
+                <br />
+                <span className="text-[#EF4444]">Rött</span> = inflationen
+                överstiger burns. Normalt vid nuvarande aktivitetsnivå.
+                <br />
+                &quot;Break-even&quot;-siffran visar hur mycket aktivitet som
+                krävs för att nå deflation.
+              </p>
+              <p className="mb-2">
+                <strong className="text-white">
+                  Vad kan jag använda det till?
+                </strong>
+              </p>
+              <p>
+                Följ break-even-trenden över tid. Om dagliga txs närmar sig
+                break-even är det ett starkt fundamentalt signal för TFUEL.
+              </p>
+            </SimplifyThis>
+          </motion.div>
+        );
+      })()}
+
       {/* ── Coverage Confidence ─────────────────────────── */}
       <motion.div
         className="bg-[#151D2E] border border-[#2A3548] rounded-2xl p-6 sm:p-8"
@@ -531,7 +848,7 @@ export default function MetachainDashboard({
           </span>
         </div>
         <p className="text-sm text-[#B0B8C4] mb-4">
-          {chainsAvailable} of {current.chainCount} data sources responded.
+          {chainsAvailable} of {contributingChainsCount} data sources responded.
           {coverage < 100
             ? " The composite score is based on partial data — some chains may be offline."
             : " All registered chains are reporting data."}
@@ -565,7 +882,7 @@ export default function MetachainDashboard({
 
         {/* Per-chain status pills */}
         <div className="flex flex-wrap gap-2">
-          {current.chains.map((chain) => (
+          {activeChains.map((chain) => (
             <div
               key={chain.chainId}
               className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px]"
@@ -698,7 +1015,7 @@ export default function MetachainDashboard({
 
         {/* Chain detail cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {current.chains.map((chain) => {
+          {activeChains.map((chain) => {
             const hist = chainHistory?.[chain.chainId] ?? [];
             const sparkData = [...hist]
               .reverse()
@@ -790,6 +1107,71 @@ export default function MetachainDashboard({
           </div>
         </div>
       </motion.div>
+
+      {/* ── Previously Tracked Chains ─────────────────────── */}
+      {excludedChains.length > 0 && (
+        <motion.div
+          className="bg-[#151D2E]/60 border border-[#2A3548]/60 rounded-2xl p-6 sm:p-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <h3 className="text-sm font-semibold text-[#B0B8C4] mb-1">
+            Previously tracked chains
+          </h3>
+          <p className="text-xs text-[#7D8694] mb-4">
+            Chains that have been inactive for more than 30 days are excluded
+            from the composite score. Their weight is redistributed among
+            active chains.
+          </p>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {excludedChains.map((chain) => {
+              const lastHist = chainHistory?.[chain.chainId]?.find(
+                (h) => h.score > 0
+              );
+              const lastKnownScore = lastHist?.score;
+              const offlineDate = chain.lastActiveDate
+                ? new Date(chain.lastActiveDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : chain.inactiveSince ?? "unknown";
+
+              return (
+                <div
+                  key={chain.chainId}
+                  className="bg-[#0D1117]/60 rounded-xl p-3 border-l-2 border-[#2A3548] opacity-75"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-medium text-[#7D8694]">
+                      {chain.chainName}
+                    </p>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#7D8694]/10 text-[#5C6675] uppercase tracking-wide">
+                      offline since {offlineDate}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#5C6675] leading-relaxed mb-2">
+                    Digital entertainment and gaming collectibles.
+                  </p>
+                  {lastKnownScore !== undefined && (
+                    <p className="text-[10px] text-[#7D8694]">
+                      Last known score:{" "}
+                      <span className="text-[#B0B8C4] font-mono">
+                        {Math.round(lastKnownScore)}
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-[10px] text-[#5C6675] mt-2 italic">
+                    Excluded from composite score until activity resumes.
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── How It Works ─────────────────────────────────── */}
       <motion.div

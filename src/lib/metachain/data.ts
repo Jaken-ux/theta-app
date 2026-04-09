@@ -1,4 +1,6 @@
 import { fetchAllChains, getRegisteredChains } from "./registry";
+import { fetchTotalMetachainTxs } from "./total-txs";
+import { fetchTfuelEconomics } from "../tfuel-economics";
 import { getPool } from "../db";
 import type { Pool } from "pg";
 
@@ -61,6 +63,16 @@ async function ensureSchema(pool: Pool) {
       total_score DOUBLE PRECISION NOT NULL DEFAULT 0
     )
   `);
+
+  // TFUEL economics columns (added later — nullable)
+  await pool
+    .query(
+      `ALTER TABLE metachain_daily_scores
+       ADD COLUMN IF NOT EXISTS daily_burn DOUBLE PRECISION,
+       ADD COLUMN IF NOT EXISTS daily_issuance DOUBLE PRECISION,
+       ADD COLUMN IF NOT EXISTS net_inflation DOUBLE PRECISION`
+    )
+    .catch(() => {});
 
   // Migrate old metachain_history data if it exists
   try {
@@ -173,24 +185,42 @@ export async function fetchMetachainData() {
     }
   }
 
-  // Save daily composite score (running average)
+  // Fetch total metachain txs from official explorer (needed for TFUEL
+  // economics below as well as the coverage widget).
+  const totalMetachain = await fetchTotalMetachainTxs();
+
+  // Compute TFUEL economics (burn vs issuance) with per-chain tx counts
+  // so each chain's burn is calculated against its own activity level.
+  const tfuelEconomics = await fetchTfuelEconomics(
+    totalMetachain.totalDailyTxs,
+    totalMetachain.perChain
+  );
+
+  // Save daily composite score (running average) + TFUEL economics
   await pool.query(
     `INSERT INTO metachain_daily_scores
-       (date, composite_score, chain_count, chains_available, coverage_pct, samples, total_score)
-     VALUES ($1, $2, $3, $4, $5, 1, $2)
+       (date, composite_score, chain_count, chains_available, coverage_pct,
+        samples, total_score, daily_burn, daily_issuance, net_inflation)
+     VALUES ($1, $2, $3, $4, $5, 1, $2, $6, $7, $8)
      ON CONFLICT (date) DO UPDATE SET
        samples = metachain_daily_scores.samples + 1,
        total_score = metachain_daily_scores.total_score + $2,
        composite_score = (metachain_daily_scores.total_score + $2) / (metachain_daily_scores.samples + 1),
        chain_count = $3,
        chains_available = $4,
-       coverage_pct = $5`,
+       coverage_pct = $5,
+       daily_burn = COALESCE($6, metachain_daily_scores.daily_burn),
+       daily_issuance = COALESCE($7, metachain_daily_scores.daily_issuance),
+       net_inflation = COALESCE($8, metachain_daily_scores.net_inflation)`,
     [
       today,
       result.compositeScore,
       result.chainCount,
       result.chains.filter((c) => c.available).length,
       coveragePct,
+      tfuelEconomics.dailyBurn,
+      tfuelEconomics.dailyIssuance,
+      tfuelEconomics.netInflation,
     ]
   );
 
@@ -225,10 +255,48 @@ export async function fetchMetachainData() {
     });
   }
 
+  // Use the same official source for "we track" — sum of the four
+  // tracked subchains from the explorer's history API. This makes
+  // both numbers directly comparable (same source, same day).
+  // totalMetachain was fetched earlier for TFUEL economics.
+  const SUBCHAIN_IDS = ["tsub360890", "tsub68967", "tsub7734", "tsub47683"];
+  let trackedSubchainTxs = 0;
+  let trackedSubchainCount = 0;
+  if (totalMetachain.perChain) {
+    for (const id of SUBCHAIN_IDS) {
+      const n = totalMetachain.perChain[id];
+      if (typeof n === "number" && n > 0) {
+        trackedSubchainTxs += n;
+        trackedSubchainCount += 1;
+      }
+    }
+  } else {
+    // Fallback to adapter-estimated numbers if official history fails
+    trackedSubchainTxs = result.chains
+      .filter(
+        (c) =>
+          SUBCHAIN_IDS.includes(c.chainId) &&
+          c.available &&
+          !c.excludeFromComposite
+      )
+      .reduce((sum, c) => sum + (c.metrics.txCount24h ?? 0), 0);
+    trackedSubchainCount = result.chains.filter(
+      (c) =>
+        SUBCHAIN_IDS.includes(c.chainId) &&
+        c.available &&
+        !c.excludeFromComposite
+    ).length;
+  }
+
   return {
     current: result,
     registeredChains: getRegisteredChains(),
     coveragePct,
+    trackedSubchainTxs,
+    trackedSubchainCount,
+    totalMetachainTxs: totalMetachain.totalDailyTxs,
+    totalMetachainSource: totalMetachain.source,
+    tfuelEconomics,
     history: history.map(
       (r: {
         date: string;
