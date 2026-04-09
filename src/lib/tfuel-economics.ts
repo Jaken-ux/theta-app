@@ -44,8 +44,10 @@ export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
 
 const WEI_PER_TFUEL = 1e18;
 
-/** Number of /transactions/range pages to sample per chain. */
-const PAGES_TO_SAMPLE = 20;
+/** Number of /transactions/range pages to sample per chain. Each page
+ *  returns up to 10 txs, so 50 pages ≈ 500 txs per chain. Larger samples
+ *  reduce volatility caused by bursts of high- or low-fee activity. */
+const PAGES_TO_SAMPLE = 50;
 
 const BURN_CHAINS: { id: string; baseUrl: string }[] = [
   {

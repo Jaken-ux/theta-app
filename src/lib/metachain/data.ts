@@ -64,15 +64,33 @@ async function ensureSchema(pool: Pool) {
     )
   `);
 
-  // TFUEL economics columns (added later — nullable)
+  // TFUEL economics columns (legacy — kept for back-compat, no longer used)
   await pool
     .query(
       `ALTER TABLE metachain_daily_scores
        ADD COLUMN IF NOT EXISTS daily_burn DOUBLE PRECISION,
        ADD COLUMN IF NOT EXISTS daily_issuance DOUBLE PRECISION,
-       ADD COLUMN IF NOT EXISTS net_inflation DOUBLE PRECISION`
+       ADD COLUMN IF NOT EXISTS net_inflation DOUBLE PRECISION,
+       ADD COLUMN IF NOT EXISTS burn_samples INTEGER DEFAULT 0,
+       ADD COLUMN IF NOT EXISTS total_burn DOUBLE PRECISION DEFAULT 0`
     )
     .catch(() => {});
+
+  // TFUEL economics — locked-in yesterday values (one row per UTC day).
+  // We compute once when a new day is first observed and never update,
+  // so the displayed numbers stay stable across the entire day.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS metachain_burn_daily (
+      date DATE PRIMARY KEY,
+      daily_burn DOUBLE PRECISION NOT NULL,
+      daily_issuance DOUBLE PRECISION NOT NULL,
+      net_inflation DOUBLE PRECISION NOT NULL,
+      total_daily_txs INTEGER,
+      avg_fee_per_tx DOUBLE PRECISION,
+      break_even_txs BIGINT,
+      computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 
   // Migrate old metachain_history data if it exists
   try {
@@ -189,38 +207,95 @@ export async function fetchMetachainData() {
   // economics below as well as the coverage widget).
   const totalMetachain = await fetchTotalMetachainTxs();
 
-  // Compute TFUEL economics (burn vs issuance) with per-chain tx counts
-  // so each chain's burn is calculated against its own activity level.
-  const tfuelEconomics = await fetchTfuelEconomics(
-    totalMetachain.totalDailyTxs,
-    totalMetachain.perChain
-  );
+  // TFUEL economics — locked-in approach.
+  //
+  // Yesterday's burn is computed ONCE (the first time anyone loads the
+  // page on a new UTC day) and stored in metachain_burn_daily. Every
+  // subsequent request returns the stored value, so the number is
+  // perfectly stable across the entire day.
+  //
+  // Yesterday's tx counts come from /transactions/history (which is
+  // the final number for that day). Yesterday's fee comes from a
+  // current sample taken at lock-in time — accurate enough since
+  // Theta gas prices are stable.
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 
-  // Save daily composite score (running average) + TFUEL economics
+  let tfuelEconomics: Awaited<ReturnType<typeof fetchTfuelEconomics>>;
+  try {
+    const cached = await pool.query(
+      `SELECT daily_burn, daily_issuance, net_inflation, total_daily_txs,
+              avg_fee_per_tx, break_even_txs
+       FROM metachain_burn_daily WHERE date = $1`,
+      [yesterday]
+    );
+    if (cached.rows.length > 0) {
+      const row = cached.rows[0];
+      tfuelEconomics = {
+        dailyIssuance: Number(row.daily_issuance),
+        dailyBurn: Number(row.daily_burn),
+        netInflation: Number(row.net_inflation),
+        avgFeePerTxTfuel:
+          row.avg_fee_per_tx != null ? Number(row.avg_fee_per_tx) : null,
+        breakEvenTxs:
+          row.break_even_txs != null ? Number(row.break_even_txs) : null,
+        totalDailyTxs:
+          row.total_daily_txs != null ? Number(row.total_daily_txs) : null,
+      };
+    } else {
+      // First load on a new UTC day — compute and lock in.
+      tfuelEconomics = await fetchTfuelEconomics(
+        totalMetachain.totalDailyTxs,
+        totalMetachain.perChain
+      );
+      if (tfuelEconomics.dailyBurn != null) {
+        await pool.query(
+          `INSERT INTO metachain_burn_daily
+             (date, daily_burn, daily_issuance, net_inflation,
+              total_daily_txs, avg_fee_per_tx, break_even_txs)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT (date) DO NOTHING`,
+          [
+            yesterday,
+            tfuelEconomics.dailyBurn,
+            tfuelEconomics.dailyIssuance,
+            tfuelEconomics.netInflation,
+            tfuelEconomics.totalDailyTxs,
+            tfuelEconomics.avgFeePerTxTfuel,
+            tfuelEconomics.breakEvenTxs,
+          ]
+        );
+      }
+    }
+  } catch (e) {
+    // If the cache table is unavailable, fall back to a fresh compute
+    console.error("[burn-cache] read/write failed, falling back:", e);
+    tfuelEconomics = await fetchTfuelEconomics(
+      totalMetachain.totalDailyTxs,
+      totalMetachain.perChain
+    );
+  }
+
+  // Save daily composite score (running average). Burn is stored
+  // separately in metachain_burn_daily (locked-in once per day).
   await pool.query(
     `INSERT INTO metachain_daily_scores
-       (date, composite_score, chain_count, chains_available, coverage_pct,
-        samples, total_score, daily_burn, daily_issuance, net_inflation)
-     VALUES ($1, $2, $3, $4, $5, 1, $2, $6, $7, $8)
+       (date, composite_score, chain_count, chains_available, coverage_pct, samples, total_score)
+     VALUES ($1, $2, $3, $4, $5, 1, $2)
      ON CONFLICT (date) DO UPDATE SET
        samples = metachain_daily_scores.samples + 1,
        total_score = metachain_daily_scores.total_score + $2,
        composite_score = (metachain_daily_scores.total_score + $2) / (metachain_daily_scores.samples + 1),
        chain_count = $3,
        chains_available = $4,
-       coverage_pct = $5,
-       daily_burn = COALESCE($6, metachain_daily_scores.daily_burn),
-       daily_issuance = COALESCE($7, metachain_daily_scores.daily_issuance),
-       net_inflation = COALESCE($8, metachain_daily_scores.net_inflation)`,
+       coverage_pct = $5`,
     [
       today,
       result.compositeScore,
       result.chainCount,
       result.chains.filter((c) => c.available).length,
       coveragePct,
-      tfuelEconomics.dailyBurn,
-      tfuelEconomics.dailyIssuance,
-      tfuelEconomics.netInflation,
     ]
   );
 
@@ -297,6 +372,7 @@ export async function fetchMetachainData() {
     totalMetachainTxs: totalMetachain.totalDailyTxs,
     totalMetachainSource: totalMetachain.source,
     tfuelEconomics,
+    tfuelEconomicsDate: yesterday,
     history: history.map(
       (r: {
         date: string;

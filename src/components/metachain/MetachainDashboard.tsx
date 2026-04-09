@@ -86,6 +86,7 @@ interface MetachainData {
   totalMetachainTxs?: number | null;
   totalMetachainSource?: string | null;
   tfuelEconomics?: TfuelEconomicsData;
+  tfuelEconomicsDate?: string;
   history: HistoryEntry[];
   chainHistory?: Record<string, { date: string; score: number; txCount24h: number; available: boolean }[]>;
 }
@@ -690,15 +691,28 @@ export default function MetachainDashboard({
                 <p className="text-[11px] text-[#7D8694] leading-relaxed max-w-lg">
                   Is the network creating more TFUEL than it burns, or the
                   other way around?
+                  {data.tfuelEconomicsDate && (
+                    <>
+                      {" "}
+                      <span className="text-[#5C6675]">
+                        Final numbers for{" "}
+                        {new Date(data.tfuelEconomicsDate).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric", year: "numeric" }
+                        )}
+                        .
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Created today */}
+              {/* Created yesterday */}
               <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
                 <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
-                  Created today
+                  Created yesterday
                 </p>
                 <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
                   {fmtTfuel(eco.dailyIssuance)}
@@ -706,11 +720,11 @@ export default function MetachainDashboard({
                 <p className="text-[10px] text-[#5C6675] mt-1">TFUEL issued</p>
               </div>
 
-              {/* Burned today */}
+              {/* Burned yesterday */}
               <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
                 <div className="flex items-center gap-1.5 mb-1.5 relative">
                   <p className="text-[10px] text-[#7D8694] uppercase tracking-wide">
-                    Burned today
+                    Burned yesterday
                   </p>
                   <button
                     type="button"
@@ -724,9 +738,9 @@ export default function MetachainDashboard({
                   {burnTooltipOpen && (
                     <div className="absolute top-5 left-0 z-10 w-64 bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-3 shadow-2xl">
                       <p className="text-[11px] text-[#D1D5DB] leading-relaxed">
-                        Estimate based on yesterday&apos;s transaction count
-                        combined with the current average gas fee. May lag real
-                        burn by up to one day.
+                        Calculated once when each new UTC day starts and locked
+                        in for the entire day. Uses the final transaction count
+                        for that day combined with sampled gas fees.
                       </p>
                     </div>
                   )}
