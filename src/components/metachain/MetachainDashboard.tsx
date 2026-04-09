@@ -282,6 +282,7 @@ export default function MetachainDashboard({
   const [loading, setLoading] = useState(!serverData);
   const [error, setError] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [burnTooltipOpen, setBurnTooltipOpen] = useState(false);
 
   // Only fetch client-side if no server data was provided
   useEffect(() => {
@@ -707,16 +708,28 @@ export default function MetachainDashboard({
 
               {/* Burned today */}
               <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
-                <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="flex items-center gap-1.5 mb-1.5 relative">
                   <p className="text-[10px] text-[#7D8694] uppercase tracking-wide">
                     Burned today
                   </p>
-                  <span
-                    title="Estimate based on yesterday's transaction count combined with the current average gas fee. May lag real burn by up to one day."
-                    className="w-3.5 h-3.5 rounded-full border border-[#5C6675] text-[#7D8694] flex items-center justify-center text-[8px] font-medium leading-none cursor-help"
+                  <button
+                    type="button"
+                    onClick={() => setBurnTooltipOpen(!burnTooltipOpen)}
+                    onBlur={() => setBurnTooltipOpen(false)}
+                    className="w-3.5 h-3.5 rounded-full border border-[#5C6675] text-[#7D8694] hover:text-white hover:border-[#B0B8C4] flex items-center justify-center text-[8px] font-medium leading-none transition-colors"
+                    aria-label="About this estimate"
                   >
                     i
-                  </span>
+                  </button>
+                  {burnTooltipOpen && (
+                    <div className="absolute top-5 left-0 z-10 w-64 bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-3 shadow-2xl">
+                      <p className="text-[11px] text-[#D1D5DB] leading-relaxed">
+                        Estimate based on yesterday&apos;s transaction count
+                        combined with the current average gas fee. May lag real
+                        burn by up to one day.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 {hasBurnData ? (
                   <>
