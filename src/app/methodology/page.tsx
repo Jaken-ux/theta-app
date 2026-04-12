@@ -482,34 +482,81 @@ export default function MethodologyPage() {
         {/* Daily burn */}
         <div>
           <p className="text-sm text-white font-medium mb-3">
-            Daily burn — empirical estimate
+            Daily burn — range estimate
           </p>
-          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-3">
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-4">
             <p>
               Every transaction on Theta consumes gas, and gas fees are{" "}
               <span className="text-white">permanently burned</span>. We
               estimate daily burn by sampling recent transactions on each
-              tracked chain and multiplying the average fee by that
-              chain&apos;s daily transaction count.
+              tracked chain, but critically we{" "}
+              <span className="text-white">
+                separate fee-bearing transactions (type-7) from fee-free
+                transactions (type-0)
+              </span>{" "}
+              before computing averages.
             </p>
-            <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB] space-y-1">
-              <p>{/* eslint-disable-next-line */}{'// Per-chain sampling'}</p>
-              <p>
-                fee_per_tx = receipt.GasUsed × data.gas_price (TFuelWei)
+
+            {/* Why type separation matters */}
+            <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-4 space-y-2">
+              <p className="text-xs text-white font-medium">
+                Why we separate type-7 from type-0
               </p>
-              <p>avgFee = Σ fees / count(sampled txs)</p>
-              <p>chainBurn = avgFee × chain.dailyTxs</p>
-              <p className="text-white mt-2">
-                dailyBurn = Σ chainBurn across all tracked chains
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                Theta subchains produce two fundamentally different transaction
+                types. <span className="text-white">Type-0</span> are block
+                proposer transactions — every block has one, they carry no
+                user activity and pay no gas fee. They exist purely as part
+                of consensus. <span className="text-white">Type-7</span> are
+                smart contract interactions — real user activity like gaming
+                actions, AI data submissions, or token transfers. These pay
+                gas that gets permanently burned.
+              </p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                On most subchains, 85–95% of all transactions are type-0
+                (fee = 0). If you average fees across all transaction types,
+                you get a number dominated by zeros — and that average swings
+                wildly depending on how many type-7 happen to land in your
+                sample. By measuring the two components separately — the{" "}
+                <span className="text-white">average fee per type-7 tx</span>{" "}
+                (stable, since gas_price is protocol-fixed at 10⁸ wei) and
+                the <span className="text-white">type-7 ratio</span> (what
+                fraction of daily txs are fee-bearing) — we get a much more
+                reliable estimate.
               </p>
             </div>
+
+            {/* Formula */}
+            <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB] space-y-1">
+              <p className="text-[#7D8694]">
+                {/* eslint-disable-next-line */}{'// Step 1: Measure independently per chain'}
+              </p>
+              <p>
+                avgFeePerType7 = Σ(GasUsed × gas_price) / count(type-7 txs)
+              </p>
+              <p>type7Ratio = count(type-7) / count(all sampled txs)</p>
+              <p className="text-[#7D8694] mt-2">
+                {/* eslint-disable-next-line */}{'// Step 2: Estimate burn with uncertainty band'}
+              </p>
+              <p>burnMid = type7Ratio × avgFeePerType7 × chain.dailyTxs</p>
+              <p>burnLow = type7Ratio × 0.5 × avgFeePerType7 × chain.dailyTxs</p>
+              <p>burnHigh = min(type7Ratio × 1.5, 1) × avgFeePerType7 × chain.dailyTxs</p>
+              <p className="text-white mt-2">
+                dailyBurn = Σ chainBurn across all tracked chains (low–mid–high)
+              </p>
+            </div>
+
             <p className="text-xs text-[#B0B8C4]">
-              We sample up to 20 pages (~200 transactions) per chain via
+              We sample up to 50 pages (~500 transactions) per chain via
               the <span className="font-mono">/transactions/range</span>{" "}
               endpoint in parallel. Per-chain daily transaction counts come
               from Theta Explorer&apos;s{" "}
               <span className="font-mono">/transactions/history</span>{" "}
               endpoint (the same source as the official explorer graph).
+              The ±50% band on type-7 ratio accounts for temporal variation
+              (sampling happens once per UTC day) and provides approximately
+              75% confidence that the true burn falls within the displayed
+              range.
             </p>
           </div>
         </div>
@@ -522,21 +569,23 @@ export default function MethodologyPage() {
           <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-2">
             <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB]">
               <p>net = dailyBurn − dailyIssuance</p>
-              <p>breakEvenTxs = dailyIssuance / avgFeePerTx</p>
+              <p>breakEvenTxs = dailyIssuance / (avgFeePerType7 × type7Ratio)</p>
             </div>
             <ul className="text-xs text-[#B0B8C4] space-y-1 list-disc list-inside mt-2">
               <li>
-                <span className="text-[#10B981]">Positive net</span> —
-                network is deflationary (burns exceed new issuance)
+                <span className="text-[#10B981]">Deflationary</span> —
+                burns exceed new issuance (not yet achieved)
               </li>
               <li>
-                <span className="text-[#EF4444]">Negative net</span> —
-                network is inflationary (current state)
+                <span className="text-[#B0B8C4]">Inflationary</span> —
+                issuance exceeds burns (current state — this is normal and
+                by design)
               </li>
               <li>
                 <span className="text-white">breakEvenTxs</span> is the
                 daily tx count required to burn exactly as much TFUEL as
-                is issued
+                is issued, assuming the current type-7 ratio and fee level
+                remain constant
               </li>
             </ul>
           </div>
@@ -549,31 +598,36 @@ export default function MethodologyPage() {
           </p>
           <ul className="space-y-1.5 text-xs text-[#D1D5DB] list-disc list-inside">
             <li>
-              <span className="text-white">Small sample size.</span> We
-              sample ~200 recent transactions per chain, not every
-              transaction in the last 24 hours. Bursts of high-fee or
-              low-fee activity can skew the average.
+              <span className="text-white">Sample size.</span> We sample
+              ~500 recent transactions per chain (~2,500 total across 5
+              chains). The type-7 fee average is very stable (gas_price is
+              protocol-fixed). The main noise source is the type-7
+              ratio — how many of the sampled txs are fee-bearing. The
+              ±50% band on this ratio yields ~75% confidence.
             </li>
             <li>
               <span className="text-white">
-                Sample reflects the current moment.
+                Locked once per UTC day.
               </span>{" "}
-              The average is computed from the most recent txs. Daily
-              averages may be higher or lower.
+              The estimate is computed once (first page load after midnight
+              UTC) and stored. It does not re-sample during the day, so the
+              displayed range is perfectly stable but may not reflect
+              intra-day changes in activity mix.
             </li>
             <li>
               <span className="text-white">
                 Main chain burn is negligible.
               </span>{" "}
-              Most main-chain txs are type-0 proposer transactions with
-              zero gas. Meaningful burn comes almost entirely from subchain
-              smart-contract activity.
+              Main chain traffic is almost entirely type-0 proposer
+              transactions (zero gas). Meaningful burn comes from subchain
+              type-7 smart contract activity — gaming, AI, token transfers.
             </li>
             <li>
-              <span className="text-white">Per-chain weighting.</span> Each
-              chain&apos;s daily tx count comes from the official history
-              endpoint, so high-activity chains dominate the total burn
-              calculation correctly.
+              <span className="text-white">Per-chain isolation.</span> Each
+              chain&apos;s type-7 ratio and average fee are computed
+              independently, then weighted by that chain&apos;s official
+              daily transaction count. This prevents high-activity chains
+              from distorting the fee average of low-activity chains.
             </li>
             <li>
               <span className="text-white">Issuance is exact.</span> Daily
