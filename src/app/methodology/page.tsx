@@ -443,14 +443,19 @@ export default function MethodologyPage() {
       {/* ── SECTION 3: TFUEL Economics ── */}
       <section className="space-y-6">
         <h2 id="tfuel-economics" className="text-xl font-semibold text-white">
-          3. TFUEL Economics (burn vs issuance)
+          3. TFUEL Economics (net absorption)
         </h2>
 
         <p className="text-sm">
-          The TFUEL Economics widget shows whether the network is creating
-          more TFUEL than it burns on a given day. It is derived from two
-          parts: a protocol constant (daily issuance) and an empirical
-          estimate (daily burn).
+          The TFUEL Economics widget shows how much of daily block issuance
+          is absorbed by burns and fees. Total TFUEL issuance has two
+          components: fixed block rewards (1,238,400/day) and variable
+          Edge Network rewards that depend on actual compute and video
+          delivery activity. We cannot separate these two streams from
+          supply data alone. We therefore show &quot;net absorption&quot; — how
+          much of block issuance is offset by all burn sources combined.
+          Days where supply grows faster than block issuance indicate
+          higher-than-usual Edge Network payouts, not negative burn.
         </p>
 
         {/* Daily issuance */}
@@ -479,96 +484,65 @@ export default function MethodologyPage() {
           </div>
         </div>
 
-        {/* Daily burn — supply-delta method */}
+        {/* Net absorption — supply-delta method */}
         <div>
           <p className="text-sm text-white font-medium mb-3">
-            Daily burn — supply-delta method
+            Net absorption — supply-delta method
           </p>
           <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-4">
             <p>
               Instead of sampling individual transaction fees, we derive
-              total burn from the{" "}
+              net absorption from the{" "}
               <span className="text-white">
                 actual change in TFUEL circulating supply
               </span>
-              . This captures{" "}
-              <span className="text-white">all burn sources</span>{" "}
-              automatically — on-chain gas, Edge Network payments (25% burn),
-              and any other mechanism — without sampling individual
-              transactions.
+              . This captures all burn sources automatically — on-chain
+              gas, Edge Network payment burns (25%), and any other
+              mechanism — without sampling individual transactions.
             </p>
 
             {/* Formula */}
             <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB] space-y-1">
               <p>supplyChange = supply_today − supply_yesterday</p>
+              <p>rawAbsorption = blockIssuance − supplyChange</p>
               <p className="text-white mt-1">
-                impliedBurn = dailyIssuance − supplyChange
+                absorption = max(0, rawAbsorption)
               </p>
               <p className="mt-2 text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// Shown as 7-day rolling average to smooth timing artifacts'}
+                {/* eslint-disable-next-line */}{'// Negative rawAbsorption → "Edge spike" (clamped to 0)'}
               </p>
-              <p>
-                avgBurn7d = Σ impliedBurn (last 7 days) / 7
-              </p>
-              <p>
-                burnRate = avgBurn7d / dailyIssuance
+              <p>absorptionRate = absorption / blockIssuance</p>
+              <p className="mt-1 text-[#7D8694]">
+                {/* eslint-disable-next-line */}{'// Shown as 7-day rolling average'}
               </p>
             </div>
 
-            {/* Why this works */}
+            {/* Why absorption instead of burn */}
             <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-4 space-y-2">
               <p className="text-xs text-white font-medium">
-                Why supply-delta instead of transaction sampling
+                Why &quot;net absorption&quot; instead of &quot;burn&quot;
               </p>
               <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                TFUEL is burned through multiple mechanisms: on-chain gas fees,
-                Edge Network payment burns (at least 25% of edge payments are
-                burned), and potentially other protocol-level burns. Sampling
-                on-chain transactions only captures gas burns (~0.5 TFUEL/day),
-                missing the dominant burn source entirely. The supply-delta
-                method sidesteps this by measuring the end result: if we know
-                how much was created (fixed at 1,238,400 TFUEL/day) and we
-                can see the actual supply change, the difference must be burn.
+                Total TFUEL issuance = block rewards (fixed 1,238,400/day)
+                + Edge Network rewards (variable). From supply data alone,
+                we cannot distinguish between &quot;less was burned&quot; and
+                &quot;more was issued via Edge&quot;. On days when Edge
+                payouts are unusually high, supply grows faster than block
+                issuance — which would appear as &quot;negative burn&quot;
+                if naively calculated. We avoid this by clamping to zero and
+                labeling these as &quot;Edge spike&quot; days. The metric we
+                show — net absorption — is the portion of block issuance
+                that is verifiably absorbed, regardless of Edge variability.
               </p>
             </div>
 
             <p className="text-xs text-[#B0B8C4]">
               Supply data comes from Theta&apos;s{" "}
               <span className="font-mono">/api/supply/tfuel</span>{" "}
-              endpoint, stored daily in our database. Daily issuance is a
-              protocol constant (14,400 blocks × 86 TFUEL). The 7-day
-              rolling average smooths timing artifacts from the supply
-              endpoint not updating at exact midnight UTC.
+              endpoint, stored daily in our database. The 7-day rolling
+              average smooths timing artifacts from the supply endpoint
+              not updating at exact midnight UTC.
             </p>
-          </div>
-        </div>
-
-        {/* Net flow */}
-        <div>
-          <p className="text-sm text-white font-medium mb-3">
-            Net supply flow
-          </p>
-          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-2">
-            <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB]">
-              <p>netGrowth = dailyIssuance − impliedBurn</p>
-              <p>= supplyChange (directly observable)</p>
-            </div>
-            <ul className="text-xs text-[#B0B8C4] space-y-1 list-disc list-inside mt-2">
-              <li>
-                <span className="text-[#10B981]">Deflationary</span> —
-                burn exceeds issuance, supply shrinks (not yet observed)
-              </li>
-              <li>
-                <span className="text-[#B0B8C4]">Inflationary</span> —
-                issuance exceeds burn, supply grows (current state — normal
-                and by design)
-              </li>
-              <li>
-                <span className="text-white">Burn rate</span> shows what
-                percentage of daily issuance is offset by burns. Higher
-                burn rate = closer to deflation.
-              </li>
-            </ul>
           </div>
         </div>
 
@@ -589,22 +563,20 @@ export default function MethodologyPage() {
             </li>
             <li>
               <span className="text-white">
-                Issuance assumes block reward only.
+                Cannot separate burn from Edge issuance.
               </span>{" "}
-              Our daily issuance figure (1,238,400 TFUEL) covers block
-              rewards only. Edge Node operators earn additional TFUEL for
-              video delivery and compute — this variable issuance is not
-              included. The implied burn therefore understates total burn
-              by the same amount that Edge issuance is understated.
+              Block issuance is a known constant, but Edge Network rewards
+              are variable and unknown. Net absorption therefore represents
+              a lower bound — actual burn may be higher if Edge payouts
+              were above average that day.
             </li>
             <li>
               <span className="text-white">
-                Direction is robust, magnitude is approximate.
+                Edge spike days show 0%.
               </span>{" "}
-              Even if Edge issuance adds 10-20% to total daily issuance,
-              the implied burn would increase proportionally. The burn rate
-              (as a percentage of issuance) would shift but the
-              inflationary/deflationary direction would remain the same.
+              When supply grows faster than block issuance (due to high
+              Edge payouts), absorption is clamped to 0%. Real burn still
+              occurred those days — it was just outweighed by Edge rewards.
             </li>
             <li>
               <span className="text-white">

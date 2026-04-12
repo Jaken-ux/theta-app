@@ -54,18 +54,19 @@ interface RegisteredChain {
   weight: number;
 }
 
-interface DailyBurnEntry {
+interface DailyEntry {
   date: string;
-  impliedBurn: number;
-  burnRate: number;
+  absorption: number;
+  absorptionRate: number;
+  isEdgeSpike: boolean;
 }
 
 interface TfuelEconomicsData {
   dailyIssuance: number;
-  avgBurn7d: number | null;
-  avgBurnRate7d: number | null;
-  avgNetSupplyGrowth7d: number | null;
-  dailyEntries: DailyBurnEntry[];
+  avgSupplyGrowth7d: number | null;
+  avgAbsorption7d: number | null;
+  avgAbsorptionRate7d: number | null;
+  dailyEntries: DailyEntry[];
   daysAvailable: number;
 }
 
@@ -659,22 +660,24 @@ export default function MetachainDashboard({
       </motion.div>
 
       {/* ── TFUEL Economics ─────────────────────────────── */}
-      {data.tfuelEconomics && data.tfuelEconomics.avgBurn7d != null && (() => {
+      {data.tfuelEconomics && data.tfuelEconomics.avgAbsorption7d != null && (() => {
         const eco = data.tfuelEconomics!;
-        const isDeflationary = (eco.avgBurn7d ?? 0) > eco.dailyIssuance;
-        const burnRate = eco.avgBurnRate7d ?? 0;
-        const netGrowth = eco.avgNetSupplyGrowth7d ?? eco.dailyIssuance;
+        const rate = eco.avgAbsorptionRate7d ?? 0;
+        const supplyGrowth = eco.avgSupplyGrowth7d ?? eco.dailyIssuance;
 
         const fmtTfuel = (n: number) =>
           n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
-        // Chart data for 7-day burn rate trend
+        const rateColor = rate >= 0.5 ? "#10B981" : rate >= 0.2 ? "#F59E0B" : "#B0B8C4";
+
+        // Chart data — clamp to 0, mark edge spikes
         const trendData = eco.dailyEntries.map((e) => ({
           date: new Date(e.date).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
           }),
-          burnRate: Math.round(e.burnRate * 1000) / 10, // percentage with 1 decimal
+          rate: Math.round(e.absorptionRate * 1000) / 10,
+          isEdgeSpike: e.isEdgeSpike,
         }));
 
         return (
@@ -690,76 +693,77 @@ export default function MetachainDashboard({
                   TFUEL Economics
                 </p>
                 <p className="text-[11px] text-[#7D8694] leading-relaxed max-w-lg">
-                  Is the network creating more TFUEL than it burns, or the
-                  other way around? Based on {eco.daysAvailable}-day supply history.
+                  How much of daily block issuance is absorbed by burns and
+                  fees? Based on {eco.daysAvailable}-day supply history.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Created daily */}
+              {/* Block issuance */}
               <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
                 <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
-                  Created daily
+                  Block issuance
                 </p>
                 <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
                   {fmtTfuel(eco.dailyIssuance)}
                 </p>
-                <p className="text-[10px] text-[#5C6675] mt-1">TFUEL issued</p>
+                <p className="text-[10px] text-[#5C6675] mt-1">
+                  Protocol constant — block rewards only
+                </p>
               </div>
 
-              {/* Burned (7d avg) */}
+              {/* Supply growth (7d avg) */}
               <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
                 <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
-                  Burned (7d avg)
+                  Supply growth (7d avg)
                 </p>
                 <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
-                  {fmtTfuel(eco.avgBurn7d!)}
-                </p>
-                <p className="text-[10px] text-[#5C6675] mt-1">TFUEL/day</p>
-              </div>
-
-              {/* Burn rate */}
-              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
-                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
-                  Burn rate
-                </p>
-                <p
-                  className="text-lg font-semibold tabular-nums"
-                  style={{ color: isDeflationary ? "#10B981" : "#B0B8C4" }}
-                >
-                  {(burnRate * 100).toFixed(1)}%
-                </p>
-                <p className="text-[10px] text-[#5C6675] mt-1">of issuance</p>
-              </div>
-
-              {/* Net */}
-              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
-                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
-                  Net supply growth
-                </p>
-                <p
-                  className="text-lg font-semibold tabular-nums"
-                  style={{ color: isDeflationary ? "#10B981" : "#B0B8C4" }}
-                >
-                  {isDeflationary ? "−" : "+"}{fmtTfuel(Math.abs(netGrowth))}
+                  +{fmtTfuel(supplyGrowth)}
                 </p>
                 <p className="text-[10px] text-[#5C6675] mt-1">
-                  TFUEL/day {isDeflationary ? "(deflation)" : "(inflation)"}
+                  From Theta&apos;s official supply API
                 </p>
+              </div>
+
+              {/* Net absorption (7d avg) */}
+              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+                  Net absorption (7d avg)
+                </p>
+                <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
+                  {fmtTfuel(eco.avgAbsorption7d!)}
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-1">
+                  Block issuance absorbed by burns &amp; fees
+                </p>
+              </div>
+
+              {/* Absorption rate */}
+              <div className="bg-[#0D1117]/60 rounded-xl p-4 border border-[#2A3548]/50">
+                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-1.5">
+                  Absorption rate
+                </p>
+                <p
+                  className="text-lg font-semibold tabular-nums"
+                  style={{ color: rateColor }}
+                >
+                  {(rate * 100).toFixed(1)}%
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-1">Of block issuance</p>
               </div>
             </div>
 
-            {/* 7-day burn rate trend */}
+            {/* 7-day absorption trend */}
             {trendData.length >= 2 && (
               <div className="mt-4">
                 <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-2">
-                  Daily burn rate — last {trendData.length} days
+                  Daily absorption rate — last {trendData.length} days
                 </p>
                 <ResponsiveContainer width="100%" height={100}>
                   <AreaChart data={trendData}>
                     <defs>
-                      <linearGradient id="burnGrad" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="absorbGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
                       </linearGradient>
@@ -782,20 +786,29 @@ export default function MetachainDashboard({
                     <Tooltip
                       content={({ active, payload, label }) => {
                         if (!active || !payload?.length) return null;
+                        const d = payload[0].payload;
                         return (
                           <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
                             <p className="text-[#7D8694] mb-1">{label}</p>
-                            <p className="text-[#F59E0B] font-medium">{payload[0].value}% burned</p>
+                            {d.isEdgeSpike ? (
+                              <p className="text-[#F59E0B] font-medium">
+                                0% — Edge spike
+                              </p>
+                            ) : (
+                              <p className="text-[#F59E0B] font-medium">
+                                {d.rate}% absorbed
+                              </p>
+                            )}
                           </div>
                         );
                       }}
                     />
                     <Area
                       type="monotone"
-                      dataKey="burnRate"
+                      dataKey="rate"
                       stroke="#F59E0B"
                       strokeWidth={2}
-                      fill="url(#burnGrad)"
+                      fill="url(#absorbGrad)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -804,45 +817,42 @@ export default function MetachainDashboard({
 
             {/* Context line */}
             <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
-              {isDeflationary
-                ? "Network is currently deflationary — burns exceed new issuance."
-                : `Supply grows by ~${fmtTfuel(netGrowth)} TFUEL/day. ${(burnRate * 100).toFixed(1)}% of new issuance is offset by burns.`}
+              {rate >= 1
+                ? "Burns currently exceed block issuance — supply is shrinking."
+                : `${(rate * 100).toFixed(1)}% of daily block issuance is absorbed by burns. Supply grows by ~${fmtTfuel(supplyGrowth)} TFUEL/day.`}
             </p>
 
-            {/* Explainer — Swedish */}
+            {/* Explainer */}
             <SimplifyThis>
               <p className="mb-2">
                 <strong className="text-white">Vad är detta?</strong>
               </p>
               <p className="mb-3">
-                TFUEL skapas varje dag som belöning till validators och
-                node-operatörer. Samtidigt bränns TFUEL permanent — dels genom
-                gas-avgifter, dels genom att minst 25% av alla Edge
-                Network-betalningar bränns. Om mer bränns än skapas
-                minskar totala utbudet — deflation. Om mer skapas än bränns
-                ökar utbudet — inflation.
-              </p>
-              <p className="mb-2">
-                <strong className="text-white">Hur mäter vi detta?</strong>
-              </p>
-              <p className="mb-3">
-                Istället för att gissa hur mycket som bränns, mäter vi den
-                faktiska förändringen i TFUEL-utbudet dag för dag. Om utbudet
-                ökade med 1.1M TFUEL och vi vet att 1.24M skapades, så
-                brändes 140K. Enkelt och exakt — fångar all burn automatiskt.
+                &quot;Block issuance&quot; är TFUEL som skapas varje dag som
+                blockbelöning — en fast konstant på 1,238,400 TFUEL/dag.
+                &quot;Net absorption&quot; visar hur mycket av den issuancen som
+                absorberas av burns och avgifter, mätt via faktisk
+                supply-förändring.
               </p>
               <p className="mb-2">
                 <strong className="text-white">Hur tolkar jag det?</strong>
               </p>
               <p className="mb-3">
-                <span className="text-[#10B981]">Grönt (deflation)</span> =
-                nätverket bränner mer än det skapar. Positivt för TFUEL-priset.
-                <br />
-                <span className="text-[#B0B8C4]">Neutralt (inflation)</span> =
-                mer skapas än bränns. Normalt vid nuvarande aktivitetsnivå.
-                <br />
-                Burn rate visar hur stor andel av nya TFUEL som bränns.
-                Ju närmare 100%, desto närmare deflation.
+                Hög absorption = nätverket bränner mer = bättre för
+                TFUEL-priset. &quot;Edge spike&quot;-dagar betyder att Edge
+                Network betalade ut extra belöningar den dagen — inte att
+                negativ burn skedde. Titta på 7-dagarstrenden snarare än
+                enskilda dagar.
+              </p>
+              <p className="mb-2">
+                <strong className="text-white">
+                  Vad kan jag använda det till?
+                </strong>
+              </p>
+              <p>
+                Om absorption-trenden stiger över tid är det ett positivt
+                fundamentalt signal — nätverket används mer och bränner mer
+                TFUEL relativt vad som skapas.
               </p>
             </SimplifyThis>
 
