@@ -72,22 +72,23 @@ export function computeTfuelEconomics(
     });
   }
 
-  const recent = entries.slice(-7);
-  if (recent.length === 0) return base;
+  if (entries.length === 0) return base;
 
+  // 7-day averages for the summary cards
+  const recent7 = entries.slice(-7);
   const avgSupplyGrowth7d =
-    recent.reduce((s, e) => s + e.supplyChange, 0) / recent.length;
+    recent7.reduce((s, e) => s + e.supplyChange, 0) / recent7.length;
   const avgAbsorption7d =
-    recent.reduce((s, e) => s + e.absorption, 0) / recent.length;
+    recent7.reduce((s, e) => s + e.absorption, 0) / recent7.length;
   const avgAbsorptionRate7d =
-    recent.reduce((s, e) => s + e.absorptionRate, 0) / recent.length;
+    recent7.reduce((s, e) => s + e.absorptionRate, 0) / recent7.length;
 
   return {
     dailyIssuance: DAILY_ISSUANCE,
     avgSupplyGrowth7d,
     avgAbsorption7d,
     avgAbsorptionRate7d,
-    dailyEntries: recent,
+    dailyEntries: entries, // all available history for chart
     daysAvailable: entries.length,
   };
 }

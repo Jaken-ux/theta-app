@@ -280,6 +280,7 @@ export default function MetachainDashboard({
   const [loading, setLoading] = useState(!serverData);
   const [error, setError] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [absorptionRange, setAbsorptionRange] = useState<"7d" | "30d" | "1y">("7d");
 
   // Only fetch client-side if no server data was provided
   useEffect(() => {
@@ -672,6 +673,7 @@ export default function MetachainDashboard({
 
         // Chart data — clamp to 0, mark edge spikes
         const trendData = eco.dailyEntries.map((e) => ({
+          fullDate: e.date,
           date: new Date(e.date).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -754,66 +756,111 @@ export default function MetachainDashboard({
               </div>
             </div>
 
-            {/* 7-day absorption trend */}
-            {trendData.length >= 2 && (
-              <div className="mt-4">
-                <p className="text-[10px] text-[#7D8694] uppercase tracking-wide mb-2">
-                  Daily absorption rate — last {trendData.length} days
-                </p>
-                <ResponsiveContainer width="100%" height={100}>
-                  <AreaChart data={trendData}>
-                    <defs>
-                      <linearGradient id="absorbGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fill: "#7D8694", fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: "#7D8694", fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      domain={[0, "auto"]}
-                      tickFormatter={(v: number) => `${v}%`}
-                      width={40}
-                    />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload?.length) return null;
-                        const d = payload[0].payload;
+            {/* Absorption trend with range selector */}
+            {trendData.length >= 2 && (() => {
+              const rangeDays = absorptionRange === "7d" ? 7 : absorptionRange === "30d" ? 30 : 365;
+              const filtered = trendData.slice(-rangeDays);
+              const hasEnough = filtered.length >= 2;
+              const dateFormat: Intl.DateTimeFormatOptions =
+                absorptionRange === "1y"
+                  ? { month: "short" }
+                  : { month: "short", day: "numeric" };
+
+              const chartData = filtered.map((e) => ({
+                ...e,
+                date: new Date(e.fullDate).toLocaleDateString("en-US", dateFormat),
+              }));
+
+              return (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] text-[#7D8694] uppercase tracking-wide">
+                      Daily absorption rate
+                    </p>
+                    <div className="flex gap-1">
+                      {(["7d", "30d", "1y"] as const).map((r) => {
+                        const available = trendData.length >= (r === "7d" ? 2 : r === "30d" ? 8 : 30);
                         return (
-                          <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
-                            <p className="text-[#7D8694] mb-1">{label}</p>
-                            {d.isEdgeSpike ? (
-                              <p className="text-[#F59E0B] font-medium">
-                                0% — Edge spike
-                              </p>
-                            ) : (
-                              <p className="text-[#F59E0B] font-medium">
-                                {d.rate}% absorbed
-                              </p>
-                            )}
-                          </div>
+                          <button
+                            key={r}
+                            onClick={() => available && setAbsorptionRange(r)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              absorptionRange === r
+                                ? "bg-[#F59E0B]/20 text-[#F59E0B]"
+                                : available
+                                ? "text-[#7D8694] hover:text-[#B0B8C4]"
+                                : "text-[#3D4654] cursor-default"
+                            }`}
+                            disabled={!available}
+                          >
+                            {r}
+                          </button>
                         );
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="rate"
-                      stroke="#F59E0B"
-                      strokeWidth={2}
-                      fill="url(#absorbGrad)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+                      })}
+                    </div>
+                  </div>
+                  {hasEnough ? (
+                    <ResponsiveContainer width="100%" height={120}>
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="absorbGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fill: "#7D8694", fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          interval={absorptionRange === "1y" ? 30 : absorptionRange === "30d" ? 4 : 0}
+                        />
+                        <YAxis
+                          tick={{ fill: "#7D8694", fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          domain={[0, "auto"]}
+                          tickFormatter={(v: number) => `${v}%`}
+                          width={40}
+                        />
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload;
+                            return (
+                              <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
+                                <p className="text-[#7D8694] mb-1">{label}</p>
+                                {d.isEdgeSpike ? (
+                                  <p className="text-[#F59E0B] font-medium">
+                                    0% — Edge spike
+                                  </p>
+                                ) : (
+                                  <p className="text-[#F59E0B] font-medium">
+                                    {d.rate}% absorbed
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="rate"
+                          stroke="#F59E0B"
+                          strokeWidth={2}
+                          fill="url(#absorbGrad)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[120px] flex items-center justify-center text-sm text-[#5C6675]">
+                      Building history… {trendData.length} of {rangeDays} days collected.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Context line */}
             <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">

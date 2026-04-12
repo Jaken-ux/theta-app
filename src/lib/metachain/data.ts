@@ -202,7 +202,7 @@ export async function fetchMetachainData() {
        FROM theta_activity_history
        WHERE tfuel_circulating_supply IS NOT NULL
        ORDER BY date DESC
-       LIMIT 8`
+       LIMIT 366`
     );
     tfuelEconomics = computeTfuelEconomics(
       supplyRows.map((r: { date: string; tfuel_circulating_supply: number }) => ({
