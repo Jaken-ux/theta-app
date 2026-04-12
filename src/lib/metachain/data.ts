@@ -91,6 +91,14 @@ async function ensureSchema(pool: Pool) {
       computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  // Range columns (added later — nullable for back-compat)
+  await pool
+    .query(
+      `ALTER TABLE metachain_burn_daily
+       ADD COLUMN IF NOT EXISTS burn_low DOUBLE PRECISION,
+       ADD COLUMN IF NOT EXISTS burn_high DOUBLE PRECISION`
+    )
+    .catch(() => {});
 
   // Migrate old metachain_history data if it exists
   try {
@@ -226,42 +234,46 @@ export async function fetchMetachainData() {
   try {
     const cached = await pool.query(
       `SELECT daily_burn, daily_issuance, net_inflation, total_daily_txs,
-              avg_fee_per_tx, break_even_txs
+              avg_fee_per_tx, break_even_txs, burn_low, burn_high
        FROM metachain_burn_daily WHERE date = $1`,
       [yesterday]
     );
     const row = cached.rows[0] ?? null;
-    const cachedBurn = row ? Number(row.daily_burn) : null;
+    const cachedHigh = row?.burn_high != null ? Number(row.burn_high) : null;
 
-    // Use cached value if it exists AND is >= 1 TFUEL. Values below
-    // that indicate a bad sample — retry on next request.
-    if (row && cachedBurn != null && cachedBurn >= 1) {
+    // Use cached value if the range exists and burn_high > 0.
+    // burn_high is the most lenient estimate — if even that is 0,
+    // the sample was bad and we should retry.
+    if (row && cachedHigh != null && cachedHigh > 0) {
       tfuelEconomics = {
         dailyIssuance: Number(row.daily_issuance),
-        dailyBurn: cachedBurn,
+        burnLow: row.burn_low != null ? Number(row.burn_low) : null,
+        burnHigh: Number(row.burn_high),
+        burnMid: Number(row.daily_burn),
         netInflation: Number(row.net_inflation),
-        avgFeePerTxTfuel:
+        avgFeePerType7Tfuel:
           row.avg_fee_per_tx != null ? Number(row.avg_fee_per_tx) : null,
         breakEvenTxs:
           row.break_even_txs != null ? Number(row.break_even_txs) : null,
         totalDailyTxs:
           row.total_daily_txs != null ? Number(row.total_daily_txs) : null,
+        type7Ratio: null,
+        type7SamplesTotal: null,
       };
     } else {
-      // No cached value, or cached value is 0 — compute fresh.
+      // No cached value, or bad sample — compute fresh.
       tfuelEconomics = await fetchTfuelEconomics(
         totalMetachain.totalDailyTxs,
         totalMetachain.perChain
       );
-      // Only persist if burn is meaningfully above 1 TFUEL. Values
-      // below that indicate a bad sample (hit mostly fee-free type-0
-      // txs). Next request will retry with a fresh sample.
-      if (tfuelEconomics.dailyBurn != null && tfuelEconomics.dailyBurn >= 1) {
+      // Persist if we have a meaningful range (burn_high > 0).
+      if (tfuelEconomics.burnHigh != null && tfuelEconomics.burnHigh > 0) {
         await pool.query(
           `INSERT INTO metachain_burn_daily
              (date, daily_burn, daily_issuance, net_inflation,
-              total_daily_txs, avg_fee_per_tx, break_even_txs)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+              total_daily_txs, avg_fee_per_tx, break_even_txs,
+              burn_low, burn_high)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            ON CONFLICT (date) DO UPDATE SET
              daily_burn = $2,
              daily_issuance = $3,
@@ -269,15 +281,19 @@ export async function fetchMetachainData() {
              total_daily_txs = $5,
              avg_fee_per_tx = $6,
              break_even_txs = $7,
+             burn_low = $8,
+             burn_high = $9,
              computed_at = NOW()`,
           [
             yesterday,
-            tfuelEconomics.dailyBurn,
+            tfuelEconomics.burnMid,
             tfuelEconomics.dailyIssuance,
             tfuelEconomics.netInflation,
             tfuelEconomics.totalDailyTxs,
-            tfuelEconomics.avgFeePerTxTfuel,
+            tfuelEconomics.avgFeePerType7Tfuel,
             tfuelEconomics.breakEvenTxs,
+            tfuelEconomics.burnLow,
+            tfuelEconomics.burnHigh,
           ]
         );
       }

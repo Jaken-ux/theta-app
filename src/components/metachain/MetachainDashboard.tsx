@@ -55,21 +55,15 @@ interface RegisteredChain {
 
 interface TfuelEconomicsData {
   dailyIssuance: number;
-  dailyBurn: number | null;
+  burnLow: number | null;
+  burnHigh: number | null;
+  burnMid: number | null;
   netInflation: number | null;
-  avgFeePerTxTfuel: number | null;
   breakEvenTxs: number | null;
   totalDailyTxs: number | null;
-  perChain?: Record<
-    string,
-    {
-      dailyTxs: number;
-      sampledTxs: number;
-      txsWithFee: number;
-      avgFeePerTxTfuel: number;
-      dailyBurnTfuel: number;
-    }
-  >;
+  type7Ratio: number | null;
+  avgFeePerType7Tfuel: number | null;
+  type7SamplesTotal: number | null;
 }
 
 interface MetachainData {
@@ -667,7 +661,7 @@ export default function MetachainDashboard({
       {data.tfuelEconomics && (() => {
         const eco = data.tfuelEconomics;
         const isDeflationary = (eco.netInflation ?? 0) > 0;
-        const hasBurnData = eco.dailyBurn != null && eco.netInflation != null;
+        const hasBurnData = eco.burnLow != null && eco.burnHigh != null;
         const txsNeeded =
           eco.breakEvenTxs != null && eco.totalDailyTxs != null
             ? Math.max(0, eco.breakEvenTxs - eco.totalDailyTxs)
@@ -675,6 +669,11 @@ export default function MetachainDashboard({
 
         const fmtTfuel = (n: number) =>
           n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+        const fmtBurn = (n: number) => {
+          if (n < 1) return `< 1`;
+          if (n < 10) return n.toFixed(1);
+          return fmtTfuel(n);
+        };
 
         return (
           <motion.div
@@ -738,9 +737,9 @@ export default function MetachainDashboard({
                   {burnTooltipOpen && (
                     <div className="absolute top-5 left-0 z-10 w-64 bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-3 shadow-2xl">
                       <p className="text-[11px] text-[#D1D5DB] leading-relaxed">
-                        Calculated once when each new UTC day starts and locked
-                        in for the entire day. Uses the final transaction count
-                        for that day combined with sampled gas fees.
+                        Range estimated from sampled transaction fees. Locked
+                        in once per UTC day. The range reflects uncertainty in
+                        the mix of fee-bearing vs fee-free transactions.
                       </p>
                     </div>
                   )}
@@ -748,9 +747,9 @@ export default function MetachainDashboard({
                 {hasBurnData ? (
                   <>
                     <p className="text-lg font-semibold text-[#B0B8C4] tabular-nums">
-                      {fmtTfuel(eco.dailyBurn!)}
+                      {fmtBurn(eco.burnLow!)} – {fmtBurn(eco.burnHigh!)}
                     </p>
-                    <p className="text-[10px] text-[#5C6675] mt-1">TFUEL gas</p>
+                    <p className="text-[10px] text-[#5C6675] mt-1">TFUEL range</p>
                   </>
                 ) : (
                   <>
@@ -775,11 +774,10 @@ export default function MetachainDashboard({
                         color: isDeflationary ? "#10B981" : "#B0B8C4",
                       }}
                     >
-                      {isDeflationary ? "+" : ""}
-                      {fmtTfuel(eco.netInflation!)}
+                      {isDeflationary ? "deflationary" : "inflationary"}
                     </p>
                     <p className="text-[10px] text-[#5C6675] mt-1">
-                      {isDeflationary ? "deflationary" : "inflationary"}
+                      burn is {`<`} 0.001% of issuance
                     </p>
                   </>
                 ) : (
