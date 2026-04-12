@@ -45,13 +45,6 @@ interface TxShape {
   receipt?: { GasUsed?: number | string } | null;
 }
 
-function computeTxFeeWei(tx: TxShape): number {
-  const gp = Number(tx?.data?.gas_price ?? 0);
-  const gu = Number(tx?.receipt?.GasUsed ?? 0);
-  if (!Number.isFinite(gp) || !Number.isFinite(gu)) return 0;
-  return gu * gp;
-}
-
 async function fetchPage(
   baseUrl: string,
   page: number
