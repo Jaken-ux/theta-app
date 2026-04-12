@@ -230,11 +230,15 @@ export async function fetchMetachainData() {
        FROM metachain_burn_daily WHERE date = $1`,
       [yesterday]
     );
-    if (cached.rows.length > 0) {
-      const row = cached.rows[0];
+    const row = cached.rows[0] ?? null;
+    const cachedBurn = row ? Number(row.daily_burn) : null;
+
+    // Use cached value if it exists AND is >= 1 TFUEL. Values below
+    // that indicate a bad sample — retry on next request.
+    if (row && cachedBurn != null && cachedBurn >= 1) {
       tfuelEconomics = {
         dailyIssuance: Number(row.daily_issuance),
-        dailyBurn: Number(row.daily_burn),
+        dailyBurn: cachedBurn,
         netInflation: Number(row.net_inflation),
         avgFeePerTxTfuel:
           row.avg_fee_per_tx != null ? Number(row.avg_fee_per_tx) : null,
@@ -244,18 +248,28 @@ export async function fetchMetachainData() {
           row.total_daily_txs != null ? Number(row.total_daily_txs) : null,
       };
     } else {
-      // First load on a new UTC day — compute and lock in.
+      // No cached value, or cached value is 0 — compute fresh.
       tfuelEconomics = await fetchTfuelEconomics(
         totalMetachain.totalDailyTxs,
         totalMetachain.perChain
       );
-      if (tfuelEconomics.dailyBurn != null) {
+      // Only persist if burn is meaningfully above 1 TFUEL. Values
+      // below that indicate a bad sample (hit mostly fee-free type-0
+      // txs). Next request will retry with a fresh sample.
+      if (tfuelEconomics.dailyBurn != null && tfuelEconomics.dailyBurn >= 1) {
         await pool.query(
           `INSERT INTO metachain_burn_daily
              (date, daily_burn, daily_issuance, net_inflation,
               total_daily_txs, avg_fee_per_tx, break_even_txs)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
-           ON CONFLICT (date) DO NOTHING`,
+           ON CONFLICT (date) DO UPDATE SET
+             daily_burn = $2,
+             daily_issuance = $3,
+             net_inflation = $4,
+             total_daily_txs = $5,
+             avg_fee_per_tx = $6,
+             break_even_txs = $7,
+             computed_at = NOW()`,
           [
             yesterday,
             tfuelEconomics.dailyBurn,
