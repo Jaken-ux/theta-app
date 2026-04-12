@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchMetachainData } from "../../../lib/metachain/data";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/metachain

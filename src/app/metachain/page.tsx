@@ -3,7 +3,7 @@ import Link from "next/link";
 import MetachainDashboard from "../../components/metachain/MetachainDashboard";
 import { fetchMetachainData } from "../../lib/metachain/data";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Metachain Utilization Index",
