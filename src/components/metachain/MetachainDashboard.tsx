@@ -828,21 +828,38 @@ export default function MetachainDashboard({
                 <strong className="text-white">Vad är detta?</strong>
               </p>
               <p className="mb-3">
-                &quot;Block issuance&quot; är TFUEL som skapas varje dag som
-                blockbelöning — en fast konstant på 1,238,400 TFUEL/dag.
-                &quot;Net absorption&quot; visar hur mycket av den issuancen som
-                absorberas av burns och avgifter, mätt via faktisk
-                supply-förändring.
+                Varje dag skapas 1,238,400 nya TFUEL som blockbelöning. Men
+                TFUEL bränns också — genom transaktionsavgifter (gas) och
+                genom att minst 25% av alla Edge Network-betalningar
+                förstörs permanent. Vi kan inte veta{" "}
+                <em>exakt</em> hur mycket som bränns, men vi kan se
+                resultatet: hur mycket utbudet faktiskt växte. Om utbudet
+                växte med 1.1M och vi vet att 1.24M skapades, så absorberades
+                ~140K av burns.
               </p>
               <p className="mb-2">
                 <strong className="text-white">Hur tolkar jag det?</strong>
               </p>
               <p className="mb-3">
-                Hög absorption = nätverket bränner mer = bättre för
-                TFUEL-priset. &quot;Edge spike&quot;-dagar betyder att Edge
-                Network betalade ut extra belöningar den dagen — inte att
-                negativ burn skedde. Titta på 7-dagarstrenden snarare än
-                enskilda dagar.
+                Tänk på absorption-siffran som &quot;hur mycket av
+                inflationen som äts upp av nätverkets aktivitet&quot;. Ju
+                högre procent, desto mer TFUEL bränns relativt vad som
+                skapas. Vid 100% råder deflation — utbudet minskar.
+                Idag ligger nätverket på ca 10%, vilket betyder att ~90%
+                av nya TFUEL adderas till utbudet.
+              </p>
+              <p className="mb-2">
+                <strong className="text-white">
+                  Varför visar vissa dagar 0%?
+                </strong>
+              </p>
+              <p className="mb-3">
+                Theta har två källor till ny TFUEL: blockbelöningar (fast)
+                och Edge Network-belöningar (variabel). Vissa dagar betalar
+                Edge Network ut extra mycket — då växer utbudet snabbare än
+                bara blockbelöningarna, och det ser ut som &quot;0%
+                absorption&quot;. Det betyder inte att inget brändes den
+                dagen, utan att Edge-utbetalningarna överskuggade burns.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
@@ -850,9 +867,11 @@ export default function MetachainDashboard({
                 </strong>
               </p>
               <p>
-                Om absorption-trenden stiger över tid är det ett positivt
-                fundamentalt signal — nätverket används mer och bränner mer
-                TFUEL relativt vad som skapas.
+                Följ trenden över tid. Om absorption-procenten stiger
+                stadigt betyder det att nätverket bränner en allt större
+                andel av nya TFUEL — ett starkt fundamentalt signal. Om
+                trenden någon gång når 100% har Theta nått deflation, och
+                det totala TFUEL-utbudet börjar krympa.
               </p>
             </SimplifyThis>
 
