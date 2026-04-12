@@ -825,53 +825,53 @@ export default function MetachainDashboard({
             {/* Explainer */}
             <SimplifyThis>
               <p className="mb-2">
-                <strong className="text-white">Vad är detta?</strong>
+                <strong className="text-white">What is this?</strong>
               </p>
               <p className="mb-3">
-                Varje dag skapas 1,238,400 nya TFUEL som blockbelöning. Men
-                TFUEL bränns också — genom transaktionsavgifter (gas) och
-                genom att minst 25% av alla Edge Network-betalningar
-                förstörs permanent. Vi kan inte veta{" "}
-                <em>exakt</em> hur mycket som bränns, men vi kan se
-                resultatet: hur mycket utbudet faktiskt växte. Om utbudet
-                växte med 1.1M och vi vet att 1.24M skapades, så absorberades
-                ~140K av burns.
+                Every day, 1,238,400 new TFUEL are created as block rewards.
+                But TFUEL is also burned — through transaction fees (gas)
+                and because at least 25% of all Edge Network payments are
+                permanently destroyed. We can&apos;t know{" "}
+                <em>exactly</em> how much is burned, but we can see the
+                result: how much supply actually grew. If supply grew by
+                1.1M and we know 1.24M was created, then ~140K was absorbed
+                by burns.
               </p>
               <p className="mb-2">
-                <strong className="text-white">Hur tolkar jag det?</strong>
+                <strong className="text-white">How do I read this?</strong>
               </p>
               <p className="mb-3">
-                Tänk på absorption-siffran som &quot;hur mycket av
-                inflationen som äts upp av nätverkets aktivitet&quot;. Ju
-                högre procent, desto mer TFUEL bränns relativt vad som
-                skapas. Vid 100% råder deflation — utbudet minskar.
-                Idag ligger nätverket på ca 10%, vilket betyder att ~90%
-                av nya TFUEL adderas till utbudet.
+                Think of the absorption rate as &quot;how much of inflation
+                is eaten up by network activity.&quot; The higher the
+                percentage, the more TFUEL is burned relative to what&apos;s
+                created. At 100%, the network reaches deflation — supply
+                shrinks. Currently the network sits around 10%, meaning ~90%
+                of new TFUEL is added to the supply.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
-                  Varför visar vissa dagar 0%?
+                  Why do some days show 0%?
                 </strong>
               </p>
               <p className="mb-3">
-                Theta har två källor till ny TFUEL: blockbelöningar (fast)
-                och Edge Network-belöningar (variabel). Vissa dagar betalar
-                Edge Network ut extra mycket — då växer utbudet snabbare än
-                bara blockbelöningarna, och det ser ut som &quot;0%
-                absorption&quot;. Det betyder inte att inget brändes den
-                dagen, utan att Edge-utbetalningarna överskuggade burns.
+                Theta has two sources of new TFUEL: block rewards (fixed)
+                and Edge Network rewards (variable). On some days the Edge
+                Network pays out more than usual — supply then grows faster
+                than block rewards alone, making it look like &quot;0%
+                absorption.&quot; That doesn&apos;t mean nothing was burned
+                that day — just that Edge payouts overshadowed the burns.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
-                  Vad kan jag använda det till?
+                  What can I use this for?
                 </strong>
               </p>
               <p>
-                Följ trenden över tid. Om absorption-procenten stiger
-                stadigt betyder det att nätverket bränner en allt större
-                andel av nya TFUEL — ett starkt fundamentalt signal. Om
-                trenden någon gång når 100% har Theta nått deflation, och
-                det totala TFUEL-utbudet börjar krympa.
+                Follow the trend over time. If the absorption rate steadily
+                climbs, it means the network is burning an increasing share
+                of new TFUEL — a strong fundamental signal. If the trend
+                ever reaches 100%, Theta has achieved deflation, and total
+                TFUEL supply starts shrinking.
               </p>
             </SimplifyThis>
 
