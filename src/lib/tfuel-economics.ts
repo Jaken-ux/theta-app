@@ -73,6 +73,8 @@ interface ChainFeeSample {
   totalTxs: number;
   type7Txs: number;
   type7Fees: number[]; // individual fee values in TFUEL
+  type7GasUsed: number[]; // individual GasUsed values
+  type7GasPrices: number[]; // individual gas_price values (wei)
   type7Ratio: number;
   avgFeePerType7: number; // TFUEL
 }
@@ -87,6 +89,8 @@ async function sampleChainFees(baseUrl: string): Promise<ChainFeeSample | null> 
   let totalTxs = 0;
   let type7Txs = 0;
   const type7Fees: number[] = [];
+  const type7GasUsed: number[] = [];
+  const type7GasPrices: number[] = [];
 
   for (const page of pages) {
     if (!page) continue;
@@ -94,9 +98,13 @@ async function sampleChainFees(baseUrl: string): Promise<ChainFeeSample | null> 
       totalTxs += 1;
       if (tx.type === 7) {
         type7Txs += 1;
-        const feeWei = computeTxFeeWei(tx);
+        const gu = Number(tx?.receipt?.GasUsed ?? 0);
+        const gp = Number(tx?.data?.gas_price ?? 0);
+        const feeWei = gu * gp;
         if (feeWei > 0) {
           type7Fees.push(feeWei / WEI_PER_TFUEL);
+          type7GasUsed.push(gu);
+          type7GasPrices.push(gp);
         }
       }
     }
@@ -114,6 +122,8 @@ async function sampleChainFees(baseUrl: string): Promise<ChainFeeSample | null> 
     totalTxs,
     type7Txs,
     type7Fees,
+    type7GasUsed,
+    type7GasPrices,
     type7Ratio,
     avgFeePerType7,
   };
@@ -192,11 +202,25 @@ export async function fetchTfuelEconomics(
     weightedType7Ratio += ratio * dailyTxs;
     totalDailyTxsUsed += dailyTxs;
 
+    const avgGasUsed =
+      sample.type7GasUsed.length > 0
+        ? sample.type7GasUsed.reduce((s, v) => s + v, 0) / sample.type7GasUsed.length
+        : 0;
+    const avgGasPrice =
+      sample.type7GasPrices.length > 0
+        ? sample.type7GasPrices.reduce((s, v) => s + v, 0) / sample.type7GasPrices.length
+        : 0;
+
     console.log(
-      `[tfuel-economics] ${id}: ${sample.totalTxs} sampled, ` +
-        `${sample.type7Txs} type-7 (${(ratio * 100).toFixed(1)}%), ` +
-        `avgFee=${avgFee.toExponential(3)} TFUEL, ` +
-        `burn=${chainBurnLow.toFixed(4)}–${chainBurnHigh.toFixed(4)} TFUEL/day`
+      `[tfuel-economics] ── ${id} ──\n` +
+        `  totalTxsSampled:    ${sample.totalTxs}\n` +
+        `  type7TxsFound:      ${sample.type7Txs} (${sample.type7Fees.length} with fee)\n` +
+        `  avgGasUsed:         ${Math.round(avgGasUsed).toLocaleString()}\n` +
+        `  avgGasPrice:        ${avgGasPrice.toLocaleString()} wei\n` +
+        `  feePerType7Tx:      ${avgFee.toExponential(6)} TFUEL\n` +
+        `  type7Ratio:         ${(ratio * 100).toFixed(2)}%\n` +
+        `  chain.dailyTxs:     ${dailyTxs.toLocaleString()}\n` +
+        `  chainBurn:          ${chainBurnLow.toFixed(4)} – ${chainBurnMid.toFixed(4)} – ${chainBurnHigh.toFixed(4)} TFUEL/day`
     );
   }
 
@@ -213,13 +237,17 @@ export async function fetchTfuelEconomics(
       : null;
 
   console.log(
-    `[tfuel-economics] TOTAL burn range: ${totalBurnLow.toFixed(
-      2
-    )}–${totalBurnHigh.toFixed(2)} TFUEL/day (mid: ${totalBurnMid.toFixed(
-      2
-    )}), type7ratio=${(globalType7Ratio * 100).toFixed(
-      1
-    )}%, ${totalType7Samples} type-7 sampled, breakEven=${breakEvenTxs}`
+    `[tfuel-economics] ── TOTALS ──\n` +
+      `  totalDailyTxs:      ${(totalDailyTxs ?? 0).toLocaleString()}\n` +
+      `  avgFeePerType7Tx:   ${globalAvgFee.toExponential(6)} TFUEL\n` +
+      `  globalType7Ratio:   ${(globalType7Ratio * 100).toFixed(2)}%\n` +
+      `  type7SamplesTotal:  ${totalType7Samples}\n` +
+      `  dailyBurnLow:       ${totalBurnLow.toFixed(4)} TFUEL\n` +
+      `  dailyBurnMid:       ${totalBurnMid.toFixed(4)} TFUEL\n` +
+      `  dailyBurnHigh:      ${totalBurnHigh.toFixed(4)} TFUEL\n` +
+      `  dailyIssuance:      ${DAILY_ISSUANCE.toLocaleString()} TFUEL\n` +
+      `  burnAsPercent:      ${((totalBurnMid / DAILY_ISSUANCE) * 100).toFixed(6)}% of issuance\n` +
+      `  breakEvenTxs:       ${breakEvenTxs?.toLocaleString() ?? "N/A"}`
   );
 
   return {
