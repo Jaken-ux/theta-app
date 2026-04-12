@@ -17,6 +17,7 @@ import {
   BarChart,
   Bar,
   Cell,
+  ReferenceLine,
 } from "recharts";
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -799,61 +800,75 @@ export default function MetachainDashboard({
                       })}
                     </div>
                   </div>
-                  {hasEnough ? (
-                    <ResponsiveContainer width="100%" height={120}>
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="absorbGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fill: "#7D8694", fontSize: 10 }}
-                          axisLine={false}
-                          tickLine={false}
-                          interval={absorptionRange === "1y" ? 30 : absorptionRange === "30d" ? 4 : 0}
-                        />
-                        <YAxis
-                          tick={{ fill: "#7D8694", fontSize: 10 }}
-                          axisLine={false}
-                          tickLine={false}
-                          domain={[0, "auto"]}
-                          tickFormatter={(v: number) => `${v}%`}
-                          width={40}
-                        />
-                        <Tooltip
-                          content={({ active, payload, label }) => {
-                            if (!active || !payload?.length) return null;
-                            const d = payload[0].payload;
-                            return (
-                              <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
-                                <p className="text-[#7D8694] mb-1">{label}</p>
-                                {d.isEdgeSpike ? (
-                                  <p className="text-[#F59E0B] font-medium">
-                                    0% — Edge spike
-                                  </p>
-                                ) : (
-                                  <p className="text-[#F59E0B] font-medium">
-                                    {d.rate}% absorbed
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="rate"
-                          stroke="#F59E0B"
-                          strokeWidth={2}
-                          fill="url(#absorbGrad)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
+                  {hasEnough ? (() => {
+                    const avg = chartData.reduce((s, d) => s + d.rate, 0) / chartData.length;
+                    return (
+                      <ResponsiveContainer width="100%" height={140}>
+                        <BarChart data={chartData} barCategoryGap="20%">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fill: "#7D8694", fontSize: 10 }}
+                            axisLine={false}
+                            tickLine={false}
+                            interval={absorptionRange === "1y" ? 30 : absorptionRange === "30d" ? 4 : 0}
+                          />
+                          <YAxis
+                            tick={{ fill: "#7D8694", fontSize: 10 }}
+                            axisLine={false}
+                            tickLine={false}
+                            domain={[0, "auto"]}
+                            tickFormatter={(v: number) => `${v}%`}
+                            width={40}
+                          />
+                          <Tooltip
+                            cursor={{ fill: "rgba(42,53,72,0.2)" }}
+                            content={({ active, payload, label }) => {
+                              if (!active || !payload?.length) return null;
+                              const d = payload[0].payload;
+                              return (
+                                <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
+                                  <p className="text-[#7D8694] mb-1">{label}</p>
+                                  {d.isEdgeSpike ? (
+                                    <p className="text-[#EF4444]/80 font-medium">
+                                      Edge Network spike — supply grew faster
+                                      than block issuance this day
+                                    </p>
+                                  ) : (
+                                    <p className="text-[#F59E0B] font-medium">
+                                      {d.rate}% absorbed
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            }}
+                          />
+                          <ReferenceLine
+                            y={Math.round(avg * 10) / 10}
+                            stroke="#F59E0B"
+                            strokeWidth={2}
+                            strokeDasharray="0"
+                            label={{
+                              value: `7d avg: ${Math.round(avg * 10) / 10}%`,
+                              position: "right",
+                              fill: "#F59E0B",
+                              fontSize: 10,
+                              fontWeight: 600,
+                            }}
+                          />
+                          <Bar dataKey="rate" radius={[3, 3, 0, 0]}>
+                            {chartData.map((entry, i) => (
+                              <Cell
+                                key={i}
+                                fill={entry.isEdgeSpike ? "#EF4444" : "#F59E0B"}
+                                fillOpacity={entry.isEdgeSpike ? 0.3 : 0.5}
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    );
+                  })() : (
                     <div className="h-[120px] flex items-center justify-center text-sm text-[#5C6675]">
                       Building history… {trendData.length} of {rangeDays} days collected.
                     </div>
@@ -866,7 +881,7 @@ export default function MetachainDashboard({
             <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
               {rate >= 1
                 ? "Burns currently exceed block issuance — supply is shrinking."
-                : `${(rate * 100).toFixed(1)}% of daily block issuance is absorbed by burns. Supply grows by ~${fmtTfuel(supplyGrowth)} TFUEL/day.`}
+                : `Daily values fluctuate due to API timing. 7-day average (~${(rate * 100).toFixed(0)}%) is the reliable signal.`}
             </p>
 
             {/* Explainer */}
