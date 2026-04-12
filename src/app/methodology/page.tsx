@@ -479,113 +479,94 @@ export default function MethodologyPage() {
           </div>
         </div>
 
-        {/* Daily burn */}
+        {/* Daily burn — supply-delta method */}
         <div>
           <p className="text-sm text-white font-medium mb-3">
-            Daily burn — range estimate
+            Daily burn — supply-delta method
           </p>
           <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-4">
             <p>
-              Every transaction on Theta consumes gas, and gas fees are{" "}
-              <span className="text-white">permanently burned</span>. We
-              estimate daily burn by sampling recent transactions on each
-              tracked chain, but critically we{" "}
+              Instead of sampling individual transaction fees, we derive
+              total burn from the{" "}
               <span className="text-white">
-                separate fee-bearing transactions (type-7) from fee-free
-                transactions (type-0)
-              </span>{" "}
-              before computing averages.
+                actual change in TFUEL circulating supply
+              </span>
+              . This captures{" "}
+              <span className="text-white">all burn sources</span>{" "}
+              automatically — on-chain gas, Edge Network payments (25% burn),
+              and any other mechanism — without sampling individual
+              transactions.
             </p>
-
-            {/* Why type separation matters */}
-            <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-4 space-y-2">
-              <p className="text-xs text-white font-medium">
-                Why we separate type-7 from type-0
-              </p>
-              <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                Theta subchains produce two fundamentally different transaction
-                types. <span className="text-white">Type-0</span> are block
-                proposer transactions — every block has one, they carry no
-                user activity and pay no gas fee. They exist purely as part
-                of consensus. <span className="text-white">Type-7</span> are
-                smart contract interactions — real user activity like gaming
-                actions, AI data submissions, or token transfers. These pay
-                gas that gets permanently burned.
-              </p>
-              <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                On most subchains, 85–95% of all transactions are type-0
-                (fee = 0). If you average fees across all transaction types,
-                you get a number dominated by zeros — and that average swings
-                wildly depending on how many type-7 happen to land in your
-                sample. By measuring the two components separately — the{" "}
-                <span className="text-white">average fee per type-7 tx</span>{" "}
-                (stable, since gas_price is protocol-fixed at 10⁸ wei) and
-                the <span className="text-white">type-7 ratio</span> (what
-                fraction of daily txs are fee-bearing) — we get a much more
-                reliable estimate.
-              </p>
-            </div>
 
             {/* Formula */}
             <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB] space-y-1">
-              <p className="text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// Step 1: Measure independently per chain'}
+              <p>supplyChange = supply_today − supply_yesterday</p>
+              <p className="text-white mt-1">
+                impliedBurn = dailyIssuance − supplyChange
+              </p>
+              <p className="mt-2 text-[#7D8694]">
+                {/* eslint-disable-next-line */}{'// Shown as 7-day rolling average to smooth timing artifacts'}
               </p>
               <p>
-                avgFeePerType7 = Σ(GasUsed × gas_price) / count(type-7 txs)
+                avgBurn7d = Σ impliedBurn (last 7 days) / 7
               </p>
-              <p>type7Ratio = count(type-7) / count(all sampled txs)</p>
-              <p className="text-[#7D8694] mt-2">
-                {/* eslint-disable-next-line */}{'// Step 2: Estimate burn with uncertainty band'}
+              <p>
+                burnRate = avgBurn7d / dailyIssuance
               </p>
-              <p>burnMid = type7Ratio × avgFeePerType7 × chain.dailyTxs</p>
-              <p>burnLow = type7Ratio × 0.5 × avgFeePerType7 × chain.dailyTxs</p>
-              <p>burnHigh = min(type7Ratio × 1.5, 1) × avgFeePerType7 × chain.dailyTxs</p>
-              <p className="text-white mt-2">
-                dailyBurn = Σ chainBurn across all tracked chains (low–mid–high)
+            </div>
+
+            {/* Why this works */}
+            <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-4 space-y-2">
+              <p className="text-xs text-white font-medium">
+                Why supply-delta instead of transaction sampling
+              </p>
+              <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                TFUEL is burned through multiple mechanisms: on-chain gas fees,
+                Edge Network payment burns (at least 25% of edge payments are
+                burned), and potentially other protocol-level burns. Sampling
+                on-chain transactions only captures gas burns (~0.5 TFUEL/day),
+                missing the dominant burn source entirely. The supply-delta
+                method sidesteps this by measuring the end result: if we know
+                how much was created (fixed at 1,238,400 TFUEL/day) and we
+                can see the actual supply change, the difference must be burn.
               </p>
             </div>
 
             <p className="text-xs text-[#B0B8C4]">
-              We sample up to 50 pages (~500 transactions) per chain via
-              the <span className="font-mono">/transactions/range</span>{" "}
-              endpoint in parallel. Per-chain daily transaction counts come
-              from Theta Explorer&apos;s{" "}
-              <span className="font-mono">/transactions/history</span>{" "}
-              endpoint (the same source as the official explorer graph).
-              The ±50% band on type-7 ratio accounts for temporal variation
-              (sampling happens once per UTC day) and provides approximately
-              75% confidence that the true burn falls within the displayed
-              range.
+              Supply data comes from Theta&apos;s{" "}
+              <span className="font-mono">/api/supply/tfuel</span>{" "}
+              endpoint, stored daily in our database. Daily issuance is a
+              protocol constant (14,400 blocks × 86 TFUEL). The 7-day
+              rolling average smooths timing artifacts from the supply
+              endpoint not updating at exact midnight UTC.
             </p>
           </div>
         </div>
 
-        {/* Net and break-even */}
+        {/* Net flow */}
         <div>
           <p className="text-sm text-white font-medium mb-3">
-            Net flow and break-even
+            Net supply flow
           </p>
           <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-2">
             <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB]">
-              <p>net = dailyBurn − dailyIssuance</p>
-              <p>breakEvenTxs = dailyIssuance / (avgFeePerType7 × type7Ratio)</p>
+              <p>netGrowth = dailyIssuance − impliedBurn</p>
+              <p>= supplyChange (directly observable)</p>
             </div>
             <ul className="text-xs text-[#B0B8C4] space-y-1 list-disc list-inside mt-2">
               <li>
                 <span className="text-[#10B981]">Deflationary</span> —
-                burns exceed new issuance (not yet achieved)
+                burn exceeds issuance, supply shrinks (not yet observed)
               </li>
               <li>
                 <span className="text-[#B0B8C4]">Inflationary</span> —
-                issuance exceeds burns (current state — this is normal and
-                by design)
+                issuance exceeds burn, supply grows (current state — normal
+                and by design)
               </li>
               <li>
-                <span className="text-white">breakEvenTxs</span> is the
-                daily tx count required to burn exactly as much TFUEL as
-                is issued, assuming the current type-7 ratio and fee level
-                remain constant
+                <span className="text-white">Burn rate</span> shows what
+                percentage of daily issuance is offset by burns. Higher
+                burn rate = closer to deflation.
               </li>
             </ul>
           </div>
@@ -594,142 +575,46 @@ export default function MethodologyPage() {
         {/* Known limitations */}
         <div className="bg-[#0A0F1C] border border-[#1E3A5F] rounded-xl p-4">
           <p className="text-sm text-white font-medium mb-2">
-            Known limitations — burn is an estimate, not a measurement
+            Known limitations
           </p>
           <ul className="space-y-1.5 text-xs text-[#D1D5DB] list-disc list-inside">
             <li>
-              <span className="text-white">Sample size.</span> We sample
-              ~500 recent transactions per chain (~2,500 total across 5
-              chains). The type-7 fee average is very stable (gas_price is
-              protocol-fixed). The main noise source is the type-7
-              ratio — how many of the sampled txs are fee-bearing. The
-              ±50% band on this ratio yields ~75% confidence.
+              <span className="text-white">
+                Supply endpoint timing.
+              </span>{" "}
+              Theta&apos;s circulating supply endpoint does not update at
+              exact midnight UTC. Single-day values can fluctuate depending
+              on when the snapshot was taken. The 7-day rolling average
+              mitigates this.
             </li>
             <li>
               <span className="text-white">
-                Locked once per UTC day.
+                Issuance assumes block reward only.
               </span>{" "}
-              The estimate is computed once (first page load after midnight
-              UTC) and stored. It does not re-sample during the day, so the
-              displayed range is perfectly stable but may not reflect
-              intra-day changes in activity mix.
+              Our daily issuance figure (1,238,400 TFUEL) covers block
+              rewards only. Edge Node operators earn additional TFUEL for
+              video delivery and compute — this variable issuance is not
+              included. The implied burn therefore understates total burn
+              by the same amount that Edge issuance is understated.
             </li>
             <li>
               <span className="text-white">
-                Main chain burn is negligible.
+                Direction is robust, magnitude is approximate.
               </span>{" "}
-              Main chain traffic is almost entirely type-0 proposer
-              transactions (zero gas). Meaningful burn comes from subchain
-              type-7 smart contract activity — gaming, AI, token transfers.
-            </li>
-            <li>
-              <span className="text-white">Per-chain isolation.</span> Each
-              chain&apos;s type-7 ratio and average fee are computed
-              independently, then weighted by that chain&apos;s official
-              daily transaction count. This prevents high-activity chains
-              from distorting the fee average of low-activity chains.
-            </li>
-            <li>
-              <span className="text-white">Issuance is exact.</span> Daily
-              issuance is a protocol constant (1,238,400 TFUEL/day). The
-              net-flow direction is therefore more robust than its magnitude:
-              even if our burn estimate is off by 10×, the conclusion that
-              Theta is currently deeply inflationary (burn &lt; issuance by
-              orders of magnitude) is unchanged.
+              Even if Edge issuance adds 10-20% to total daily issuance,
+              the implied burn would increase proportionally. The burn rate
+              (as a percentage of issuance) would shift but the
+              inflationary/deflationary direction would remain the same.
             </li>
             <li>
               <span className="text-white">
-                Edge Network flows are not captured.
+                Requires accumulated history.
               </span>{" "}
-              Edge Node operators earn additional TFUEL for video delivery
-              and compute work — this issuance is not fixed per block and
-              is not included in our daily issuance figure. Additionally,
-              at least 25% of all Edge Network payments are burned. Both
-              streams are unknown without access to off-chain EdgeCloud
-              payment data. Our net flow calculation therefore understates
-              both total issuance and total burn. The directional
-              conclusion (deeply inflationary at current levels) remains
-              valid, but the exact magnitude is unknown.
+              The calculation needs at least 2 days of stored supply data.
+              The 7-day average needs 8 days. New deployments will show
+              limited data initially.
             </li>
           </ul>
-        </div>
-
-        {/* Error margin estimate */}
-        <div>
-          <p className="text-sm text-white font-medium mb-3">
-            Estimated error margin
-          </p>
-          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-3">
-            <p>
-              The daily burn number carries a{" "}
-              <span className="text-white font-medium">
-                realistic error margin of roughly ±25%
-              </span>{" "}
-              and a{" "}
-              <span className="text-white">conservative bound of ±40%</span>.
-              The main contributors:
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="text-[#B0B8C4] text-left border-b border-[#2A3548]">
-                    <th className="py-1.5 pr-3 font-medium">Source</th>
-                    <th className="py-1.5 pr-3 font-medium">Estimated impact</th>
-                  </tr>
-                </thead>
-                <tbody className="text-[#D1D5DB]">
-                  <tr className="border-b border-[#2A3548]/50">
-                    <td className="py-1.5 pr-3">
-                      Sample size (~200 txs/chain)
-                    </td>
-                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
-                      ±7%
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#2A3548]/50">
-                    <td className="py-1.5 pr-3">
-                      Temporal variation (current fee × yesterday&apos;s
-                      txs)
-                    </td>
-                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
-                      ±15–25%
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#2A3548]/50">
-                    <td className="py-1.5 pr-3">
-                      Per-chain fee mix uncertainty
-                    </td>
-                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
-                      ±10–15%
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#2A3548]/50">
-                    <td className="py-1.5 pr-3">
-                      Main chain approximation (≈ 0 burn)
-                    </td>
-                    <td className="py-1.5 pr-3 font-mono text-[#B0B8C4]">
-                      &lt;3%
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-1.5 pr-3 text-white">
-                      Combined (quadrature sum)
-                    </td>
-                    <td className="py-1.5 pr-3 font-mono text-white">
-                      ≈ ±25%
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="text-xs text-[#B0B8C4]">
-              A reported burn of e.g. 200 TFUEL/day means the real value
-              most likely sits between ~150 and ~250 TFUEL/day. Even at
-              10× the upper bound, the network would still be deeply
-              inflationary — the direction of net flow is robust even
-              when the magnitude is uncertain.
-            </p>
-          </div>
         </div>
       </section>
 
