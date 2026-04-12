@@ -17,7 +17,8 @@ import {
   BarChart,
   Bar,
   Cell,
-  ReferenceLine,
+  ComposedChart,
+  Line,
 } from "recharts";
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -801,10 +802,17 @@ export default function MetachainDashboard({
                     </div>
                   </div>
                   {hasEnough ? (() => {
-                    const avg = chartData.reduce((s, d) => s + d.rate, 0) / chartData.length;
+                    // Compute rolling 7d average for each data point
+                    const withAvg = chartData.map((d, i) => {
+                      const windowStart = Math.max(0, i - 6);
+                      const window = chartData.slice(windowStart, i + 1);
+                      const avg7d = window.reduce((s, w) => s + w.rate, 0) / window.length;
+                      return { ...d, avg7d: Math.round(avg7d * 10) / 10 };
+                    });
+
                     return (
                       <ResponsiveContainer width="100%" height={140}>
-                        <BarChart data={chartData} barCategoryGap="20%">
+                        <ComposedChart data={withAvg} barCategoryGap="20%">
                           <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
                           <XAxis
                             dataKey="date"
@@ -839,33 +847,31 @@ export default function MetachainDashboard({
                                       {d.rate}% absorbed
                                     </p>
                                   )}
+                                  <p className="text-[#B0B8C4] mt-1">
+                                    7d trend: {d.avg7d}%
+                                  </p>
                                 </div>
                               );
                             }}
                           />
-                          <ReferenceLine
-                            y={Math.round(avg * 10) / 10}
-                            stroke="#F59E0B"
-                            strokeWidth={2}
-                            strokeDasharray="0"
-                            label={{
-                              value: `7d avg: ${Math.round(avg * 10) / 10}%`,
-                              position: "right",
-                              fill: "#F59E0B",
-                              fontSize: 10,
-                              fontWeight: 600,
-                            }}
-                          />
                           <Bar dataKey="rate" radius={[3, 3, 0, 0]}>
-                            {chartData.map((entry, i) => (
+                            {withAvg.map((entry, i) => (
                               <Cell
                                 key={i}
                                 fill={entry.isEdgeSpike ? "#EF4444" : "#F59E0B"}
-                                fillOpacity={entry.isEdgeSpike ? 0.3 : 0.5}
+                                fillOpacity={entry.isEdgeSpike ? 0.3 : 0.4}
                               />
                             ))}
                           </Bar>
-                        </BarChart>
+                          <Line
+                            type="monotone"
+                            dataKey="avg7d"
+                            stroke="#F59E0B"
+                            strokeWidth={2.5}
+                            dot={false}
+                            activeDot={false}
+                          />
+                        </ComposedChart>
                       </ResponsiveContainer>
                     );
                   })() : (
@@ -881,7 +887,7 @@ export default function MetachainDashboard({
             <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
               {rate >= 1
                 ? "Burns currently exceed block issuance — supply is shrinking."
-                : `Daily values fluctuate due to API timing. 7-day average (~${(rate * 100).toFixed(0)}%) is the reliable signal.`}
+                : `Bars show daily values (noisy). Line shows the 7-day moving average — follow this for the real trend.`}
             </p>
 
             {/* Explainer */}
