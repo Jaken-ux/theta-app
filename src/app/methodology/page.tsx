@@ -442,7 +442,7 @@ export default function MethodologyPage() {
 
       {/* ── SECTION 3: TFUEL Economics ── */}
       <section className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">
+        <h2 id="tfuel-economics" className="text-xl font-semibold text-white">
           3. TFUEL Economics (burn vs issuance)
         </h2>
 

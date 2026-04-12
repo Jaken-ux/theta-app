@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import SimplifyThis from "../SimplifyThis";
 import LearnMore from "../LearnMore";
@@ -750,6 +751,7 @@ export default function MetachainDashboard({
                       {fmtBurn(eco.burnLow!)} – {fmtBurn(eco.burnHigh!)}
                     </p>
                     <p className="text-[10px] text-[#5C6675] mt-1">TFUEL range</p>
+                    <p className="text-[11px] text-[#5C6675] mt-0.5">~75% confidence interval</p>
                   </>
                 ) : (
                   <>
@@ -855,6 +857,13 @@ export default function MetachainDashboard({
                 break-even är det ett starkt fundamentalt signal för TFUEL.
               </p>
             </SimplifyThis>
+
+            <Link
+              href="/methodology#tfuel-economics"
+              className="inline-block text-[11px] text-[#7D8694] hover:text-[#B0B8C4] transition-colors mt-3"
+            >
+              How is this calculated? &rarr;
+            </Link>
           </motion.div>
         );
       })()}
