@@ -35,16 +35,26 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
+    url: "https://theta-simplified.vercel.app",
     siteName: "Theta Simplified",
     title: "Theta Simplified — Understand Theta Network",
     description:
-      "Plain-language explanations, live network stats, and honest analysis of the Theta Network.",
+      "Live indexes tracking Theta Network ecosystem health — Main Chain Activity, Metachain Utilization, and TFUEL economics.",
+    images: [
+      {
+        url: "https://theta-simplified.vercel.app/og-image",
+        width: 1200,
+        height: 630,
+        alt: "Theta Simplified — Live Theta Network indexes",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Theta Simplified",
     description:
-      "Understand Theta Network — live data, staking calculators, and plain-language explanations.",
+      "Live indexes tracking Theta Network ecosystem health — Main Chain Activity, Metachain Utilization, and TFUEL economics.",
+    images: ["https://theta-simplified.vercel.app/og-image"],
   },
   robots: {
     index: true,
