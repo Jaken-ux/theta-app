@@ -42,7 +42,7 @@ export const metadata: Metadata = {
       "Live indexes tracking Theta Network ecosystem health — Main Chain Activity, Metachain Utilization, and TFUEL economics.",
     images: [
       {
-        url: "https://www.thetasimplified.com/og-image",
+        url: "https://www.thetasimplified.com/og-image?v=2",
         width: 1200,
         height: 630,
         alt: "Theta Simplified — Live Theta Network indexes",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: "Theta Simplified",
     description:
       "Live indexes tracking Theta Network ecosystem health — Main Chain Activity, Metachain Utilization, and TFUEL economics.",
-    images: ["https://www.thetasimplified.com/og-image"],
+    images: ["https://www.thetasimplified.com/og-image?v=2"],
   },
   robots: {
     index: true,
