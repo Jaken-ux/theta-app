@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function GET() {
   return new ImageResponse(
@@ -203,7 +203,7 @@ export async function GET() {
           }}
         >
           <span style={{ color: "#5C6675", fontSize: "14px" }}>
-            theta-simplified.vercel.app
+            thetasimplified.com
           </span>
         </div>
       </div>

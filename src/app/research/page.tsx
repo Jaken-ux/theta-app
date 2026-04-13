@@ -17,6 +17,7 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
+import { computeTfuelEconomics, DAILY_ISSUANCE } from "@/lib/tfuel-economics";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -333,6 +334,25 @@ export default function ResearchPage() {
     [scores, tfuelPrices]
   );
 
+  // Per-row absorption rate (handles weekly aggregation via day-gap scaling)
+  const rowAbsorption = useMemo(() => {
+    return rows.map((r, i) => {
+      if (i === 0) return null;
+      const prev = rows[i - 1];
+      const curSup = r.metrics.tfuelCirculatingSupply;
+      const prevSup = prev.metrics.tfuelCirculatingSupply;
+      if (curSup == null || prevSup == null) return null;
+      const days =
+        (new Date(r.date + "T00:00:00").getTime() -
+          new Date(prev.date + "T00:00:00").getTime()) /
+        86400000;
+      if (days <= 0) return null;
+      const expected = DAILY_ISSUANCE * days;
+      const abs = Math.max(0, expected - (curSup - prevSup));
+      return abs / expected;
+    });
+  }, [rows]);
+
   // Component correlations vs THETA price
   const componentCorrelations = useMemo(() => {
     const components: {
@@ -348,7 +368,7 @@ export default function ResearchPage() {
       { name: "TFUEL Staking %", key: "tfuelStakingRatio", color: "#06B6D4" },
       { name: "Dagliga block", key: "dailyBlocks", color: "#F97316" },
     ];
-    return components.map((c) => {
+    const base = components.map((c) => {
       const vals = rows
         .filter((r) => r.metrics[c.key] != null)
         .map((r) => r.metrics[c.key] as number);
@@ -361,7 +381,27 @@ export default function ResearchPage() {
         n: vals.length,
       };
     });
-  }, [rows]);
+    // Net absorption (TFUEL burn proxy) as a synthetic component
+    const absVals: number[] = [];
+    const absPrices: number[] = [];
+    rows.forEach((r, i) => {
+      const a = rowAbsorption[i];
+      if (a != null && r.metrics.thetaPrice != null) {
+        absVals.push(a);
+        absPrices.push(r.metrics.thetaPrice);
+      }
+    });
+    if (absVals.length >= 3) {
+      base.push({
+        name: "Net absorption",
+        key: "tfuelCirculatingSupply",
+        color: "#DC2626",
+        r: pearson(absVals, absPrices),
+        n: absVals.length,
+      });
+    }
+    return base;
+  }, [rows, rowAbsorption]);
 
   // ── Lead/lag analysis ────────────────────────────────────────────────────
   const leadLag = useMemo(() => {
@@ -557,6 +597,44 @@ export default function ResearchPage() {
     });
   }, [rows]);
 
+  // ── TFUEL economics (net absorption) ─────────────────────────────────────
+  const tfuelSupplyHistory = useMemo(
+    () =>
+      filteredRows
+        .filter((r) => r.metrics.tfuelCirculatingSupply != null)
+        .map((r) => ({ date: r.date, supply: r.metrics.tfuelCirculatingSupply! })),
+    [filteredRows]
+  );
+
+  const tfuelEconomics = useMemo(
+    () => computeTfuelEconomics(tfuelSupplyHistory),
+    [tfuelSupplyHistory]
+  );
+
+  // Correlate daily absorption rate with THETA/TFUEL price (daily data only)
+  const absorptionStats = useMemo(() => {
+    const entries = tfuelEconomics.dailyEntries;
+    const thetaByDate = new Map(
+      filteredRows.map((r) => [r.date, r.metrics.thetaPrice])
+    );
+    const tfuelByDate = new Map(
+      filteredRows.map((r) => [r.date, r.metrics.tfuelPrice])
+    );
+    const pairs = entries.filter(
+      (e) => thetaByDate.get(e.date) != null && tfuelByDate.get(e.date) != null
+    );
+    const absArr = pairs.map((p) => p.absorptionRate);
+    const thetaArr = pairs.map((p) => thetaByDate.get(p.date)!);
+    const tfuelArr = pairs.map((p) => tfuelByDate.get(p.date)!);
+    return {
+      corrTheta: pairs.length >= 3 ? pearson(absArr, thetaArr) : 0,
+      corrTfuel: pairs.length >= 3 ? pearson(absArr, tfuelArr) : 0,
+      n: pairs.length,
+      edgeSpikeDays: entries.filter((e) => e.isEdgeSpike).length,
+      totalDays: entries.length,
+    };
+  }, [tfuelEconomics, filteredRows]);
+
   // ── Login screen ─────────────────────────────────────────────────────────
   if (!authed) {
     return (
@@ -695,6 +773,53 @@ export default function ResearchPage() {
           </p>
         </div>
       </div>
+
+      {/* ── TFUEL burn/absorption KPIs ─────────────────────────────── */}
+      {tfuelEconomics.avgAbsorptionRate7d != null && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
+            <p className="text-xs text-[#7D8694] mb-1">7d Net absorption</p>
+            <p className="text-2xl font-bold text-white tabular-nums">
+              {(tfuelEconomics.avgAbsorptionRate7d * 100).toFixed(1)}%
+            </p>
+            <p className="text-xs text-[#7D8694] mt-1">av block-issuance</p>
+          </div>
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
+            <p className="text-xs text-[#7D8694] mb-1">7d Absorption (TFUEL)</p>
+            <p className="text-2xl font-bold text-white tabular-nums">
+              {tfuelEconomics.avgAbsorption7d != null
+                ? Math.round(tfuelEconomics.avgAbsorption7d).toLocaleString("sv-SE")
+                : "–"}
+            </p>
+            <p className="text-xs text-[#7D8694] mt-1">genomsnitt/dag</p>
+          </div>
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
+            <p className="text-xs text-[#7D8694] mb-1">Edge spike-dagar</p>
+            <p className="text-2xl font-bold text-[#F59E0B] tabular-nums">
+              {absorptionStats.edgeSpikeDays}
+              <span className="text-sm text-[#7D8694] font-normal">
+                /{absorptionStats.totalDays}
+              </span>
+            </p>
+            <p className="text-xs text-[#7D8694] mt-1">supply &gt; block-issuance</p>
+          </div>
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
+            <p className="text-xs text-[#7D8694] mb-1">Absorption &harr; THETA</p>
+            <p
+              className="text-2xl font-bold tabular-nums"
+              style={{ color: correlationLabel(absorptionStats.corrTheta).color }}
+            >
+              {absorptionStats.corrTheta.toFixed(3)}
+            </p>
+            <p
+              className="text-xs mt-1"
+              style={{ color: correlationLabel(absorptionStats.corrTheta).color }}
+            >
+              {correlationLabel(absorptionStats.corrTheta).text} (n={absorptionStats.n})
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── 1. Trend: Index + Price (normalized) ─────────────────────── */}
       <Section
@@ -871,6 +996,90 @@ export default function ResearchPage() {
           riktning. Negativ = rör sig i motsatt riktning.
         </p>
       </Section>
+
+      {/* ── 3b. TFUEL absorption / burn analysis ─────────────────────── */}
+      {tfuelEconomics.daysAvailable >= 2 && (
+        <Section
+          title="TFUEL net absorption &amp; burn-dynamik"
+          subtitle="Hur mycket av den dagliga block-issuance absorberas av burns och avgifter — och hänger det ihop med priset?"
+        >
+          <Explainer
+            whatIsThis="Varje dag skapas 1 238 400 TFUEL som block-rewards. Samtidigt bränns TFUEL via gas-avgifter och Edge Network-betalningar (25% bränns). Vi kan inte separera burn från Edge-utbetalningar direkt, så vi mäter 'net absorption' — hur mycket av block-issuance som faktiskt absorberas, beräknat från supply-deltat. När supply växer snabbare än block-issuance kallar vi det 'Edge spike' (hög nätverksanvändning)."
+            howToRead="Korrelationsvärdet mäter om dagar med hög absorption (mycket burn) sammanfaller med dagar med högt pris. Positiv korrelation antyder att nätverksanvändning (som driver burn) också driver pris. Edge spike-räknaren visar antal dagar där Edge Network-utbetalningarna översteg block-issuance — det är också en indikator på hög nätverksanvändning."
+            useCase="Ger oss en unik vinkel: vi kan säga något om TFUEL-tokenomin som ingen annan publikt analyserar. Om absorption korrelerar starkt med pris, är burn-narrativet validerat i data. Om Edge spikes korrelerar med index-uppgångar, stärker det tesen att Activity Index fångar verklig användning."
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="bg-[#0D1117] rounded-xl p-4">
+              <p className="text-xs text-[#7D8694] mb-1">Absorption &harr; TFUEL-pris</p>
+              <p
+                className="text-2xl font-bold tabular-nums"
+                style={{ color: correlationLabel(absorptionStats.corrTfuel).color }}
+              >
+                {absorptionStats.corrTfuel.toFixed(3)}
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: correlationLabel(absorptionStats.corrTfuel).color }}
+              >
+                {correlationLabel(absorptionStats.corrTfuel).text} korrelation
+              </p>
+              <p className="text-[10px] text-[#5C6675] mt-0.5">
+                n={absorptionStats.n} dagar
+              </p>
+            </div>
+            <div className="bg-[#0D1117] rounded-xl p-4">
+              <p className="text-xs text-[#7D8694] mb-1">Edge spike-andel</p>
+              <p className="text-2xl font-bold text-[#F59E0B] tabular-nums">
+                {absorptionStats.totalDays > 0
+                  ? (
+                      (absorptionStats.edgeSpikeDays / absorptionStats.totalDays) *
+                      100
+                    ).toFixed(1)
+                  : "0"}
+                %
+              </p>
+              <p className="text-xs text-[#7D8694] mt-1">
+                dagar med hög Edge-aktivitet
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-[#0D1117] rounded-lg p-4 mb-4">
+            <p className="text-sm text-white font-medium mb-2">Tolkning</p>
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
+              {(() => {
+                const absCorr = absorptionStats.corrTheta;
+                const edgePct =
+                  absorptionStats.totalDays > 0
+                    ? (absorptionStats.edgeSpikeDays / absorptionStats.totalDays) * 100
+                    : 0;
+                const absStrength = correlationLabel(absCorr).text.toLowerCase();
+                const dir = absCorr >= 0 ? "samma riktning" : "motsatt riktning";
+                return `Absorption och THETA-pris rör sig i ${dir} med ${absStrength} korrelation (r=${absCorr.toFixed(3)}). ${
+                  edgePct > 40
+                    ? `Hög andel Edge spike-dagar (${edgePct.toFixed(0)}%) tyder på aktivt Edge Network — burn-siffran underskattar därför faktisk förbränning.`
+                    : `Låg andel Edge spike-dagar (${edgePct.toFixed(0)}%) innebär att net absorption ligger nära faktisk burn.`
+                }`;
+              })()}
+            </p>
+          </div>
+
+          <div className="bg-[#1E3A5F]/30 border border-[#1E3A5F] rounded-lg p-4">
+            <p className="text-xs text-white font-medium mb-1">Viktigt att veta</p>
+            <p className="text-xs text-[#B0B8C4] leading-relaxed">
+              Net absorption är en <span className="text-white">lower bound</span> —
+              faktisk burn kan vara högre på dagar med hög Edge-aktivitet eftersom
+              Edge-utbetalningar (variabla) blandas in i supply-deltat. Edge spike-dagar
+              clampas till 0% absorption trots att burn sannolikt fortfarande pågick.
+              Detaljer:{" "}
+              <a href="/methodology#tfuel-economics" className="text-[#2AB8E6] hover:underline">
+                Methodology &sect; 3
+              </a>
+              .
+            </p>
+          </div>
+        </Section>
+      )}
 
       {/* ── 4. Lead/Lag analysis ─────────────────────────────────────── */}
       <Section
