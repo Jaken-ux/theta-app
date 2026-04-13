@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/admin"],
     },
-    sitemap: "https://theta-simplified.vercel.app/sitemap.xml",
+    sitemap: "https://www.thetasimplified.com/sitemap.xml",
   };
 }
