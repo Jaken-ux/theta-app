@@ -22,6 +22,13 @@ interface Stats {
   };
   topPages: { page: string; views: number }[];
   last14Days: { date: string; uniqueVisitors: number; pageViews: number }[];
+  topReferrers: { referrer: string; visitors: number; views: number }[];
+  topCampaigns: {
+    source: string;
+    campaign: string | null;
+    visitors: number;
+    views: number;
+  }[];
 }
 
 function formatDate(dateStr: string): string {
@@ -351,6 +358,70 @@ export default function AdminPage() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Traffic sources */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+          <p className="text-sm font-medium text-white mb-1">Top Referrers</p>
+          <p className="text-xs text-[#7D8694] mb-4">Last 30 days · by unique visitors</p>
+          {stats.topReferrers.length === 0 ? (
+            <p className="text-xs text-[#7D8694]">No referrer data yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {stats.topReferrers.map((r, i) => {
+                const max = stats.topReferrers[0]?.visitors || 1;
+                const pct = (r.visitors / max) * 100;
+                return (
+                  <div key={r.referrer} className="flex items-center gap-4">
+                    <span className="text-xs text-[#7D8694] w-5 text-right">{i + 1}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-white font-mono truncate">{r.referrer}</span>
+                        <span className="text-sm text-[#B0B8C4] tabular-nums">{r.visitors.toLocaleString()}</span>
+                      </div>
+                      <div className="h-1.5 bg-[#0D1117] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-[#8B5CF6]" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+          <p className="text-sm font-medium text-white mb-1">UTM Campaigns</p>
+          <p className="text-xs text-[#7D8694] mb-4">Last 30 days · tagged traffic only</p>
+          {stats.topCampaigns.length === 0 ? (
+            <p className="text-xs text-[#7D8694]">
+              Tag your links with <span className="font-mono">?utm_source=x&amp;utm_campaign=name</span> to track them here.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {stats.topCampaigns.map((c, i) => {
+                const max = stats.topCampaigns[0]?.visitors || 1;
+                const pct = (c.visitors / max) * 100;
+                const label = c.campaign ? `${c.source} · ${c.campaign}` : c.source;
+                return (
+                  <div key={`${c.source}-${c.campaign ?? ""}-${i}`} className="flex items-center gap-4">
+                    <span className="text-xs text-[#7D8694] w-5 text-right">{i + 1}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-white font-mono truncate">{label}</span>
+                        <span className="text-sm text-[#B0B8C4] tabular-nums">{c.visitors.toLocaleString()}</span>
+                      </div>
+                      <div className="h-1.5 bg-[#0D1117] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-[#F59E0B]" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

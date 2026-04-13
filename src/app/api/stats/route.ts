@@ -14,8 +14,17 @@ export async function GET(request: Request) {
   try {
     const pool = await getPool();
 
-    const [totalVisitors, totalPageViews, newToday, returningToday, todayViews, topPages, recentDays] =
-      await Promise.all([
+    const [
+      totalVisitors,
+      totalPageViews,
+      newToday,
+      returningToday,
+      todayViews,
+      topPages,
+      recentDays,
+      topReferrers,
+      topCampaigns,
+    ] = await Promise.all([
         // Total unique visitors (excluding devs)
         pool.query(
           `SELECT COUNT(*) as count FROM theta_visitors WHERE is_dev IS NOT TRUE`
@@ -70,6 +79,35 @@ export async function GET(request: Request) {
            GROUP BY viewed_at::date
            ORDER BY date DESC`
         ),
+        // Top referrers (30 days, excluding devs) — null = direct traffic
+        pool.query(
+          `SELECT COALESCE(referrer, '(direct)') as referrer,
+                  COUNT(DISTINCT pv.visitor_id) as visitors,
+                  COUNT(*) as views
+           FROM theta_page_views pv
+           WHERE viewed_at > NOW() - INTERVAL '30 days'
+             AND NOT EXISTS (
+               SELECT 1 FROM theta_visitors v
+               WHERE v.visitor_id = pv.visitor_id AND v.is_dev IS TRUE
+             )
+           GROUP BY COALESCE(referrer, '(direct)')
+           ORDER BY visitors DESC LIMIT 10`
+        ),
+        // Top UTM campaigns (30 days, excluding devs)
+        pool.query(
+          `SELECT utm_source, utm_campaign,
+                  COUNT(DISTINCT pv.visitor_id) as visitors,
+                  COUNT(*) as views
+           FROM theta_page_views pv
+           WHERE viewed_at > NOW() - INTERVAL '30 days'
+             AND utm_source IS NOT NULL
+             AND NOT EXISTS (
+               SELECT 1 FROM theta_visitors v
+               WHERE v.visitor_id = pv.visitor_id AND v.is_dev IS TRUE
+             )
+           GROUP BY utm_source, utm_campaign
+           ORDER BY visitors DESC LIMIT 10`
+        ),
       ]);
 
     return NextResponse.json({
@@ -85,6 +123,17 @@ export async function GET(request: Request) {
         date: r.date.toISOString().slice(0, 10),
         uniqueVisitors: parseInt(r.unique_visitors),
         pageViews: parseInt(r.page_views),
+      })),
+      topReferrers: topReferrers.rows.map((r) => ({
+        referrer: r.referrer,
+        visitors: parseInt(r.visitors),
+        views: parseInt(r.views),
+      })),
+      topCampaigns: topCampaigns.rows.map((r) => ({
+        source: r.utm_source,
+        campaign: r.utm_campaign,
+        visitors: parseInt(r.visitors),
+        views: parseInt(r.views),
       })),
     });
   } catch (error) {
