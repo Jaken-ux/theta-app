@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "../../../lib/db";
+import { fetchTotalMetachainTxsHistory } from "../../../lib/metachain/total-txs";
 
 export const revalidate = 3600; // cache 1 hour
 
@@ -74,6 +75,23 @@ export async function GET() {
     const metachainPrev =
       metachain.length > 0 ? metachain[0].composite_score : null;
 
+    let metachainTxsSeries: (number | null)[] = [];
+    let metachainTxsCurrent: number | null = null;
+    let metachainTxsEarliest: number | null = null;
+    try {
+      const history = await fetchTotalMetachainTxsHistory(7);
+      metachainTxsSeries = history.map((h) => h.total);
+      const nonNull = history.filter(
+        (h): h is { date: string; total: number } => h.total != null
+      );
+      if (nonNull.length > 0) {
+        metachainTxsCurrent = nonNull[nonNull.length - 1].total;
+        metachainTxsEarliest = nonNull[0].total;
+      }
+    } catch {
+      // leave empty
+    }
+
     return NextResponse.json({
       available: true,
       periodStart: earliest.date,
@@ -111,13 +129,13 @@ export async function GET() {
               : null,
           series: seriesOf(metachain, "composite_score"),
         },
-        dailyTxs: {
-          current: latest.daily_txs,
+        metachainTxs: {
+          current: metachainTxsCurrent,
           changePct:
-            latest.daily_txs != null && earliest.daily_txs != null
-              ? pctChange(latest.daily_txs, earliest.daily_txs)
+            metachainTxsCurrent != null && metachainTxsEarliest != null
+              ? pctChange(metachainTxsCurrent, metachainTxsEarliest)
               : null,
-          series: seriesOf(activity, "daily_txs"),
+          series: metachainTxsSeries,
         },
         stakingNodes: {
           current: latest.staking_nodes,

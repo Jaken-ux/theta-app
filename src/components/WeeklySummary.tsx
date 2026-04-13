@@ -19,7 +19,7 @@ interface WeeklyData {
     thetaPrice: Metric;
     tfuelPrice: Metric;
     metachainIndex: Metric;
-    dailyTxs: Metric;
+    metachainTxs: Metric;
     stakingNodes: Metric;
   };
 }
@@ -133,6 +133,7 @@ function ChangeIndicator({ value, suffix = "%" }: { value: number | null | undef
 
 function SummaryCard({
   label,
+  sublabel,
   value,
   change,
   changeSuffix,
@@ -142,6 +143,7 @@ function SummaryCard({
   series,
 }: {
   label: string;
+  sublabel?: string;
   value: string;
   change: number | null | undefined;
   changeSuffix?: string;
@@ -170,6 +172,9 @@ function SummaryCard({
       </div>
       <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{value}</p>
       <p className="text-xs text-[#7D8694] mt-1">{label}</p>
+      {sublabel ? (
+        <p className="text-[10px] text-[#5C6675] mt-0.5">{sublabel}</p>
+      ) : null}
       <Sparkline data={series} color={color} />
     </motion.div>
   );
@@ -264,13 +269,14 @@ export default function WeeklySummary() {
             series={m.metachainIndex.series}
           />
           <SummaryCard
-            label="Daily Transactions"
-            value={formatNumber(m.dailyTxs.current)}
-            change={m.dailyTxs.changePct}
+            label="Metachain Txs"
+            sublabel="Across all active subchains"
+            value={formatNumber(m.metachainTxs.current)}
+            change={m.metachainTxs.changePct}
             icon="↗"
             color="#F59E0B"
             delay={0.2}
-            series={m.dailyTxs.series}
+            series={m.metachainTxs.series}
           />
           <SummaryCard
             label="Staking Nodes"
