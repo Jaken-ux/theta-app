@@ -56,6 +56,70 @@ async function fetchLatestTxCount(baseUrl: string): Promise<number | null> {
   }
 }
 
+async function fetchDailyTxSeries(
+  baseUrl: string,
+  days: number
+): Promise<Map<string, number>> {
+  try {
+    const res = await fetch(
+      `${baseUrl}/transactions/history?limitNumber=${days + 1}`,
+      { next: { revalidate: 300 } }
+    );
+    if (!res.ok) return new Map();
+    const json: {
+      body?: { data?: { number: number; timestamp: string }[] };
+    } = await res.json();
+    const rows = json?.body?.data ?? [];
+    const map = new Map<string, number>();
+    for (const r of rows) {
+      const day = new Date(Number(r.timestamp) * 1000)
+        .toISOString()
+        .slice(0, 10);
+      map.set(day, r.number);
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * Last-N-days series of total Metachain daily txs (main chain + subchains),
+ * aggregated from the same /transactions/history endpoints as the coverage
+ * widget. Oldest → newest; null for days where no source returned data.
+ */
+export async function fetchTotalMetachainTxsHistory(
+  days = 7
+): Promise<{ date: string; total: number | null }[]> {
+  const allUrls = [
+    MAIN_CHAIN_API,
+    ...SUBCHAIN_APIS.map(
+      (sc) => `https://${sc.id}-explorer-api.thetatoken.org/api`
+    ),
+  ];
+  const maps = await Promise.all(
+    allUrls.map((u) => fetchDailyTxSeries(u, days))
+  );
+
+  // Build the ordered set of the latest `days` days present in any source
+  const allDays = new Set<string>();
+  for (const m of maps) for (const d of m.keys()) allDays.add(d);
+  const sortedDays = [...allDays].sort().slice(-days);
+
+  return sortedDays.map((date) => {
+    let sum = 0;
+    let anyPresent = false;
+    for (const m of maps) {
+      const v = m.get(date);
+      if (typeof v === "number") {
+        sum += v;
+        anyPresent = true;
+      }
+    }
+    return { date, total: anyPresent ? sum : null };
+  });
+}
+
 export async function fetchTotalMetachainTxs(): Promise<TotalMetachainResult> {
   const perChain: Record<string, number> = {};
 
