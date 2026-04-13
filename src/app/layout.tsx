@@ -12,6 +12,7 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.thetasimplified.com"),
   title: {
     default: "Theta Simplified — Understand Theta Network",
     template: "%s | Theta Simplified",
