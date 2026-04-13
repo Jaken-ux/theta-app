@@ -25,6 +25,21 @@ export default function Nav() {
     setNavigating(null);
   }, [pathname]);
 
+  // Warm the metachain data cache in the background so that when the user
+  // navigates to /metachain it renders instantly. Skip when already on that
+  // page (the page itself fetches the data).
+  useEffect(() => {
+    if (pathname === "/metachain") return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch("/api/metachain", { signal: controller.signal }).catch(() => {});
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pathname]);
+
   function handleLinkClick(href: string) {
     if (href === pathname) {
       // Already on this page, just close

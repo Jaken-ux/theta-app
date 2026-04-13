@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { fetchAllChains, getRegisteredChains } from "./registry";
 import { fetchTotalMetachainTxs } from "./total-txs";
 import { computeTfuelEconomics } from "../tfuel-economics";
@@ -102,7 +103,13 @@ async function ensureSchema(pool: Pool) {
  * Fetch live data from all chain adapters, save to DB, return with history.
  * Used by both the API route and the server-side page prefetch.
  */
-export async function fetchMetachainData() {
+export const fetchMetachainData = unstable_cache(
+  () => fetchMetachainDataFresh(),
+  ["metachain-data-v1"],
+  { revalidate: 90, tags: ["metachain"] }
+);
+
+async function fetchMetachainDataFresh() {
   const pool = await getPool();
   await ensureSchema(pool);
 
