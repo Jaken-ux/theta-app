@@ -879,6 +879,9 @@ export default function MetachainDashboard({
                       Building history… {trendData.length} of {rangeDays} days collected.
                     </div>
                   )}
+                  <p className="text-[10px] text-[#5C6675] mt-2">
+                    Values finalize at midnight UTC — showing completed days only
+                  </p>
                 </div>
               );
             })()}

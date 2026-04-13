@@ -54,8 +54,14 @@ export function computeTfuelEconomics(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
+  // Today's UTC date — entries dated today are excluded because their delta
+  // has no confirmed next-day snapshot yet and is still changing.
+  const todayUtc = new Date().toISOString().slice(0, 10);
+
   const entries: DailyEntry[] = [];
   for (let i = 1; i < sorted.length; i++) {
+    const entryDate = sorted[i].date;
+    if (entryDate >= todayUtc) continue; // incomplete — skip today (and any future-dated row)
     const supplyChange = sorted[i].supply - sorted[i - 1].supply;
     const rawAbsorption = DAILY_ISSUANCE - supplyChange;
     const isEdgeSpike = rawAbsorption < 0;
@@ -63,7 +69,7 @@ export function computeTfuelEconomics(
     const absorptionRate = absorption / DAILY_ISSUANCE;
 
     entries.push({
-      date: sorted[i].date,
+      date: entryDate,
       supplyChange,
       rawAbsorption,
       absorption,
