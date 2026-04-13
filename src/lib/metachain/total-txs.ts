@@ -102,8 +102,8 @@ export async function fetchTotalMetachainTxsHistory(
   );
 
   const allDays = new Set<string>();
-  for (const m of maps) for (const d of m.keys()) allDays.add(d);
-  const sortedDays = [...allDays].sort().slice(-days);
+  for (const m of maps) m.forEach((_v, d) => allDays.add(d));
+  const sortedDays = Array.from(allDays).sort().slice(-days);
 
   return sortedDays.map((date) => {
     let sum = 0;
