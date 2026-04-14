@@ -859,7 +859,7 @@ export default function MetachainDashboard({
                               <Cell
                                 key={i}
                                 fill={entry.isEdgeSpike ? "#EF4444" : "#F59E0B"}
-                                fillOpacity={entry.isEdgeSpike ? 0.3 : 0.4}
+                                fillOpacity={entry.isEdgeSpike ? 0.12 : 0.15}
                               />
                             ))}
                           </Bar>
@@ -867,9 +867,9 @@ export default function MetachainDashboard({
                             type="monotone"
                             dataKey="avg7d"
                             stroke="#F59E0B"
-                            strokeWidth={2.5}
+                            strokeWidth={3}
                             dot={false}
-                            activeDot={false}
+                            activeDot={{ r: 4, fill: "#F59E0B" }}
                           />
                         </ComposedChart>
                       </ResponsiveContainer>
