@@ -28,6 +28,23 @@ const SUBCHAIN_ENDPOINTS = [
   "https://explorer-api.thetatoken.org/api/transactions/number/24?include_subchains=true",
 ];
 
+async function fetchTdropSnapshot(): Promise<{ price: number | null; marketCap: number | null }> {
+  try {
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=thetadrop&vs_currencies=usd&include_market_cap=true",
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return { price: null, marketCap: null };
+    const data = await res.json();
+    return {
+      price: data?.thetadrop?.usd ?? null,
+      marketCap: data?.thetadrop?.usd_market_cap ?? null,
+    };
+  } catch {
+    return { price: null, marketCap: null };
+  }
+}
+
 async function checkSubchainApi(): Promise<boolean> {
   for (const url of SUBCHAIN_ENDPOINTS) {
     try {
@@ -53,9 +70,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [stats, subchainAvailable] = await Promise.all([
+    const [stats, subchainAvailable, tdrop] = await Promise.all([
       fetchNetworkStats(),
       checkSubchainApi(),
+      fetchTdropSnapshot(),
     ]);
     const snapshot = await fetchActivitySnapshot(stats);
     const score = computeIndex(snapshot);
@@ -70,8 +88,9 @@ export async function GET(request: Request) {
         theta_staking_ratio, tfuel_staking_ratio,
         theta_price, tfuel_price, theta_market_cap,
         tfuel_circulating_supply, daily_blocks,
-        validator_guardian_nodes, edge_nodes, subchain_api_available
-      ) VALUES ($1, 1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        validator_guardian_nodes, edge_nodes, subchain_api_available,
+        tdrop_price, tdrop_market_cap
+      ) VALUES ($1, 1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        ON CONFLICT (date) DO UPDATE SET
          samples = theta_activity_history.samples + 1,
          total_score = theta_activity_history.total_score + $2,
@@ -81,7 +100,8 @@ export async function GET(request: Request) {
          theta_price = $9, tfuel_price = $10, theta_market_cap = $11,
          tfuel_circulating_supply = $12, daily_blocks = $13,
          validator_guardian_nodes = $14, edge_nodes = $15,
-         subchain_api_available = $16`,
+         subchain_api_available = $16,
+         tdrop_price = $17, tdrop_market_cap = $18`,
       [
         today, score,
         snapshot.estimatedDailyTxs, snapshot.tfuelVolume24h,
@@ -91,6 +111,7 @@ export async function GET(request: Request) {
         snapshot.tfuelCirculatingSupply, snapshot.dailyBlocks,
         snapshot.validatorGuardianNodes, snapshot.edgeNodes,
         subchainAvailable,
+        tdrop.price, tdrop.marketCap,
       ]
     );
 

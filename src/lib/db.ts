@@ -34,6 +34,7 @@ export async function getPool(): Promise<Pool> {
       'tfuel_circulating_supply DOUBLE PRECISION', 'daily_blocks INTEGER',
       'validator_guardian_nodes INTEGER', 'edge_nodes INTEGER',
       'subchain_api_available BOOLEAN DEFAULT FALSE',
+      'tdrop_price DOUBLE PRECISION', 'tdrop_market_cap DOUBLE PRECISION',
     ];
 
     // Visitor tracking table

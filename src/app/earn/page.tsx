@@ -8,7 +8,9 @@ export const metadata: Metadata = {
 import CalculatorCard from "../../components/CalculatorCard";
 import DreamCalculator from "../../components/DreamCalculator";
 import SimplifyThis from "../../components/SimplifyThis";
+import TdropSection from "../../components/TdropSection";
 import { fetchNetworkStats, fetchEurRate } from "../../lib/theta-api";
+import { fetchTdropData } from "../../lib/tdrop";
 
 export const revalidate = 60;
 
@@ -34,9 +36,10 @@ const ways = [
 ];
 
 export default async function EarnPage() {
-  const [stats, eurRate] = await Promise.all([
+  const [stats, eurRate, tdrop] = await Promise.all([
     fetchNetworkStats(),
     fetchEurRate(),
+    fetchTdropData().catch(() => null),
   ]);
 
   const stakingData = {
@@ -67,6 +70,9 @@ export default async function EarnPage() {
       <section>
         <DreamCalculator stakingData={stakingData} eurRate={eurRate} />
       </section>
+
+      {/* TDROP section */}
+      <TdropSection data={tdrop} />
 
       {/* Ways to earn */}
       <section>
