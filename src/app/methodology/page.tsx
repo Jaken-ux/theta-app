@@ -448,14 +448,16 @@ export default function MethodologyPage() {
 
         <p className="text-sm">
           The TFUEL Economics widget shows how much of daily block issuance
-          is absorbed by burns and fees. Total TFUEL issuance has two
-          components: fixed block rewards (1,238,400/day) and variable
-          Edge Network rewards that depend on actual compute and video
-          delivery activity. We cannot separate these two streams from
-          supply data alone. We therefore show &quot;net absorption&quot; — how
-          much of block issuance is offset by all burn sources combined.
-          Days where supply grows faster than block issuance indicate
-          higher-than-usual Edge Network payouts, not negative burn.
+          is absorbed by burns and fees. Block rewards are the{" "}
+          <span className="text-white">only</span> source of new TFUEL —
+          fixed at 1,238,400 per day. Edge Network jobs and EdgeCloud
+          payments move existing tokens, they do not mint new ones. We
+          therefore show &quot;net absorption&quot; — how much of block
+          issuance is offset by all burn sources combined (gas, 25% of
+          Edge payments, etc.). Days where the reported supply grew
+          faster than 1,238,400 are data artifacts — most often the
+          snapshot being taken at a slightly different time of day than
+          the previous one, or a rare token unlock — not negative burn.
         </p>
 
         {/* Daily issuance */}
@@ -509,7 +511,7 @@ export default function MethodologyPage() {
                 absorption = max(0, rawAbsorption)
               </p>
               <p className="mt-2 text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// Negative rawAbsorption → "Edge spike" (clamped to 0)'}
+                {/* eslint-disable-next-line */}{'// Negative rawAbsorption → data artifact (clamped, excluded from 7d avg)'}
               </p>
               <p>absorptionRate = absorption / blockIssuance</p>
               <p className="mt-1 text-[#7D8694]">
@@ -523,16 +525,14 @@ export default function MethodologyPage() {
                 Why &quot;net absorption&quot; instead of &quot;burn&quot;
               </p>
               <p className="text-xs text-[#D1D5DB] leading-relaxed">
-                Total TFUEL issuance = block rewards (fixed 1,238,400/day)
-                + Edge Network rewards (variable). From supply data alone,
-                we cannot distinguish between &quot;less was burned&quot; and
-                &quot;more was issued via Edge&quot;. On days when Edge
-                payouts are unusually high, supply grows faster than block
-                issuance — which would appear as &quot;negative burn&quot;
-                if naively calculated. We avoid this by clamping to zero and
-                labeling these as &quot;Edge spike&quot; days. The metric we
-                show — net absorption — is the portion of block issuance
-                that is verifiably absorbed, regardless of Edge variability.
+                We can&apos;t measure burn directly from the chain API — we
+                infer it from the supply delta. Since block rewards are the
+                only way new TFUEL enters circulation, anything missing from
+                the expected daily growth is assumed to be burn. The metric
+                we show — net absorption — is the portion of block issuance
+                that is verifiably absorbed, calculated from a one-sided
+                supply difference. It is a lower bound on real burn when
+                snapshot timing is imperfect.
               </p>
             </div>
 
@@ -563,20 +563,13 @@ export default function MethodologyPage() {
             </li>
             <li>
               <span className="text-white">
-                Cannot separate burn from Edge issuance.
+                Data artifact days are clamped to 0%.
               </span>{" "}
-              Block issuance is a known constant, but Edge Network rewards
-              are variable and unknown. Net absorption therefore represents
-              a lower bound — actual burn may be higher if Edge payouts
-              were above average that day.
-            </li>
-            <li>
-              <span className="text-white">
-                Edge spike days show 0%.
-              </span>{" "}
-              When supply grows faster than block issuance (due to high
-              Edge payouts), absorption is clamped to 0%. Real burn still
-              occurred those days — it was just outweighed by Edge rewards.
+              When the reported supply grows faster than 1,238,400 in a
+              day, we flag it as a data artifact (usually snapshot-timing
+              drift or a token unlock moving into circulating supply) and
+              clamp absorption to 0%. These days are also excluded from
+              the 7-day rolling average so they do not bias the trend.
             </li>
             <li>
               <span className="text-white">

@@ -630,7 +630,7 @@ export default function ResearchPage() {
       corrTheta: pairs.length >= 3 ? pearson(absArr, thetaArr) : 0,
       corrTfuel: pairs.length >= 3 ? pearson(absArr, tfuelArr) : 0,
       n: pairs.length,
-      edgeSpikeDays: entries.filter((e) => e.isEdgeSpike).length,
+      artifactDays: entries.filter((e) => e.isDataArtifact).length,
       totalDays: entries.length,
     };
   }, [tfuelEconomics, filteredRows]);
@@ -794,14 +794,14 @@ export default function ResearchPage() {
             <p className="text-xs text-[#7D8694] mt-1">genomsnitt/dag</p>
           </div>
           <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
-            <p className="text-xs text-[#7D8694] mb-1">Edge spike-dagar</p>
-            <p className="text-2xl font-bold text-[#F59E0B] tabular-nums">
-              {absorptionStats.edgeSpikeDays}
+            <p className="text-xs text-[#7D8694] mb-1">Artefaktdagar</p>
+            <p className="text-2xl font-bold text-[#7D8694] tabular-nums">
+              {absorptionStats.artifactDays}
               <span className="text-sm text-[#7D8694] font-normal">
                 /{absorptionStats.totalDays}
               </span>
             </p>
-            <p className="text-xs text-[#7D8694] mt-1">supply &gt; block-issuance</p>
+            <p className="text-xs text-[#7D8694] mt-1">snapshot-drift / unlock</p>
           </div>
           <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-5">
             <p className="text-xs text-[#7D8694] mb-1">Absorption &harr; THETA</p>
@@ -1004,9 +1004,9 @@ export default function ResearchPage() {
           subtitle="Hur mycket av den dagliga block-issuance absorberas av burns och avgifter — och hänger det ihop med priset?"
         >
           <Explainer
-            whatIsThis="Varje dag skapas 1 238 400 TFUEL som block-rewards. Samtidigt bränns TFUEL via gas-avgifter och Edge Network-betalningar (25% bränns). Vi kan inte separera burn från Edge-utbetalningar direkt, så vi mäter 'net absorption' — hur mycket av block-issuance som faktiskt absorberas, beräknat från supply-deltat. När supply växer snabbare än block-issuance kallar vi det 'Edge spike' (hög nätverksanvändning)."
-            howToRead="Korrelationsvärdet mäter om dagar med hög absorption (mycket burn) sammanfaller med dagar med högt pris. Positiv korrelation antyder att nätverksanvändning (som driver burn) också driver pris. Edge spike-räknaren visar antal dagar där Edge Network-utbetalningarna översteg block-issuance — det är också en indikator på hög nätverksanvändning."
-            useCase="Ger oss en unik vinkel: vi kan säga något om TFUEL-tokenomin som ingen annan publikt analyserar. Om absorption korrelerar starkt med pris, är burn-narrativet validerat i data. Om Edge spikes korrelerar med index-uppgångar, stärker det tesen att Activity Index fångar verklig användning."
+            whatIsThis="Varje dag skapas 1 238 400 TFUEL som block-rewards — det är den enda källan till nya TFUEL. Samtidigt bränns TFUEL via gas-avgifter och 25% av Edge Network-betalningar. Vi mäter 'net absorption' = block-issuance − supply-tillväxt, vilket approximerar hur mycket av dagens issuance som offsetade av burns."
+            howToRead="Korrelationsvärdet mäter om dagar med hög absorption (mycket burn) sammanfaller med dagar med högt pris. Positiv korrelation antyder att nätverksanvändning (som driver burn) också driver pris. Artefaktdagar är dagar då supply växte snabbare än block-issuance — troligen snapshot-drift eller token-unlocks, inte riktigt negativ burn. De utesluts från 7-dagars-snittet."
+            useCase="Ger oss en unik vinkel: vi kan säga något om TFUEL-tokenomin som ingen annan publikt analyserar. Om absorption korrelerar starkt med pris, är burn-narrativet validerat i data."
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div className="bg-[#0D1117] rounded-xl p-4">
@@ -1028,18 +1028,18 @@ export default function ResearchPage() {
               </p>
             </div>
             <div className="bg-[#0D1117] rounded-xl p-4">
-              <p className="text-xs text-[#7D8694] mb-1">Edge spike-andel</p>
-              <p className="text-2xl font-bold text-[#F59E0B] tabular-nums">
+              <p className="text-xs text-[#7D8694] mb-1">Artefaktandel</p>
+              <p className="text-2xl font-bold text-[#7D8694] tabular-nums">
                 {absorptionStats.totalDays > 0
                   ? (
-                      (absorptionStats.edgeSpikeDays / absorptionStats.totalDays) *
+                      (absorptionStats.artifactDays / absorptionStats.totalDays) *
                       100
                     ).toFixed(1)
                   : "0"}
                 %
               </p>
               <p className="text-xs text-[#7D8694] mt-1">
-                dagar med hög Edge-aktivitet
+                snapshot-drift / unlock (utesluts ur snittet)
               </p>
             </div>
           </div>
@@ -1049,16 +1049,16 @@ export default function ResearchPage() {
             <p className="text-xs text-[#B0B8C4] leading-relaxed">
               {(() => {
                 const absCorr = absorptionStats.corrTheta;
-                const edgePct =
+                const artifactPct =
                   absorptionStats.totalDays > 0
-                    ? (absorptionStats.edgeSpikeDays / absorptionStats.totalDays) * 100
+                    ? (absorptionStats.artifactDays / absorptionStats.totalDays) * 100
                     : 0;
                 const absStrength = correlationLabel(absCorr).text.toLowerCase();
                 const dir = absCorr >= 0 ? "samma riktning" : "motsatt riktning";
                 return `Absorption och THETA-pris rör sig i ${dir} med ${absStrength} korrelation (r=${absCorr.toFixed(3)}). ${
-                  edgePct > 40
-                    ? `Hög andel Edge spike-dagar (${edgePct.toFixed(0)}%) tyder på aktivt Edge Network — burn-siffran underskattar därför faktisk förbränning.`
-                    : `Låg andel Edge spike-dagar (${edgePct.toFixed(0)}%) innebär att net absorption ligger nära faktisk burn.`
+                  artifactPct > 25
+                    ? `Hög andel artefaktdagar (${artifactPct.toFixed(0)}%) — oftast snapshot-timingen som driftar. Fixa cron-timingen och siffran bör sjunka.`
+                    : `Låg andel artefaktdagar (${artifactPct.toFixed(0)}%) — snapshot-datan är konsekvent och 7d-snittet är trovärdigt.`
                 }`;
               })()}
             </p>
@@ -1067,11 +1067,11 @@ export default function ResearchPage() {
           <div className="bg-[#1E3A5F]/30 border border-[#1E3A5F] rounded-lg p-4">
             <p className="text-xs text-white font-medium mb-1">Viktigt att veta</p>
             <p className="text-xs text-[#B0B8C4] leading-relaxed">
-              Net absorption är en <span className="text-white">lower bound</span> —
-              faktisk burn kan vara högre på dagar med hög Edge-aktivitet eftersom
-              Edge-utbetalningar (variabla) blandas in i supply-deltat. Edge spike-dagar
-              clampas till 0% absorption trots att burn sannolikt fortfarande pågick.
-              Detaljer:{" "}
+              Block rewards är den enda källan till nya TFUEL — Edge Network-jobb
+              skapar inte nya tokens. Dagar där supply växt snabbare än 1,238,400
+              är <span className="text-white">dataartefakter</span>, oftast
+              från snapshot-timingdrift. De clampas till 0% absorption och
+              utesluts ur 7d-snittet. Detaljer:{" "}
               <a href="/methodology#tfuel-economics" className="text-[#2AB8E6] hover:underline">
                 Methodology &sect; 3
               </a>

@@ -60,7 +60,7 @@ interface DailyEntry {
   date: string;
   absorption: number;
   absorptionRate: number;
-  isEdgeSpike: boolean;
+  isDataArtifact: boolean;
 }
 
 interface TfuelEconomicsData {
@@ -681,7 +681,7 @@ export default function MetachainDashboard({
             day: "numeric",
           }),
           rate: Math.round(e.absorptionRate * 1000) / 10,
-          isEdgeSpike: e.isEdgeSpike,
+          isDataArtifact: e.isDataArtifact,
         }));
 
         return (
@@ -837,10 +837,11 @@ export default function MetachainDashboard({
                               return (
                                 <div className="bg-[#0D1117] border border-[#2A3548] rounded-lg px-3 py-2 text-xs shadow-xl">
                                   <p className="text-[#7D8694] mb-1">{label}</p>
-                                  {d.isEdgeSpike ? (
-                                    <p className="text-[#EF4444]/80 font-medium">
-                                      Edge Network spike — supply grew faster
-                                      than block issuance this day
+                                  {d.isDataArtifact ? (
+                                    <p className="text-[#7D8694] font-medium">
+                                      Data artifact — likely snapshot-timing
+                                      drift or a token unlock. Excluded from
+                                      the 7-day average.
                                     </p>
                                   ) : (
                                     <p className="text-[#F59E0B] font-medium">
@@ -858,8 +859,8 @@ export default function MetachainDashboard({
                             {withAvg.map((entry, i) => (
                               <Cell
                                 key={i}
-                                fill={entry.isEdgeSpike ? "#EF4444" : "#F59E0B"}
-                                fillOpacity={entry.isEdgeSpike ? 0.12 : 0.15}
+                                fill={entry.isDataArtifact ? "#7D8694" : "#F59E0B"}
+                                fillOpacity={entry.isDataArtifact ? 0.1 : 0.15}
                               />
                             ))}
                           </Bar>
@@ -925,12 +926,14 @@ export default function MetachainDashboard({
                 </strong>
               </p>
               <p className="mb-3">
-                Theta has two sources of new TFUEL: block rewards (fixed)
-                and Edge Network rewards (variable). On some days the Edge
-                Network pays out more than usual — supply then grows faster
-                than block rewards alone, making it look like &quot;0%
-                absorption.&quot; That doesn&apos;t mean nothing was burned
-                that day — just that Edge payouts overshadowed the burns.
+                Block rewards are the <em>only</em> source of new TFUEL —
+                Edge Network jobs move existing tokens, they do not mint new
+                ones. If a day appears to have grown the supply by more than
+                1.24M, that is not a real burn-negative day. It is a data
+                artifact — usually the snapshot being taken at a slightly
+                different time of day than the previous one, so the &quot;24h
+                window&quot; is actually 26h or 28h. We flag those days in
+                grey and leave them out of the 7-day average.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
