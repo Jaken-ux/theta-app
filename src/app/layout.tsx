@@ -13,7 +13,10 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.thetasimplified.com"),
+  metadataBase: new URL("https://thetasimplified.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: "Theta Simplified — Understand Theta Network",
     template: "%s | Theta Simplified",
@@ -37,14 +40,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://www.thetasimplified.com",
+    url: "https://thetasimplified.com",
     siteName: "Theta Simplified",
     title: "Theta Simplified — Understand Theta Network",
     description:
       "Live indexes tracking Theta Network ecosystem health — Main Chain Activity, Metachain Utilization, and TFUEL economics.",
     images: [
       {
-        url: "https://www.thetasimplified.com/preview",
+        url: "https://thetasimplified.com/preview",
         width: 1200,
         height: 630,
         alt: "Theta Simplified — Live Theta Network indexes",
@@ -56,7 +59,7 @@ export const metadata: Metadata = {
     title: "Theta Simplified",
     description:
       "Live indexes tracking Theta Network ecosystem health — Main Chain Activity, Metachain Utilization, and TFUEL economics.",
-    images: ["https://www.thetasimplified.com/preview"],
+    images: ["https://thetasimplified.com/preview"],
   },
   robots: {
     index: true,
@@ -79,12 +82,12 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               name: "Theta Simplified",
-              url: "https://www.thetasimplified.com",
+              url: "https://thetasimplified.com",
               description:
                 "Plain-language explanations, live network stats, and honest analysis of the Theta Network.",
               potentialAction: {
                 "@type": "SearchAction",
-                target: "https://www.thetasimplified.com/network",
+                target: "https://thetasimplified.com/network",
               },
             }),
           }}
