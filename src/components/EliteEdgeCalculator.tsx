@@ -199,15 +199,25 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-xs text-theta-muted">Monthly</span>
-                        <span className="text-xs text-white">
-                          {fmtTfuel(hasBooster ? totalBaseMonthly : baseMonthly)} TFUEL
-                        </span>
+                        <div className="text-right">
+                          <span className="text-xs text-white">
+                            {fmtTfuel(hasBooster ? totalBaseMonthly : baseMonthly)} TFUEL
+                          </span>
+                          <span className="text-[10px] text-[#7D8694] ml-1.5">
+                            {fmtUsd((hasBooster ? totalBaseMonthly : baseMonthly) * tfuelPrice)}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex justify-between border-t border-theta-border pt-2">
                         <span className="text-xs text-theta-muted">Annual</span>
-                        <span className="text-xs font-semibold text-[#10B981]">
-                          {fmtTfuel(hasBooster ? totalBase : baseYearly)} TFUEL
-                        </span>
+                        <div className="text-right">
+                          <span className="text-xs font-semibold text-[#10B981]">
+                            {fmtTfuel(hasBooster ? totalBase : baseYearly)} TFUEL
+                          </span>
+                          <span className="text-[10px] text-[#7D8694] ml-1.5">
+                            {fmtUsd((hasBooster ? totalBase : baseYearly) * tfuelPrice)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="bg-[#0A0F1C] rounded-lg p-2 mt-3">
@@ -236,15 +246,25 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-xs text-theta-muted">Monthly</span>
-                          <span className="text-xs text-white">
-                            {fmtTfuel(boosterLowMonthly)} – {fmtTfuel(boosterHighMonthly)} TFUEL
-                          </span>
+                          <div className="text-right">
+                            <span className="text-xs text-white">
+                              {fmtTfuel(boosterLowMonthly)} – {fmtTfuel(boosterHighMonthly)} TFUEL
+                            </span>
+                            <span className="text-[10px] text-[#7D8694] ml-1.5">
+                              {fmtUsd(boosterLowMonthly * tfuelPrice)} – {fmtUsd(boosterHighMonthly * tfuelPrice)}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex justify-between border-t border-theta-border pt-2">
                           <span className="text-xs text-theta-muted">Annual</span>
-                          <span className="text-xs font-semibold text-[#8B5CF6]">
-                            {fmtTfuel(boosterLowYearly)} – {fmtTfuel(boosterHighYearly)} TFUEL
-                          </span>
+                          <div className="text-right">
+                            <span className="text-xs font-semibold text-[#8B5CF6]">
+                              {fmtTfuel(boosterLowYearly)} – {fmtTfuel(boosterHighYearly)} TFUEL
+                            </span>
+                            <span className="text-[10px] text-[#7D8694] ml-1.5">
+                              {fmtUsd(boosterLowYearly * tfuelPrice)} – {fmtUsd(boosterHighYearly * tfuelPrice)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="bg-[#0A0F1C] rounded-lg p-2 mt-3">
