@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: "Calculate THETA and TFUEL staking rewards with live APY data. Compare scenarios and understand how staking generates passive income.",
 };
 import CalculatorCard from "../../components/CalculatorCard";
+import EliteEdgeCalculator from "../../components/EliteEdgeCalculator";
 import DreamCalculator from "../../components/DreamCalculator";
 import SimplifyThis from "../../components/SimplifyThis";
 import TdropSection from "../../components/TdropSection";
@@ -64,6 +65,14 @@ export default async function EarnPage() {
       {/* Calculator */}
       <section>
         <CalculatorCard stakingData={stakingData} eurRate={eurRate} />
+      </section>
+
+      {/* Elite Edge Node & Booster calculator */}
+      <section>
+        <EliteEdgeCalculator
+          tfuelPrice={stakingData.tfuelPrice}
+          tfuelStaked={stakingData.tfuelStaked}
+        />
       </section>
 
       {/* What if calculator */}
