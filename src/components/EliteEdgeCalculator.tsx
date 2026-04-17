@@ -6,18 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 const TFUEL_REWARD_PER_BLOCK = 38;
 const BLOCKS_PER_YEAR = 5_256_000;
 
-// Booster base APY at 100% EdgeCloud utilization, 3-month lock.
-// Multiplied by lock multiplier and utilization fraction.
-const BOOSTER_BASE_APY = 0.20;
+// Theta Labs verified figures (Source: Theta Labs Medium, June 2024 Q&A)
+// Booster APY on locked TFUEL at 3-month lock:
+//   Low utilization: 14%   → Full utilization: 28% (doubles)
+// Lock multipliers: 3mo = 1.0×, 6mo = 1.25×, 12mo = 1.50×
+const BOOSTER_LOW_APY = 0.14;
+const BOOSTER_HIGH_APY = 0.28;
+const BOOSTER_BASE_BONUS_APY = 0.03; // +3% on base 500K staked TFUEL
+
 const LOCK_OPTIONS = [
   { months: 3, label: "3 months", multiplier: 1.0 },
   { months: 6, label: "6 months", multiplier: 1.25 },
   { months: 12, label: "12 months", multiplier: 1.5 },
-] as const;
-const UTIL_OPTIONS = [
-  { label: "Low", pct: 0.4, description: "40% — conservative estimate" },
-  { label: "Medium", pct: 0.7, description: "70% — moderate load" },
-  { label: "High", pct: 0.9, description: "90% — near capacity" },
 ] as const;
 
 interface Props {
@@ -38,7 +38,6 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
   const [staked, setStaked] = useState("");
   const [locked, setLocked] = useState("");
   const [lockIdx, setLockIdx] = useState(0);
-  const [utilIdx, setUtilIdx] = useState(1);
 
   const stakedAmt = parseFloat(staked) || 0;
   const lockedAmt = parseFloat(locked) || 0;
@@ -47,7 +46,7 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
   const hasBooster = lockedCapped > 0;
   const showResults = stakedAmt >= 500_000;
 
-  // Base staking rewards (protocol-fixed)
+  // ── Base staking rewards (protocol-fixed) ─────────────────────────
   const userShare = tfuelStaked > 0 ? stakedAmt / tfuelStaked : 0;
   const baseYearly = userShare * TFUEL_REWARD_PER_BLOCK * BLOCKS_PER_YEAR;
   const baseMonthly = baseYearly / 12;
@@ -55,16 +54,27 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
     ? ((TFUEL_REWARD_PER_BLOCK * BLOCKS_PER_YEAR) / tfuelStaked) * 100
     : 0;
 
-  // Booster rewards (variable)
-  const lock = LOCK_OPTIONS[lockIdx];
-  const util = UTIL_OPTIONS[utilIdx];
-  const boosterApy = BOOSTER_BASE_APY * lock.multiplier * util.pct * 100;
-  const boosterYearly = lockedCapped * (boosterApy / 100);
-  const boosterMonthly = boosterYearly / 12;
+  // ── Booster base bonus: +3% APY on the 500K staked TFUEL ─────────
+  const boosterBonusYearly = 500_000 * BOOSTER_BASE_BONUS_APY;
+  const boosterBonusMonthly = boosterBonusYearly / 12;
 
-  // Combined
-  const totalMonthly = baseMonthly + boosterMonthly;
-  const totalYearly = baseYearly + boosterYearly;
+  // ── Booster rewards on locked TFUEL (shown as range) ──────────────
+  const lock = LOCK_OPTIONS[lockIdx];
+  const lowApy = BOOSTER_LOW_APY * lock.multiplier * 100;
+  const highApy = BOOSTER_HIGH_APY * lock.multiplier * 100;
+
+  const boosterLowYearly = lockedCapped * (lowApy / 100);
+  const boosterHighYearly = lockedCapped * (highApy / 100);
+  const boosterLowMonthly = boosterLowYearly / 12;
+  const boosterHighMonthly = boosterHighYearly / 12;
+
+  // ── Combined totals ───────────────────────────────────────────────
+  const totalBase = baseYearly + (hasBooster ? boosterBonusYearly : 0);
+  const totalBaseMonthly = baseMonthly + (hasBooster ? boosterBonusMonthly : 0);
+  const totalLowYearly = totalBase + boosterLowYearly;
+  const totalHighYearly = totalBase + boosterHighYearly;
+  const totalLowMonthly = totalBaseMonthly + boosterLowMonthly;
+  const totalHighMonthly = totalBaseMonthly + boosterHighMonthly;
 
   return (
     <section className="bg-theta-card border border-theta-border rounded-xl overflow-hidden">
@@ -105,7 +115,6 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
             <div className="px-6 pb-6 space-y-6">
               {/* ── Inputs ─────────────────────────────────── */}
               <div className="grid sm:grid-cols-2 gap-4">
-                {/* TFUEL staked */}
                 <div>
                   <label className="block text-xs text-theta-muted mb-1">
                     TFUEL staked (min 500,000)
@@ -128,7 +137,6 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                   )}
                 </div>
 
-                {/* TFUEL locked */}
                 <div>
                   <label className="block text-xs text-theta-muted mb-1">
                     Additional TFUEL locked
@@ -154,61 +162,35 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                 </div>
               </div>
 
-              {/* Lock period + utilization — only shown if booster active */}
+              {/* Lock period — only shown if booster active */}
               {hasBooster && showResults && (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {/* Lock period */}
-                  <div>
-                    <p className="text-xs text-theta-muted mb-2">Lock period</p>
-                    <div className="flex gap-2">
-                      {LOCK_OPTIONS.map((opt, i) => (
-                        <button
-                          key={opt.months}
-                          onClick={() => setLockIdx(i)}
-                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
-                            lockIdx === i
-                              ? "bg-[#10B981]/15 border-[#10B981]/40 text-[#10B981]"
-                              : "bg-theta-dark border-theta-border text-[#7D8694] hover:text-[#B0B8C4]"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-[#7D8694] mt-1.5">
-                      Longer lock = higher multiplier (6mo +25%, 12mo +50% vs 3mo)
-                    </p>
+                <div className="max-w-sm">
+                  <p className="text-xs text-theta-muted mb-2">Lock period</p>
+                  <div className="flex gap-2">
+                    {LOCK_OPTIONS.map((opt, i) => (
+                      <button
+                        key={opt.months}
+                        onClick={() => setLockIdx(i)}
+                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
+                          lockIdx === i
+                            ? "bg-[#10B981]/15 border-[#10B981]/40 text-[#10B981]"
+                            : "bg-theta-dark border-theta-border text-[#7D8694] hover:text-[#B0B8C4]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
-
-                  {/* EdgeCloud utilization */}
-                  <div>
-                    <p className="text-xs text-theta-muted mb-2">EdgeCloud utilization</p>
-                    <div className="flex gap-2">
-                      {UTIL_OPTIONS.map((opt, i) => (
-                        <button
-                          key={opt.label}
-                          onClick={() => setUtilIdx(i)}
-                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
-                            utilIdx === i
-                              ? "bg-[#8B5CF6]/15 border-[#8B5CF6]/40 text-[#8B5CF6]"
-                              : "bg-theta-dark border-theta-border text-[#7D8694] hover:text-[#B0B8C4]"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-[#7D8694] mt-1.5">
-                      How busy EdgeCloud GPUs are. Affects Booster rewards only.
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-[#7D8694] mt-1.5">
+                    Longer lock = higher multiplier (6mo +25%, 12mo +50% vs 3mo)
+                  </p>
                 </div>
               )}
 
               {/* ── Results ────────────────────────────────── */}
               {showResults && (
                 <div className={`grid gap-4 ${hasBooster ? "sm:grid-cols-3" : "sm:grid-cols-1 max-w-sm"}`}>
-                  {/* Card 1 — Base staking */}
+                  {/* Card 1 — Base staking + Booster bonus */}
                   <div className="bg-[#0D1117] rounded-xl p-4 border border-theta-border">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-2 h-2 rounded-full bg-[#10B981]" />
@@ -217,20 +199,34 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-xs text-theta-muted">Monthly</span>
-                        <span className="text-xs text-white">{fmtTfuel(baseMonthly)} TFUEL</span>
+                        <span className="text-xs text-white">
+                          {fmtTfuel(hasBooster ? totalBaseMonthly : baseMonthly)} TFUEL
+                        </span>
                       </div>
                       <div className="flex justify-between border-t border-theta-border pt-2">
                         <span className="text-xs text-theta-muted">Annual</span>
-                        <span className="text-xs font-semibold text-[#10B981]">{fmtTfuel(baseYearly)} TFUEL</span>
+                        <span className="text-xs font-semibold text-[#10B981]">
+                          {fmtTfuel(hasBooster ? totalBase : baseYearly)} TFUEL
+                        </span>
                       </div>
                     </div>
                     <div className="bg-[#0A0F1C] rounded-lg p-2 mt-3">
-                      <p className="text-lg font-semibold text-white tabular-nums">{baseApy.toFixed(1)}% <span className="text-xs font-normal text-[#7D8694]">APY</span></p>
+                      <p className="text-lg font-semibold text-white tabular-nums">
+                        {baseApy.toFixed(1)}%
+                        {hasBooster && (
+                          <span className="text-[#10B981] text-sm ml-1">+3%</span>
+                        )}
+                        <span className="text-xs font-normal text-[#7D8694] ml-1">APY</span>
+                      </p>
                     </div>
-                    <p className="text-[10px] text-[#7D8694] mt-2">Guaranteed by protocol</p>
+                    <p className="text-[10px] text-[#7D8694] mt-2">
+                      {hasBooster
+                        ? "Protocol rewards + Booster bonus on 500K stake"
+                        : "Guaranteed by protocol"}
+                    </p>
                   </div>
 
-                  {/* Card 2 — Booster rewards (only if locked > 0) */}
+                  {/* Card 2 — Booster rewards on locked TFUEL (range) */}
                   {hasBooster && (
                     <div className="bg-[#0D1117] rounded-xl p-4 border border-theta-border">
                       <div className="flex items-center gap-2 mb-3">
@@ -240,23 +236,30 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-xs text-theta-muted">Monthly</span>
-                          <span className="text-xs text-white">{fmtTfuel(boosterMonthly)} TFUEL</span>
+                          <span className="text-xs text-white">
+                            {fmtTfuel(boosterLowMonthly)} – {fmtTfuel(boosterHighMonthly)} TFUEL
+                          </span>
                         </div>
                         <div className="flex justify-between border-t border-theta-border pt-2">
                           <span className="text-xs text-theta-muted">Annual</span>
-                          <span className="text-xs font-semibold text-[#8B5CF6]">{fmtTfuel(boosterYearly)} TFUEL</span>
+                          <span className="text-xs font-semibold text-[#8B5CF6]">
+                            {fmtTfuel(boosterLowYearly)} – {fmtTfuel(boosterHighYearly)} TFUEL
+                          </span>
                         </div>
                       </div>
                       <div className="bg-[#0A0F1C] rounded-lg p-2 mt-3">
-                        <p className="text-lg font-semibold text-white tabular-nums">{boosterApy.toFixed(1)}% <span className="text-xs font-normal text-[#7D8694]">APY</span></p>
+                        <p className="text-lg font-semibold text-white tabular-nums">
+                          {lowApy.toFixed(0)}–{highApy.toFixed(0)}%
+                          <span className="text-xs font-normal text-[#7D8694] ml-1">APY</span>
+                        </p>
                       </div>
                       <p className="text-[10px] text-[#7D8694] mt-2">
-                        {lock.label} lock · {util.label} utilization ({(util.pct * 100).toFixed(0)}%)
+                        {lock.label} lock · range: low → full EdgeCloud utilization
                       </p>
                     </div>
                   )}
 
-                  {/* Card 3 — Combined total (only if booster active) */}
+                  {/* Card 3 — Combined total (range) */}
                   {hasBooster && (
                     <div className="bg-[#0D1117] rounded-xl p-4 border border-[#2AB8E6]/30">
                       <div className="flex items-center gap-2 mb-3">
@@ -267,25 +270,36 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                         <div className="flex justify-between">
                           <span className="text-xs text-theta-muted">Monthly</span>
                           <div className="text-right">
-                            <span className="text-xs text-white">{fmtTfuel(totalMonthly)} TFUEL</span>
-                            <span className="text-[10px] text-[#7D8694] ml-1.5">{fmtUsd(totalMonthly * tfuelPrice)}</span>
+                            <span className="text-xs text-white">
+                              {fmtTfuel(totalLowMonthly)} – {fmtTfuel(totalHighMonthly)}
+                            </span>
+                            <span className="text-[10px] text-[#7D8694] ml-1">TFUEL</span>
                           </div>
                         </div>
                         <div className="flex justify-between border-t border-theta-border pt-2">
                           <span className="text-xs text-theta-muted">Annual</span>
                           <div className="text-right">
-                            <span className="text-xs font-semibold text-[#2AB8E6]">{fmtTfuel(totalYearly)} TFUEL</span>
-                            <span className="text-[10px] text-[#7D8694] ml-1.5">{fmtUsd(totalYearly * tfuelPrice)}</span>
+                            <span className="text-xs font-semibold text-[#2AB8E6]">
+                              {fmtTfuel(totalLowYearly)} – {fmtTfuel(totalHighYearly)}
+                            </span>
+                            <span className="text-[10px] text-[#7D8694] ml-1">TFUEL</span>
                           </div>
+                        </div>
+                        <div className="flex justify-between border-t border-theta-border pt-2">
+                          <span className="text-xs text-theta-muted">In USD</span>
+                          <span className="text-xs text-white">
+                            {fmtUsd(totalLowYearly * tfuelPrice)} – {fmtUsd(totalHighYearly * tfuelPrice)}
+                          </span>
                         </div>
                       </div>
                       <div className="bg-[#0A0F1C] rounded-lg p-2 mt-3">
                         <p className="text-lg font-semibold text-white tabular-nums">
-                          {(baseApy + boosterApy).toFixed(1)}% <span className="text-xs font-normal text-[#7D8694]">combined APY</span>
+                          {(baseApy + 3 + lowApy).toFixed(0)}–{(baseApy + 3 + highApy).toFixed(0)}%
+                          <span className="text-xs font-normal text-[#7D8694] ml-1">combined APY</span>
                         </p>
                       </div>
                       <p className="text-[10px] text-[#7D8694] mt-2">
-                        {fmtUsd(totalYearly * tfuelPrice)}/yr at current TFUEL price
+                        {fmtUsd(totalLowYearly * tfuelPrice)} – {fmtUsd(totalHighYearly * tfuelPrice)}/yr at current TFUEL price
                       </p>
                     </div>
                   )}
@@ -296,9 +310,11 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
               {showResults && (
                 <p className="text-[10px] text-[#5C6675] leading-relaxed">
                   Base staking rewards (~{baseApy.toFixed(0)}% APY) are fixed by the Theta
-                  protocol. Booster rewards depend on actual EdgeCloud utilization and job
-                  availability — the figures above assume your Edge Node is online 24/7 and
-                  EdgeCloud operates at your selected utilization level. Not financial advice.
+                  protocol. Booster APY (14–28%) is the range published by Theta Labs —
+                  actual rewards depend on total TFUEL locked by all Booster nodes and
+                  EdgeCloud utilization. Figures shown are Theta Labs&apos; stated range,
+                  not a guarantee. The +3% bonus on staked TFUEL applies to Booster nodes
+                  only. Not financial advice. Source: Theta Labs Medium, June 2024 Q&amp;A.
                   Verify current rates at{" "}
                   <a
                     href="https://www.thetatoken.org"
