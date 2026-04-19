@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchNetworkStats, fetchActivitySnapshot } from "../../../../lib/theta-api";
 import { getPool } from "../../../../lib/db";
+import { checkForNewSubchains } from "../../../../lib/metachain/monitor";
 
 function computeIndex(snap: {
   estimatedDailyTxs: number;
@@ -115,11 +116,25 @@ export async function GET(request: Request) {
       ]
     );
 
+    // Check for new subchains (non-blocking — failures are silently ignored)
+    let newSubchains: { subchainId: string; dailyTxs: number }[] = [];
+    try {
+      newSubchains = await checkForNewSubchains();
+      if (newSubchains.length > 0) {
+        console.log(
+          `[subchain-monitor] New explorer(s) online: ${newSubchains.map((s) => s.subchainId).join(", ")}`
+        );
+      }
+    } catch (e) {
+      console.error("[subchain-monitor] Check failed:", e);
+    }
+
     return NextResponse.json({
       ok: true,
       date: today,
       score,
       subchainApiAvailable: subchainAvailable,
+      newSubchains: newSubchains.length > 0 ? newSubchains : undefined,
     });
   } catch (error) {
     console.error("Cron activity fetch failed:", error);

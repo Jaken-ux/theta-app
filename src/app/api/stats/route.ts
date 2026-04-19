@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "../../../lib/db";
+import { getMonitoredSubchains } from "../../../lib/metachain/monitor";
 
 export const dynamic = "force-dynamic"; // never cache stats
 
@@ -135,6 +136,7 @@ export async function GET(request: Request) {
         visitors: parseInt(r.visitors),
         views: parseInt(r.views),
       })),
+      monitoredSubchains: await getMonitoredSubchains().catch(() => []),
     });
   } catch (error) {
     console.error("Stats query failed:", error);

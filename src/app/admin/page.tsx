@@ -29,6 +29,15 @@ interface Stats {
     visitors: number;
     views: number;
   }[];
+  monitoredSubchains: {
+    subchainId: string;
+    firstSeen: string;
+    explorerActive: boolean;
+    explorerFirstActive: string | null;
+    lastChecked: string;
+    dailyTxs: number;
+    totalTxs: number;
+  }[];
 }
 
 function formatDate(dateStr: string): string {
@@ -424,6 +433,63 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      {/* Subchain monitor */}
+      {stats.monitoredSubchains && stats.monitoredSubchains.length > 0 && (
+        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <p className="text-sm font-medium text-white">Subchain Monitor</p>
+            {stats.monitoredSubchains.some((s) => s.explorerActive) && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-400 font-medium animate-pulse">
+                New chain detected
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[#7D8694] mb-4">
+            Untracked subchains registered on ChainRegistrar — checked daily
+          </p>
+          <div className="space-y-2">
+            {stats.monitoredSubchains.map((s) => (
+              <div
+                key={s.subchainId}
+                className="flex items-center justify-between bg-[#0D1117] rounded-lg p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      s.explorerActive ? "bg-emerald-400" : "bg-[#2A3548]"
+                    }`}
+                  />
+                  <div>
+                    <p className="text-sm text-white font-mono">{s.subchainId}</p>
+                    <p className="text-[10px] text-[#7D8694]">
+                      Registered {s.firstSeen}
+                      {s.explorerFirstActive && ` · Explorer live since ${s.explorerFirstActive}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {s.explorerActive ? (
+                    <>
+                      <p className="text-sm text-emerald-400 font-medium tabular-nums">
+                        {s.dailyTxs.toLocaleString()} txs/day
+                      </p>
+                      <p className="text-[10px] text-[#7D8694]">
+                        {s.totalTxs.toLocaleString()} total
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-[#5C6675]">No explorer yet</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-[#5C6675] mt-3">
+            When a new explorer comes online, add an adapter in src/lib/metachain/adapters/ and register it.
+          </p>
+        </div>
+      )}
 
       <p className="text-[10px] text-[#7D8694] text-center">
         All data is anonymous. No personal information is collected or stored.
