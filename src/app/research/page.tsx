@@ -232,7 +232,7 @@ export default function ResearchPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<HistoryRow[]>([]);
   const [mcData, setMcData] = useState<{ date: string; compositeScore: number; chainsAvailable?: number; coveragePct?: number }[]>([]);
-  const [mcChainHistory, setMcChainHistory] = useState<Record<string, { date: string; score: number }[]>>({});
+  const [mcChainHistory, setMcChainHistory] = useState<Record<string, { date: string; score: number; txCount24h?: number }[]>>({});
   const [warningDismissed, setWarningDismissed] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("90d");
 
@@ -267,11 +267,13 @@ export default function ResearchPage() {
         );
         // Per-chain history for correlation analysis
         if (mc.chainHistory) {
-          const normalized: Record<string, { date: string; score: number }[]> = {};
+          const normalized: Record<string, { date: string; score: number; txCount24h?: number }[]> = {};
           for (const [chainId, entries] of Object.entries(mc.chainHistory)) {
-            normalized[chainId] = (entries as { date: string; score: number }[]).map((e) => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            normalized[chainId] = (entries as any[]).map((e) => ({
               date: typeof e.date === "string" && e.date.length > 10 ? e.date.slice(0, 10) : e.date,
               score: e.score,
+              txCount24h: e.txCount24h ?? undefined,
             }));
           }
           setMcChainHistory(normalized);
@@ -1080,6 +1082,136 @@ export default function ResearchPage() {
           </div>
         </Section>
       )}
+
+      {/* ── 3c. EdgeCloud Inference Monitor (TPulse) ─────────────────── */}
+      {(() => {
+        const tpulse = mcChainHistory["tsub68967"];
+        if (!tpulse || tpulse.length < 3) return null;
+
+        const sorted = [...tpulse]
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .filter((d) => d.txCount24h != null && d.txCount24h > 0);
+        if (sorted.length < 3) return null;
+
+        const chartData = sorted.map((d) => ({
+          date: formatDate(d.date),
+          fullDate: d.date,
+          txs: d.txCount24h!,
+          txsK: Math.round(d.txCount24h! / 1000),
+        }));
+
+        // 7d averages for current and previous week
+        const recent7 = sorted.slice(-7);
+        const prev7 = sorted.slice(-14, -7);
+        const avgRecent = recent7.length > 0
+          ? Math.round(recent7.reduce((s, d) => s + d.txCount24h!, 0) / recent7.length)
+          : 0;
+        const avgPrev = prev7.length > 0
+          ? Math.round(prev7.reduce((s, d) => s + d.txCount24h!, 0) / prev7.length)
+          : 0;
+        const wowChange = avgPrev > 0
+          ? ((avgRecent - avgPrev) / avgPrev * 100).toFixed(1)
+          : "—";
+        const peak = sorted.reduce((max, d) => d.txCount24h! > max.txCount24h! ? d : max);
+        const latest = sorted[sorted.length - 1];
+
+        // Correlate TPulse txs with TFUEL absorption
+        const absEntries = tfuelEconomics.dailyEntries;
+        const absByDate = new Map(absEntries.map((e) => [e.date, e.absorptionRate]));
+        const pairs = sorted
+          .filter((d) => absByDate.has(d.date))
+          .map((d) => ({ txs: d.txCount24h!, abs: absByDate.get(d.date)! }));
+        const corrTPulseAbs = pairs.length >= 5
+          ? pearson(pairs.map((p) => p.txs), pairs.map((p) => p.abs))
+          : null;
+
+        return (
+          <Section
+            title="EdgeCloud Inference Monitor"
+            subtitle="TPulse (tsub68967) loggar alla EdgeCloud-jobb — AI-inferens, GPU-compute, modellanrop. Spårar om nya modelldeployments (t.ex. Qwen3) driver reell trafik."
+          >
+            <Explainer
+              whatIsThis="TPulse-subchainens transaktioner är en direkt proxy för EdgeCloud-användning. Varje AI-inferens, GPU-jobb och modellanrop loggas som en transaktion. Fler transaktioner = fler betalda jobb = mer TFUEL-betalningar (varav 25% bränns)."
+              howToRead="Titta på trenden: om dagliga transaktioner ökar efter en ny modelldeployment (t.ex. Qwen3 32B) ser vi bevis på att EdgeCloud faktiskt levererar reell trafik, inte bara testkörningar."
+              useCase="Det starkaste beviset vi kan ge att Theta EdgeCloud har verkliga användare. Om vi kan visa en tydlig trafikspike efter en känd deployment är det en kraftig signal till investerare och communityt."
+            />
+
+            {/* Key metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="bg-[#0D1117] rounded-xl p-4">
+                <p className="text-xs text-[#7D8694] mb-1">Senaste (txs/dag)</p>
+                <p className="text-2xl font-bold text-[#8B5CF6] tabular-nums">
+                  {latest.txCount24h!.toLocaleString()}
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-0.5">{latest.date}</p>
+              </div>
+              <div className="bg-[#0D1117] rounded-xl p-4">
+                <p className="text-xs text-[#7D8694] mb-1">7d snitt</p>
+                <p className="text-2xl font-bold text-white tabular-nums">
+                  {avgRecent.toLocaleString()}
+                </p>
+                <p className={`text-[10px] mt-0.5 ${Number(wowChange) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {typeof wowChange === "string" && wowChange !== "—" ? (Number(wowChange) >= 0 ? "+" : "") : ""}{wowChange}% vecka-över-vecka
+                </p>
+              </div>
+              <div className="bg-[#0D1117] rounded-xl p-4">
+                <p className="text-xs text-[#7D8694] mb-1">Peak</p>
+                <p className="text-2xl font-bold text-[#F59E0B] tabular-nums">
+                  {peak.txCount24h!.toLocaleString()}
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-0.5">{peak.date}</p>
+              </div>
+              <div className="bg-[#0D1117] rounded-xl p-4">
+                <p className="text-xs text-[#7D8694] mb-1">TPulse ↔ Absorption</p>
+                <p
+                  className="text-2xl font-bold tabular-nums"
+                  style={{ color: corrTPulseAbs != null ? correlationLabel(corrTPulseAbs).color : "#7D8694" }}
+                >
+                  {corrTPulseAbs != null ? corrTPulseAbs.toFixed(3) : "—"}
+                </p>
+                <p className="text-[10px] text-[#5C6675] mt-0.5">
+                  {corrTPulseAbs != null ? correlationLabel(corrTPulseAbs).text : "för lite data"} korrelation
+                </p>
+              </div>
+            </div>
+
+            {/* Trend chart */}
+            <div className="h-60 mb-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} barCategoryGap="15%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fill: "#7D8694", fontSize: 10 }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(chartData.length / 8))} />
+                  <YAxis tick={{ fill: "#7D8694", fontSize: 10 }} axisLine={false} tickLine={false} width={40} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`} />
+                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} formatter={(v) => [Number(v).toLocaleString() + " txs", "EdgeCloud jobb"]} labelFormatter={(l) => `${l}`} />
+                  <Bar dataKey="txs" fill="#8B5CF6" fillOpacity={0.6} radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Known events timeline */}
+            <div className="bg-[#0D1117] rounded-lg p-4">
+              <p className="text-xs text-white font-medium mb-2">Kända EdgeCloud-händelser</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
+                  <p className="text-xs text-[#B0B8C4]">
+                    <span className="text-white">Apr 20, 2026:</span> Qwen3 32B (Alibaba) live på EdgeCloud — decentraliserad inferens över community-GPU-noder
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#00d4aa]" />
+                  <p className="text-xs text-[#B0B8C4]">
+                    <span className="text-white">Apr 14–20:</span> EdgeCloud listad på GetDeploying.com (25K+ utvecklare)
+                  </p>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#5C6675] mt-3">
+                Håll koll på dagliga transaktioner efter dessa datum — en ihållande ökning bekräftar att deployment driver reell trafik, inte bara engångstester.
+              </p>
+            </div>
+          </Section>
+        );
+      })()}
 
       {/* ── 4. Lead/Lag analysis ─────────────────────────────────────── */}
       <Section

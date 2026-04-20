@@ -185,8 +185,40 @@ export default function AdminPage() {
     views: d.pageViews,
   }));
 
+  const activeNewChains = stats.monitoredSubchains?.filter((s) => s.explorerActive) ?? [];
+
   return (
     <div className="space-y-8">
+      {/* New subchain alert — top of page, impossible to miss */}
+      {activeNewChains.length > 0 && (
+        <div className="bg-emerald-400/10 border border-emerald-400/30 rounded-xl p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-base font-semibold text-emerald-400">
+              {activeNewChains.length} new subchain{activeNewChains.length > 1 ? "s" : ""} detected with active explorer
+            </p>
+          </div>
+          <div className="space-y-2 ml-6">
+            {activeNewChains.map((s) => (
+              <div key={s.subchainId} className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm text-white font-mono">{s.subchainId}</span>
+                  <span className="text-xs text-[#7D8694] ml-3">
+                    Explorer live since {s.explorerFirstActive ?? s.lastChecked}
+                  </span>
+                </div>
+                <span className="text-sm text-emerald-400 font-medium tabular-nums">
+                  {s.dailyTxs.toLocaleString()} txs/day
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-[#7D8694] mt-3 ml-6">
+            Add an adapter in src/lib/metachain/adapters/ to start tracking.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
