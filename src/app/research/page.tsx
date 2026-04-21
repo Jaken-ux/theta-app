@@ -16,6 +16,7 @@ import {
   Bar,
   Cell,
   ReferenceLine,
+  ComposedChart,
 } from "recharts";
 import { computeTfuelEconomics, DAILY_ISSUANCE } from "@/lib/tfuel-economics";
 
@@ -235,6 +236,22 @@ export default function ResearchPage() {
   const [mcChainHistory, setMcChainHistory] = useState<Record<string, { date: string; score: number; txCount24h?: number }[]>>({});
   const [warningDismissed, setWarningDismissed] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>("90d");
+  const [edgeImpact, setEdgeImpact] = useState<{
+    tpulseDelta: number;
+    absorptionDelta: number;
+    impact: string;
+    message: string;
+    tpulseTrend: { date: string; txs: number }[];
+    absorptionTrend: { date: string; rate: number; artifact: boolean }[];
+    baselineTxAvg: number;
+    postTxAvg: number;
+    baselineAbsAvg: number;
+    postAbsAvg: number;
+    baselineEnd: string;
+    trackingStart: string;
+    daysTracked: number;
+  } | null>(null);
+  const [edgeImpactOpen, setEdgeImpactOpen] = useState(false);
 
   // Auth check — reuse STATS_SECRET via /api/stats
   async function authenticate(secret: string) {
@@ -254,6 +271,11 @@ export default function ResearchPage() {
         fetch("/api/metachain"),
       ]);
       if (histRes.ok) setData(await histRes.json());
+      // EdgeCloud impact (non-blocking)
+      fetch(`/api/edgecloud-impact?key=${encodeURIComponent(secret)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d) setEdgeImpact(d); })
+        .catch(() => {});
       if (mcRes.ok) {
         const mc = await mcRes.json();
         setMcData(
@@ -1456,6 +1478,142 @@ export default function ResearchPage() {
             </LineChart>
           </ResponsiveContainer>
         </Section>
+      )}
+
+      {/* ── 6b. EdgeCloud Impact Tracker ─────────────────────────── */}
+      {edgeImpact && (
+        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl overflow-hidden">
+          <button
+            onClick={() => setEdgeImpactOpen(!edgeImpactOpen)}
+            className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[#0D1117]/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-white">EdgeCloud Impact Tracker</h2>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] font-medium">NEW</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[#7D8694]">
+                {edgeImpact.daysTracked} dag{edgeImpact.daysTracked !== 1 ? "ar" : ""} sedan Qwen3
+              </span>
+              <svg
+                className={`w-5 h-5 text-[#7D8694] transition-transform duration-200 ${edgeImpactOpen ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+
+          {edgeImpactOpen && (
+            <div className="px-6 pb-6 space-y-6">
+              <p className="text-xs text-[#7D8694]">
+                Mäter reell nätverkseffekt av Qwen3 32B och EdgeCloud-deployments från {edgeImpact.trackingStart}. Jämför med 7-dagars baseline ({edgeImpact.baselineEnd} och bakåt).
+              </p>
+
+              {/* Signal cards */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="bg-[#0D1117] rounded-xl p-5 border border-theta-border">
+                  <p className="text-xs text-[#7D8694] mb-2">TPulse-signal</p>
+                  <p
+                    className="text-3xl font-bold tabular-nums"
+                    style={{ color: edgeImpact.tpulseDelta > 10 ? "#10B981" : edgeImpact.tpulseDelta > 0 ? "#F59E0B" : "#EF4444" }}
+                  >
+                    {edgeImpact.tpulseDelta > 0 ? "+" : ""}{edgeImpact.tpulseDelta.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-[#7D8694] mt-2">
+                    vs 7d pre-launch baseline ({edgeImpact.baselineTxAvg.toLocaleString()} → {edgeImpact.postTxAvg.toLocaleString()} txs/dag)
+                  </p>
+                </div>
+                <div className="bg-[#0D1117] rounded-xl p-5 border border-theta-border">
+                  <p className="text-xs text-[#7D8694] mb-2">TFUEL absorption-signal</p>
+                  <p
+                    className="text-3xl font-bold tabular-nums"
+                    style={{ color: edgeImpact.absorptionDelta > 3 ? "#10B981" : edgeImpact.absorptionDelta > 0 ? "#F59E0B" : "#EF4444" }}
+                  >
+                    {edgeImpact.absorptionDelta > 0 ? "+" : ""}{edgeImpact.absorptionDelta.toFixed(1)} pp
+                  </p>
+                  <p className="text-xs text-[#7D8694] mt-2">
+                    procentenheter vs baseline ({edgeImpact.baselineAbsAvg.toFixed(1)}% → {edgeImpact.postAbsAvg.toFixed(1)}%)
+                  </p>
+                </div>
+              </div>
+
+              {/* Impact verdict */}
+              <div
+                className="rounded-xl p-5 border"
+                style={{
+                  backgroundColor:
+                    edgeImpact.impact === "CONFIRMED" ? "#10B98110" :
+                    edgeImpact.impact === "PARTIAL" ? "#F59E0B10" :
+                    edgeImpact.impact === "NONE" ? "#EF444410" : "#7D869410",
+                  borderColor:
+                    edgeImpact.impact === "CONFIRMED" ? "#10B98140" :
+                    edgeImpact.impact === "PARTIAL" ? "#F59E0B40" :
+                    edgeImpact.impact === "NONE" ? "#EF444440" : "#7D869440",
+                }}
+              >
+                <p
+                  className="text-2xl font-bold tracking-wide"
+                  style={{
+                    color:
+                      edgeImpact.impact === "CONFIRMED" ? "#10B981" :
+                      edgeImpact.impact === "PARTIAL" ? "#F59E0B" :
+                      edgeImpact.impact === "NONE" ? "#EF4444" : "#7D8694",
+                  }}
+                >
+                  {edgeImpact.impact}
+                </p>
+                <p className="text-sm text-[#B0B8C4] mt-1">{edgeImpact.message}</p>
+              </div>
+
+              {/* Dual-axis chart */}
+              {(() => {
+                const LAUNCH = "2026-04-20";
+                const merged = edgeImpact.tpulseTrend.map((t) => {
+                  const abs = edgeImpact.absorptionTrend.find((a) => a.date === t.date);
+                  return {
+                    date: formatDate(t.date),
+                    fullDate: t.date,
+                    txs: t.txs,
+                    txsK: Math.round(t.txs / 1000),
+                    absorption: abs && !abs.artifact ? abs.rate : null,
+                    isPostLaunch: t.date >= LAUNCH,
+                  };
+                });
+                const launchIdx = merged.findIndex((d) => d.fullDate >= LAUNCH);
+
+                return (
+                  <div>
+                    <p className="text-xs text-[#7D8694] mb-2">TPulse txs (lila) vs TFUEL absorption % (teal) — streckad linje = Qwen3 launch</p>
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={merged}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fill: "#7D8694", fontSize: 10 }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(merged.length / 7))} />
+                          <YAxis yAxisId="txs" tick={{ fill: "#7D8694", fontSize: 10 }} axisLine={false} tickLine={false} width={45} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`} />
+                          <YAxis yAxisId="abs" orientation="right" tick={{ fill: "#7D8694", fontSize: 10 }} axisLine={false} tickLine={false} width={40} tickFormatter={(v: number) => `${v}%`} domain={[0, "auto"]} />
+                          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                          {launchIdx >= 0 && (
+                            <ReferenceLine x={merged[launchIdx]?.date} yAxisId="txs" stroke="#8B5CF6" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: "Qwen3", fill: "#8B5CF6", fontSize: 10, position: "top" }} />
+                          )}
+                          <Line yAxisId="txs" type="monotone" dataKey="txs" stroke="#8B5CF6" strokeWidth={2} dot={false} name="TPulse txs" />
+                          <Line yAxisId="abs" type="monotone" dataKey="absorption" stroke="#00d4aa" strokeWidth={2} dot={false} name="Absorption %" connectNulls />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Explainer */}
+              <Explainer
+                whatIsThis="Denna tracker mäter om EdgeCloud AI-deployments som Qwen3 32B genererar mätbar on-chain-aktivitet via två oberoende signaler: TPulse-transaktioner (EdgeCloud loggar AI-interaktioner on-chain) och TFUEL-absorption (nodoperatörer tjänar TFUEL för inferens-jobb, varav 25% bränns)."
+                howToRead="Grönt = stark signal (TPulse +10% eller absorption +3pp). Gult = tidig signal. Grått = ännu ingen mätbar effekt. Om bara absorption stiger pågår inferens men loggas kanske inte per-request till TPulse. Båda stigande = starkaste bekräftelsen."
+                useCase="Det starkaste beviset vi kan leverera att EdgeCloud inte bara är en demo — att Qwen3 och andra modeller faktiskt driver reella betalda GPU-jobb. En ihållande ökning i båda signalerna efter launch-datum är exakt den datan investerare och communityt frågar efter."
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── 7. Per-chain correlations with THETA price ────────────── */}
