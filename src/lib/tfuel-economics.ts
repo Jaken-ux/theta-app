@@ -9,13 +9,26 @@
  * of each day's fresh issuance is offset by burns (gas, 25% of Edge
  * payments, etc.).
  *
- * Some days appear to have negative absorption (supply grew faster than
- * block issuance). That is not a real phenomenon — block rewards are the
- * only source of new TFUEL. These days are snapshot-timing artifacts
- * (jittery cron, API rounding, or occasional token unlocks moving tokens
- * into the circulating supply figure). We flag them as `isDataArtifact`,
- * clamp the value to 0, render them in neutral styling, and exclude them
- * from the 7-day averages so they do not contaminate the trend signal.
+ * Raw single-day values are noisy because daily snapshots are not taken
+ * at exactly 24h intervals — cron timing drifts by a few hours from
+ * day to day. That drift splits one day's real issuance across two
+ * reported deltas, producing paired "too low" and "too high" days
+ * (including apparent supply growth > 1,238,400, which is physically
+ * impossible).
+ *
+ * We correct for this with a 2-day trailing rolling average:
+ *   smoothed[N] = (raw[N-1] + raw[N]) / 2
+ *
+ * Mathematically, the sum over any 2-day window reflects the real
+ * 2-day issuance regardless of where inside each 24h block the
+ * snapshot was taken. Dividing by 2 restores the per-day signal while
+ * cancelling out timing drift. The tradeoff is a small loss of daily
+ * precision (real day-to-day variation is slightly blurred), but in
+ * exchange we never report impossible artifact days.
+ *
+ * `isDataArtifact` now only flags days where the smoothed value is
+ * still negative — extremely rare, indicates either 2+ consecutive
+ * drift days or a genuine on-chain event (e.g. a large token unlock).
  */
 
 const BLOCKS_PER_DAY = Math.floor(86400 / 6); // 14,400
@@ -25,16 +38,20 @@ export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
 export interface DailyEntry {
   date: string;
   supplyChange: number;
-  rawAbsorption: number; // can be negative — indicates a data artifact
-  absorption: number; // clamped to >= 0
-  absorptionRate: number; // as fraction 0–1, clamped to >= 0
-  isDataArtifact: boolean; // true when rawAbsorption < 0 (snapshot drift / unlock)
+  /** Single-day raw absorption (no smoothing). Negative on drift days. */
+  rawAbsorption: number;
+  /** 2-day trailing smoothed absorption, clamped to >= 0. */
+  absorption: number;
+  /** Smoothed rate as fraction 0–1. */
+  absorptionRate: number;
+  /** True only if smoothed absorption is still negative (rare). */
+  isDataArtifact: boolean;
 }
 
 export interface TfuelEconomics {
   dailyIssuance: number;
   avgSupplyGrowth7d: number | null;
-  avgAbsorption7d: number | null; // over last 7 non-artifact days
+  avgAbsorption7d: number | null;
   avgAbsorptionRate7d: number | null;
   dailyEntries: DailyEntry[];
   daysAvailable: number;
@@ -62,30 +79,38 @@ export function computeTfuelEconomics(
   // has no confirmed next-day snapshot yet and is still changing.
   const todayUtc = new Date().toISOString().slice(0, 10);
 
-  const entries: DailyEntry[] = [];
+  // First pass: compute raw per-day values.
+  const raw: { date: string; supplyChange: number; rawAbsorption: number }[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const entryDate = sorted[i].date;
     if (entryDate >= todayUtc) continue;
     const supplyChange = sorted[i].supply - sorted[i - 1].supply;
     const rawAbsorption = DAILY_ISSUANCE - supplyChange;
-    const isDataArtifact = rawAbsorption < 0;
-    const absorption = Math.max(0, rawAbsorption);
-    const absorptionRate = absorption / DAILY_ISSUANCE;
-
-    entries.push({
-      date: entryDate,
-      supplyChange,
-      rawAbsorption,
-      absorption,
-      absorptionRate,
-      isDataArtifact,
-    });
+    raw.push({ date: entryDate, supplyChange, rawAbsorption });
   }
 
-  if (entries.length === 0) return base;
+  if (raw.length === 0) return base;
 
-  // 7-day averages — only over clean (non-artifact) days so timing glitches
-  // or rare unlocks do not drag the trend line toward zero.
+  // Second pass: apply 2-day trailing rolling average.
+  // Day N's displayed value = average of (day N-1, day N).
+  // First day has no predecessor — use its raw value directly.
+  const entries: DailyEntry[] = raw.map((r, i) => {
+    const smoothedRaw =
+      i === 0 ? r.rawAbsorption : (raw[i - 1].rawAbsorption + r.rawAbsorption) / 2;
+    const absorption = Math.max(0, smoothedRaw);
+    const absorptionRate = absorption / DAILY_ISSUANCE;
+    return {
+      date: r.date,
+      supplyChange: r.supplyChange,
+      rawAbsorption: r.rawAbsorption,
+      absorption,
+      absorptionRate,
+      isDataArtifact: smoothedRaw < 0,
+    };
+  });
+
+  // 7-day averages — drift is already corrected by smoothing, so any
+  // remaining artifact days are excluded to keep the trend trustworthy.
   const clean = entries.filter((e) => !e.isDataArtifact);
   const recent7 = clean.slice(-7);
   const avgSupplyGrowth7d =

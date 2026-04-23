@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getPool } from "../../../lib/db";
+import { computeTfuelEconomics } from "../../../lib/tfuel-economics";
 
 export const dynamic = "force-dynamic";
 
-const DAILY_ISSUANCE = 1_238_400;
 const BASELINE_START = "2026-04-13";
 const BASELINE_END = "2026-04-19";
 const LAUNCH_DATE = "2026-04-20";
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       `SELECT date, tfuel_circulating_supply
        FROM theta_activity_history
        WHERE tfuel_circulating_supply IS NOT NULL
-         AND date >= ($1::date - INTERVAL '1 day')
+         AND date >= ($1::date - INTERVAL '2 days')
        ORDER BY date ASC`,
       [BASELINE_START]
     );
@@ -45,20 +45,21 @@ export async function GET(request: Request) {
       txs: r.tx_count_24h as number,
     }));
 
-    // Build absorption trend
-    const todayUtc = new Date().toISOString().slice(0, 10);
-    const absorptionTrend: { date: string; rate: number; artifact: boolean }[] = [];
-    for (let i = 1; i < supplyRows.length; i++) {
-      const date = supplyRows[i].date.toISOString().slice(0, 10);
-      if (date >= todayUtc) continue;
-      const delta =
-        Number(supplyRows[i].tfuel_circulating_supply) -
-        Number(supplyRows[i - 1].tfuel_circulating_supply);
-      const raw = DAILY_ISSUANCE - delta;
-      const artifact = raw < 0;
-      const rate = Math.max(0, raw) / DAILY_ISSUANCE;
-      absorptionTrend.push({ date, rate: Math.round(rate * 1000) / 10, artifact });
-    }
+    // Reuse the same 2-day-smoothed absorption logic that the dashboard uses,
+    // so the impact tracker shows the same numbers as the main chart.
+    const economics = computeTfuelEconomics(
+      supplyRows.map((r) => ({
+        date: r.date.toISOString().slice(0, 10),
+        supply: Number(r.tfuel_circulating_supply),
+      }))
+    );
+    const absorptionTrend = economics.dailyEntries
+      .filter((e) => e.date >= BASELINE_START)
+      .map((e) => ({
+        date: e.date,
+        rate: Math.round(e.absorptionRate * 1000) / 10,
+        artifact: e.isDataArtifact,
+      }));
 
     // Split into baseline and post-launch
     const tpulseBaseline = tpulseTrend.filter(
@@ -94,25 +95,21 @@ export async function GET(request: Request) {
         : 0;
     const absorptionDelta = postAbsAvg - baselineAbsAvg;
 
-    // Impact assessment
     let impact: string;
     let message: string;
     if (tpulseDelta > 10 && absorptionDelta > 3) {
       impact = "CONFIRMED";
-      message =
-        "Both signals rising — EdgeCloud generating real activity";
+      message = "Both signals rising — EdgeCloud generating real activity";
     } else if (tpulseDelta > 10) {
       impact = "PARTIAL";
-      message =
-        "TPulse rising — inference may be logging on-chain";
+      message = "TPulse rising — inference may be logging on-chain";
     } else if (absorptionDelta > 3) {
       impact = "PARTIAL";
       message =
         "TFUEL absorption rising — node payments increasing even if TPulse unchanged";
     } else if (tpulseDelta < -5 && absorptionDelta < -1) {
       impact = "NONE";
-      message =
-        "No signal yet — too early or volume too small to measure";
+      message = "No signal yet — too early or volume too small to measure";
     } else {
       impact = "MONITORING";
       message = "Watching for signal — check back in a few days";

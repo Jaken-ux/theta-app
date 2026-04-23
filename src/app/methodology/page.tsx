@@ -505,18 +505,16 @@ export default function MethodologyPage() {
 
             {/* Formula */}
             <div className="font-mono text-xs bg-[#0A0F1C] rounded-lg p-3 text-[#D1D5DB] space-y-1">
-              <p>supplyChange = supply_today − supply_yesterday</p>
-              <p>rawAbsorption = blockIssuance − supplyChange</p>
-              <p className="text-white mt-1">
-                absorption = max(0, rawAbsorption)
-              </p>
+              <p>supplyChange[N] = supply[N] − supply[N-1]</p>
+              <p>rawAbsorption[N] = blockIssuance − supplyChange[N]</p>
               <p className="mt-2 text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// Negative rawAbsorption → data artifact (clamped, excluded from 7d avg)'}
+                {/* eslint-disable-next-line */}{'// 2-day trailing rolling average corrects snapshot timing drift'}
               </p>
-              <p>absorptionRate = absorption / blockIssuance</p>
-              <p className="mt-1 text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// Shown as 7-day rolling average'}
+              <p className="text-white">
+                smoothed[N] = (rawAbsorption[N-1] + rawAbsorption[N]) / 2
               </p>
+              <p>absorption[N] = max(0, smoothed[N])</p>
+              <p>absorptionRate[N] = absorption[N] / blockIssuance</p>
             </div>
 
             {/* Why absorption instead of burn */}
@@ -563,13 +561,17 @@ export default function MethodologyPage() {
             </li>
             <li>
               <span className="text-white">
-                Data artifact days are clamped to 0%.
+                Snapshot-timing drift is corrected by 2-day smoothing.
               </span>{" "}
-              When the reported supply grows faster than 1,238,400 in a
-              day, we flag it as a data artifact (usually snapshot-timing
-              drift or a token unlock moving into circulating supply) and
-              clamp absorption to 0%. These days are also excluded from
-              the 7-day rolling average so they do not bias the trend.
+              Daily snapshots are never taken at exactly the same time.
+              That splits one day&apos;s real issuance across two reported
+              deltas — one too small, one too large. We show each bar as
+              the average of that day and the day before. The sum over a
+              2-day window is preserved regardless of timing, so this
+              cancels out drift while keeping real daily variation visible.
+              Days where even the smoothed value is still negative (very
+              rare — usually a token unlock) are flagged as artifacts and
+              excluded from the 7-day average.
             </li>
             <li>
               <span className="text-white">

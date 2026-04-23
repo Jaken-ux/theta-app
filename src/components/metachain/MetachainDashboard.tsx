@@ -839,9 +839,10 @@ export default function MetachainDashboard({
                                   <p className="text-[#7D8694] mb-1">{label}</p>
                                   {d.isDataArtifact ? (
                                     <p className="text-[#7D8694] font-medium">
-                                      Data artifact — likely snapshot-timing
-                                      drift or a token unlock. Excluded from
-                                      the 7-day average.
+                                      Data artifact — even the 2-day smoothed
+                                      value is negative. Likely a token unlock
+                                      or multi-day snapshot drift. Excluded
+                                      from the 7-day average.
                                     </p>
                                   ) : (
                                     <p className="text-[#F59E0B] font-medium">
@@ -881,7 +882,7 @@ export default function MetachainDashboard({
                     </div>
                   )}
                   <p className="text-[10px] text-[#5C6675] mt-2">
-                    Values finalize at midnight UTC — showing completed days only
+                    Each bar is a 2-day trailing average (corrects snapshot timing drift). Completed days only.
                   </p>
                 </div>
               );
@@ -922,18 +923,20 @@ export default function MetachainDashboard({
               </p>
               <p className="mb-2">
                 <strong className="text-white">
-                  Why do some days show 0%?
+                  How is this calculated?
                 </strong>
               </p>
               <p className="mb-3">
                 Block rewards are the <em>only</em> source of new TFUEL —
                 Edge Network jobs move existing tokens, they do not mint new
-                ones. If a day appears to have grown the supply by more than
-                1.24M, that is not a real burn-negative day. It is a data
-                artifact — usually the snapshot being taken at a slightly
-                different time of day than the previous one, so the &quot;24h
-                window&quot; is actually 26h or 28h. We flag those days in
-                grey and leave them out of the 7-day average.
+                ones. So supply can never truly grow more than 1.24M in a day.
+                But snapshot timing drifts a few hours day-to-day, which
+                splits one day&apos;s real issuance across two reported
+                deltas. To correct this we show each bar as a{" "}
+                <strong className="text-white">2-day trailing rolling average</strong>
+                {" "}— the sum over any 2-day window is always right, even
+                when timing shifts. That kills impossible &quot;0%&quot;
+                artifact days while preserving real variation.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
