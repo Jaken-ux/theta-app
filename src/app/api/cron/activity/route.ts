@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     const pool = await getPool();
     const today = new Date().toISOString().slice(0, 10);
 
+    const snapshotAt = new Date();
     await pool.query(
       `INSERT INTO theta_activity_history (
         date, samples, total_score, average,
@@ -90,8 +91,8 @@ export async function GET(request: Request) {
         theta_price, tfuel_price, theta_market_cap,
         tfuel_circulating_supply, daily_blocks,
         validator_guardian_nodes, edge_nodes, subchain_api_available,
-        tdrop_price, tdrop_market_cap
-      ) VALUES ($1, 1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        tdrop_price, tdrop_market_cap, tfuel_supply_snapshot_at
+      ) VALUES ($1, 1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
        ON CONFLICT (date) DO UPDATE SET
          samples = theta_activity_history.samples + 1,
          total_score = theta_activity_history.total_score + $2,
@@ -102,7 +103,8 @@ export async function GET(request: Request) {
          tfuel_circulating_supply = $12, daily_blocks = $13,
          validator_guardian_nodes = $14, edge_nodes = $15,
          subchain_api_available = $16,
-         tdrop_price = $17, tdrop_market_cap = $18`,
+         tdrop_price = $17, tdrop_market_cap = $18,
+         tfuel_supply_snapshot_at = $19`,
       [
         today, score,
         snapshot.estimatedDailyTxs, snapshot.tfuelVolume24h,
@@ -112,7 +114,7 @@ export async function GET(request: Request) {
         snapshot.tfuelCirculatingSupply, snapshot.dailyBlocks,
         snapshot.validatorGuardianNodes, snapshot.edgeNodes,
         subchainAvailable,
-        tdrop.price, tdrop.marketCap,
+        tdrop.price, tdrop.marketCap, snapshotAt,
       ]
     );
 

@@ -16,15 +16,20 @@
  * (including apparent supply growth > 1,238,400, which is physically
  * impossible).
  *
- * We correct for this with a 2-day trailing rolling average:
- *   smoothed[N] = (raw[N-1] + raw[N]) / 2
+ * We correct for this with a 3-day centered rolling average:
+ *   smoothed[N] = (raw[N-1] + raw[N] + raw[N+1]) / 3
  *
- * Mathematically, the sum over any 2-day window reflects the real
- * 2-day issuance regardless of where inside each 24h block the
- * snapshot was taken. Dividing by 2 restores the per-day signal while
- * cancelling out timing drift. The tradeoff is a small loss of daily
- * precision (real day-to-day variation is slightly blurred), but in
- * exchange we never report impossible artifact days.
+ * Snapshot drift creates paired errors (one day too small, the next
+ * too large). A centered 3-day window has both neighbours of each
+ * drift pair so both halves get corrected to the same plausible value.
+ * A 2-day trailing window only corrected the second half of each pair,
+ * leaving the first half biased. The tradeoff is a slightly larger
+ * smoothing window — real daily variation is blurred across ~3 days
+ * instead of ~2 — but in exchange the day-to-day wobble from imperfect
+ * snapshot timing is largely gone.
+ *
+ * The first and last day of the series have no pair to center on, so
+ * we fall back to 2-day trailing for those edges.
  *
  * `isDataArtifact` now only flags days where the smoothed value is
  * still negative — extremely rare, indicates either 2+ consecutive
@@ -40,7 +45,7 @@ export interface DailyEntry {
   supplyChange: number;
   /** Single-day raw absorption (no smoothing). Negative on drift days. */
   rawAbsorption: number;
-  /** 2-day trailing smoothed absorption, clamped to >= 0. */
+  /** 3-day centered smoothed absorption (2-day trailing at edges), clamped to >= 0. */
   absorption: number;
   /** Smoothed rate as fraction 0–1. */
   absorptionRate: number;
@@ -91,12 +96,24 @@ export function computeTfuelEconomics(
 
   if (raw.length === 0) return base;
 
-  // Second pass: apply 2-day trailing rolling average.
-  // Day N's displayed value = average of (day N-1, day N).
-  // First day has no predecessor — use its raw value directly.
+  // Second pass: 3-day centered rolling average.
+  // Interior days: smoothed[N] = (raw[N-1] + raw[N] + raw[N+1]) / 3
+  // Edges (first/last day, no pair) fall back to 2-day trailing/leading.
   const entries: DailyEntry[] = raw.map((r, i) => {
-    const smoothedRaw =
-      i === 0 ? r.rawAbsorption : (raw[i - 1].rawAbsorption + r.rawAbsorption) / 2;
+    let smoothedRaw: number;
+    if (raw.length === 1) {
+      smoothedRaw = r.rawAbsorption;
+    } else if (i === 0) {
+      // First day — 2-day leading
+      smoothedRaw = (r.rawAbsorption + raw[1].rawAbsorption) / 2;
+    } else if (i === raw.length - 1) {
+      // Last day — 2-day trailing
+      smoothedRaw = (raw[i - 1].rawAbsorption + r.rawAbsorption) / 2;
+    } else {
+      // Interior — 3-day centered
+      smoothedRaw =
+        (raw[i - 1].rawAbsorption + r.rawAbsorption + raw[i + 1].rawAbsorption) / 3;
+    }
     const absorption = Math.max(0, smoothedRaw);
     const absorptionRate = absorption / DAILY_ISSUANCE;
     return {

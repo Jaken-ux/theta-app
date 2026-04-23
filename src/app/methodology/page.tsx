@@ -508,10 +508,10 @@ export default function MethodologyPage() {
               <p>supplyChange[N] = supply[N] − supply[N-1]</p>
               <p>rawAbsorption[N] = blockIssuance − supplyChange[N]</p>
               <p className="mt-2 text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// 2-day trailing rolling average corrects snapshot timing drift'}
+                {/* eslint-disable-next-line */}{'// 3-day centered rolling average corrects snapshot timing drift'}
               </p>
               <p className="text-white">
-                smoothed[N] = (rawAbsorption[N-1] + rawAbsorption[N]) / 2
+                smoothed[N] = (rawAbsorption[N-1] + rawAbsorption[N] + rawAbsorption[N+1]) / 3
               </p>
               <p>absorption[N] = max(0, smoothed[N])</p>
               <p>absorptionRate[N] = absorption[N] / blockIssuance</p>
@@ -561,17 +561,20 @@ export default function MethodologyPage() {
             </li>
             <li>
               <span className="text-white">
-                Snapshot-timing drift is corrected by 2-day smoothing.
+                Snapshot-timing drift is corrected by 3-day centered smoothing.
               </span>{" "}
-              Daily snapshots are never taken at exactly the same time.
-              That splits one day&apos;s real issuance across two reported
-              deltas — one too small, one too large. We show each bar as
-              the average of that day and the day before. The sum over a
-              2-day window is preserved regardless of timing, so this
-              cancels out drift while keeping real daily variation visible.
-              Days where even the smoothed value is still negative (very
-              rare — usually a token unlock) are flagged as artifacts and
-              excluded from the 7-day average.
+              Daily snapshots are never taken at exactly the same time,
+              and the upstream supply endpoint updates on its own cadence.
+              That splits real issuance across multiple reported deltas —
+              one day shows too little growth, the next too much. We show
+              each bar as the average of three days (the day before, the
+              day itself, the day after). Drift errors come in pairs, so
+              having both neighbours in the window cancels them from both
+              sides. Days where even the smoothed value is still negative
+              (very rare) are flagged as artifacts and excluded from the
+              7-day average. Going forward, we also store the exact UTC
+              timestamp of each supply snapshot so future calculations
+              can normalise by the actual interval length.
             </li>
             <li>
               <span className="text-white">

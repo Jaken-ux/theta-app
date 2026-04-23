@@ -882,7 +882,7 @@ export default function MetachainDashboard({
                     </div>
                   )}
                   <p className="text-[10px] text-[#5C6675] mt-2">
-                    Each bar is a 2-day trailing average (corrects snapshot timing drift). Completed days only.
+                    Each bar is a 3-day centered average (corrects snapshot timing drift). Completed days only.
                   </p>
                 </div>
               );
@@ -933,10 +933,11 @@ export default function MetachainDashboard({
                 But snapshot timing drifts a few hours day-to-day, which
                 splits one day&apos;s real issuance across two reported
                 deltas. To correct this we show each bar as a{" "}
-                <strong className="text-white">2-day trailing rolling average</strong>
-                {" "}— the sum over any 2-day window is always right, even
-                when timing shifts. That kills impossible &quot;0%&quot;
-                artifact days while preserving real variation.
+                <strong className="text-white">3-day centered rolling average</strong>
+                {" "}— each day uses info from the day before and the day
+                after, so drift errors (which come in pairs) are cancelled
+                on both sides. That kills impossible &quot;0%&quot; artifact
+                days while keeping real daily variation visible.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
