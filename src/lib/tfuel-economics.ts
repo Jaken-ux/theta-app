@@ -80,16 +80,23 @@ export function computeTfuelEconomics(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Today's UTC date — entries dated today are excluded because their delta
-  // has no confirmed next-day snapshot yet and is still changing.
+  // Today's UTC date. The loop pairs consecutive snapshots, so the
+  // last raw entry is automatically limited to the second-to-last
+  // snapshot — which represents yesterday's completed activity.
   const todayUtc = new Date().toISOString().slice(0, 10);
 
   // First pass: compute raw per-day values.
+  //
+  // IMPORTANT: the delta (supply[N+1] − supply[N]) represents activity
+  // that happened DURING day N (between the snapshot taken at start of
+  // day N and the one taken at start of day N+1). We therefore label
+  // each entry with the START date of the interval, not the end date.
+  // Previously we labelled with sorted[i].date which was off-by-one.
   const raw: { date: string; supplyChange: number; rawAbsorption: number }[] = [];
-  for (let i = 1; i < sorted.length; i++) {
+  for (let i = 0; i < sorted.length - 1; i++) {
     const entryDate = sorted[i].date;
     if (entryDate >= todayUtc) continue;
-    const supplyChange = sorted[i].supply - sorted[i - 1].supply;
+    const supplyChange = sorted[i + 1].supply - sorted[i].supply;
     const rawAbsorption = DAILY_ISSUANCE - supplyChange;
     raw.push({ date: entryDate, supplyChange, rawAbsorption });
   }
