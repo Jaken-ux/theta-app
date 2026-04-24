@@ -4,6 +4,7 @@ import Card from "../../components/Card";
 export const metadata: Metadata = {
   title: "Deep Dive",
   description: "In-depth look at Theta Network architecture, TFUEL tokenomics, staking mechanics, competitors, and risks. Honest technical analysis.",
+  alternates: { canonical: "/theta-explained" },
 };
 
 const topics = [

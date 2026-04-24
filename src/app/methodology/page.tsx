@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Methodology",
   description:
     "How the Main Chain Activity Index and Metachain Utilization Index are calculated.",
+  alternates: { canonical: "/methodology" },
 };
 
 export default function MethodologyPage() {

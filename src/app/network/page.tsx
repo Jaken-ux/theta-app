@@ -4,6 +4,7 @@ import { fetchNetworkStats, fetchActivitySnapshot } from "../../lib/theta-api";
 export const metadata: Metadata = {
   title: "Network Explorer",
   description: "Live Main Chain Activity Index, staking metrics, transaction data, and TFUEL supply tracking. Theta's settlement layer — updated every 60 seconds.",
+  alternates: { canonical: "/network" },
 };
 import { getPool } from "../../lib/db";
 import MetricCard from "../../components/MetricCard";

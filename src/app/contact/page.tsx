@@ -4,6 +4,7 @@ import ContactSection from "../../components/ContactSection";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Send feedback, ideas, or collaboration proposals to Theta Simplified.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

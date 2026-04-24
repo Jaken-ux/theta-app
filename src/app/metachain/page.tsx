@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Metachain Utilization Index",
   description:
     "Composite utilization index across Theta's main chain and subchains. Measures real application usage — gaming, AI, health data — not just token trading.",
+  alternates: { canonical: "/metachain" },
 };
 
 export default async function MetachainPage() {

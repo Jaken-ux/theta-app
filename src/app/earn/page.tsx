@@ -4,6 +4,7 @@ import Card from "../../components/Card";
 export const metadata: Metadata = {
   title: "Earn with Theta",
   description: "Calculate THETA and TFUEL staking rewards with live APY data. Compare scenarios and understand how staking generates passive income.",
+  alternates: { canonical: "/earn" },
 };
 import CalculatorCard from "../../components/CalculatorCard";
 import EliteEdgeCalculator from "../../components/EliteEdgeCalculator";
