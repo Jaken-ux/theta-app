@@ -41,15 +41,20 @@ async function saveSnapshot(snapshot: Awaited<ReturnType<typeof fetchActivitySna
     const today = new Date().toISOString().slice(0, 10);
     const score = computeIndex(snapshot);
 
+    // NOTE: Do NOT write tfuel_circulating_supply here. The daily cron at
+    // 00:05 UTC owns that column so the TFUEL absorption time series has
+    // a consistent snapshot time per day. /network visits throughout the
+    // day would otherwise overwrite today's supply value continuously and
+    // contaminate the smoothed absorption signal.
     await pool.query(
       `INSERT INTO theta_activity_history (
         date, samples, total_score, average,
         daily_txs, tfuel_volume, wallet_activity, staking_nodes,
         theta_staking_ratio, tfuel_staking_ratio,
         theta_price, tfuel_price, theta_market_cap,
-        tfuel_circulating_supply, daily_blocks,
+        daily_blocks,
         validator_guardian_nodes, edge_nodes
-      ) VALUES ($1, 1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ) VALUES ($1, 1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        ON CONFLICT (date) DO UPDATE SET
          samples = theta_activity_history.samples + 1,
          total_score = theta_activity_history.total_score + $2,
@@ -57,15 +62,15 @@ async function saveSnapshot(snapshot: Awaited<ReturnType<typeof fetchActivitySna
          daily_txs = $3, tfuel_volume = $4, wallet_activity = $5, staking_nodes = $6,
          theta_staking_ratio = $7, tfuel_staking_ratio = $8,
          theta_price = $9, tfuel_price = $10, theta_market_cap = $11,
-         tfuel_circulating_supply = $12, daily_blocks = $13,
-         validator_guardian_nodes = $14, edge_nodes = $15`,
+         daily_blocks = $12,
+         validator_guardian_nodes = $13, edge_nodes = $14`,
       [
         today, score,
         snapshot.estimatedDailyTxs, snapshot.tfuelVolume24h,
         snapshot.userTxRate, snapshot.totalNodes,
         snapshot.thetaStakingRatio, snapshot.tfuelStakingRatio,
         snapshot.thetaPrice, snapshot.tfuelPrice, snapshot.thetaMarketCap,
-        snapshot.tfuelCirculatingSupply, snapshot.dailyBlocks,
+        snapshot.dailyBlocks,
         snapshot.validatorGuardianNodes, snapshot.edgeNodes,
       ]
     );
