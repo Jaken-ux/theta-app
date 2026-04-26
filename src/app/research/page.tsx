@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   LineChart,
   Line,
@@ -726,6 +727,32 @@ export default function ResearchPage() {
           ))}
         </div>
       </div>
+
+      {/* ── Trajectory entry point (sandbox before promoting to main nav) ── */}
+      <Link
+        href="/research/trajectory"
+        className="block group bg-gradient-to-br from-[#2AB8E6]/10 via-[#151D2E] to-[#151D2E] border border-[#2AB8E6]/30 hover:border-[#2AB8E6]/60 rounded-xl p-5 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#2AB8E6]/15 text-[#2AB8E6] border border-[#2AB8E6]/30">
+                Nytt
+              </span>
+              <h2 className="text-lg font-semibold text-white">Theta Trajectory</h2>
+            </div>
+            <p className="text-sm text-[#B0B8C4]">
+              Tar Theta sig ur slumpen? Fyra demand-side-mått som mäter faktisk adoption —
+              utan brus från supply-side-kapacitet, tokenomics eller spekulation.
+            </p>
+          </div>
+          <span className="text-[#2AB8E6] group-hover:translate-x-1 transition-transform shrink-0 mt-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </Link>
 
       {/* ── Data insufficiency warning ──────────────────────────────── */}
       {dataDays < 30 && dataDays > 0 && !warningDismissed && (
