@@ -40,6 +40,30 @@ const BLOCKS_PER_DAY = Math.floor(86400 / 6); // 14,400
 const TFUEL_PER_BLOCK = 86;
 export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
 
+/**
+ * Days where the raw absorption value is known to reflect snapshot
+ * timing drift, not real activity. These are excluded from smoothing
+ * (their neighbours skip them when averaging) and excluded from the
+ * 7-day trend. The bar still appears on the chart but is rendered as
+ * a faded "data artifact" marker so historic viewers see why the day
+ * is muted instead of being misled by a phantom spike.
+ *
+ *   2026-04-21 — pre-fix snapshot timing drift, raw absorption was
+ *     -22.9% (physically impossible: supply growth exceeded daily
+ *     issuance, meaning consecutive snapshots were >24h apart).
+ *
+ *   2026-04-24 — bug-fix transition day. Apr 24 snapshot was the last
+ *     /network-write before the 21:14 UTC fix in 9f0c2aa; Apr 25 was
+ *     the first clean cron at 00:05 UTC. The interval between them
+ *     was only a few hours, so a single day's denominator was applied
+ *     to a tiny window of supply growth, producing a +78.5% phantom
+ *     spike.
+ */
+const KNOWN_ARTIFACT_DATES = new Set<string>([
+  "2026-04-21",
+  "2026-04-24",
+]);
+
 export interface DailyEntry {
   date: string;
   supplyChange: number;
@@ -106,21 +130,34 @@ export function computeTfuelEconomics(
   // Second pass: 3-day centered rolling average.
   // Interior days: smoothed[N] = (raw[N-1] + raw[N] + raw[N+1]) / 3
   // Edges (first/last day, no pair) fall back to 2-day trailing/leading.
+  // Known-artifact neighbours are excluded so their bad raw values do
+  // not bleed into surrounding days' smoothed values. The artifact day
+  // itself gets absorption=0 so the bar disappears, with isDataArtifact
+  // set so the chart renders the muted "data anomaly" treatment.
   const entries: DailyEntry[] = raw.map((r, i) => {
-    let smoothedRaw: number;
-    if (raw.length === 1) {
-      smoothedRaw = r.rawAbsorption;
-    } else if (i === 0) {
-      // First day — 2-day leading
-      smoothedRaw = (r.rawAbsorption + raw[1].rawAbsorption) / 2;
-    } else if (i === raw.length - 1) {
-      // Last day — 2-day trailing
-      smoothedRaw = (raw[i - 1].rawAbsorption + r.rawAbsorption) / 2;
-    } else {
-      // Interior — 3-day centered
-      smoothedRaw =
-        (raw[i - 1].rawAbsorption + r.rawAbsorption + raw[i + 1].rawAbsorption) / 3;
+    const isKnownArtifact = KNOWN_ARTIFACT_DATES.has(r.date);
+
+    if (isKnownArtifact) {
+      return {
+        date: r.date,
+        supplyChange: r.supplyChange,
+        rawAbsorption: r.rawAbsorption,
+        absorption: 0,
+        absorptionRate: 0,
+        isDataArtifact: true,
+      };
     }
+
+    const candidates: number[] = [r.rawAbsorption];
+    if (i > 0 && !KNOWN_ARTIFACT_DATES.has(raw[i - 1].date)) {
+      candidates.push(raw[i - 1].rawAbsorption);
+    }
+    if (i < raw.length - 1 && !KNOWN_ARTIFACT_DATES.has(raw[i + 1].date)) {
+      candidates.push(raw[i + 1].rawAbsorption);
+    }
+    const smoothedRaw =
+      candidates.reduce((sum, v) => sum + v, 0) / candidates.length;
+
     const absorption = Math.max(0, smoothedRaw);
     const absorptionRate = absorption / DAILY_ISSUANCE;
     return {

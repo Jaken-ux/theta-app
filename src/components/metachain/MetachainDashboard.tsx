@@ -839,10 +839,10 @@ export default function MetachainDashboard({
                                   <p className="text-[#7D8694] mb-1">{label}</p>
                                   {d.isDataArtifact ? (
                                     <p className="text-[#7D8694] font-medium">
-                                      Data artifact — even the 2-day smoothed
-                                      value is negative. Likely a token unlock
-                                      or multi-day snapshot drift. Excluded
-                                      from the 7-day average.
+                                      Data artifact — snapshot timing drift,
+                                      not real activity. Excluded from
+                                      smoothing of neighbouring days and from
+                                      the 7-day average.
                                     </p>
                                   ) : (
                                     <p className="text-[#F59E0B] font-medium">
