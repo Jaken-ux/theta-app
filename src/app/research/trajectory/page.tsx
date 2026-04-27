@@ -112,7 +112,15 @@ function DirectionArrow({ direction }: { direction: TrendDirection }) {
   );
 }
 
-function MetricCard({ metric }: { metric: MetricResult }) {
+function MetricCard({
+  metric,
+  shortWindow,
+  longWindow,
+}: {
+  metric: MetricResult;
+  shortWindow: number;
+  longWindow: number;
+}) {
   const color = DIRECTION_COLOR[metric.direction];
   const sparkData = metric.series.map((p) => ({
     date: p.date,
@@ -146,7 +154,7 @@ function MetricCard({ metric }: { metric: MetricResult }) {
       </div>
 
       <div className="text-xs text-[#B0B8C4] mt-2 mb-3">
-        30d-snitt:{" "}
+        {shortWindow}d-snitt:{" "}
         <span className="text-white tabular-nums">{formatNumber(metric.shortAvg, metric.unit)}</span>
         {metric.changePct != null && (
           <>
@@ -155,7 +163,7 @@ function MetricCard({ metric }: { metric: MetricResult }) {
               {metric.changePct > 0 ? "+" : ""}
               {metric.changePct.toFixed(1)}%
             </span>
-            <span className="text-[#7D8694]"> vs 90d</span>
+            <span className="text-[#7D8694]"> vs {longWindow}d</span>
           </>
         )}
       </div>
@@ -350,7 +358,12 @@ export default function TrajectoryPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           {metrics.map((m) => (
-            <MetricCard key={m.key} metric={m} />
+            <MetricCard
+              key={m.key}
+              metric={m}
+              shortWindow={data.shortWindow}
+              longWindow={data.longWindow}
+            />
           ))}
         </div>
 
