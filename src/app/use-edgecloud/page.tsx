@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import Card from "../../components/Card";
+import CodeBlock from "../../components/CodeBlock";
 import SimplifyThis from "../../components/SimplifyThis";
 import {
   PRICING_ROWS,
   lastVerifiedDate,
 } from "../../lib/edgecloud-pricing";
+import { fetchTdropData } from "../../lib/tdrop";
+
+// Re-render at most every 60s so the cashback example tracks the live
+// TDROP price. fetchTdropData itself caches the underlying CoinGecko
+// call for 300s — the actual price refreshes on its 5-min cycle.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Run AI on Theta EdgeCloud",
@@ -78,25 +85,60 @@ const models = [
   },
 ];
 
-const cashbackSteps = [
-  {
-    n: 1,
-    title: "You spend $100 on GPU compute",
-    body: "Any EdgeCloud usage counts — inference, training, hosted notebooks, custom containers.",
-  },
-  {
-    n: 2,
-    title: "You automatically receive 5% back in TDROP",
-    body: "≈ 32,000 TDROP at current prices. No opt-in, no claim flow — it shows up in your EdgeCloud balance.",
-  },
-  {
-    n: 3,
-    title: "Convert to USD credit or withdraw to your wallet",
-    body: "Use the credit to pay for more compute, or withdraw the TDROP to use elsewhere.",
-  },
-];
+const EXAMPLE_SPEND_USD = 100;
+const CASHBACK_RATE = 0.05;
 
-export default function UseEdgeCloudPage() {
+// Canonical text for the quickstart code block — must stay in sync with the
+// JSX rendered inside <CodeBlock>. The `\\` line-continuations become a
+// literal `\` after template-literal evaluation, so the copied command runs
+// as-is when pasted into a shell.
+const QUICKSTART_CURL = `curl --request POST \\
+  --url https://theta-edge-cloud-ai-inference-api.p.rapidapi.com/v1/chat/completions \\
+  --header 'Content-Type: application/json' \\
+  --header 'x-rapidapi-host: theta-edge-cloud-ai-inference-api.p.rapidapi.com' \\
+  --header 'x-rapidapi-key: YOUR_KEY_HERE' \\
+  --data '{
+    "model": "Qwen3-32B",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'`;
+
+export default async function UseEdgeCloudPage() {
+  // Pull live TDROP price so the cashback example below never goes
+  // stale. Same source as /earn — `.catch` keeps the page rendering
+  // if CoinGecko is down.
+  const tdrop = await fetchTdropData().catch(() => null);
+  const tdropPrice = tdrop?.priceUsd ?? null;
+
+  const cashbackUsd = EXAMPLE_SPEND_USD * CASHBACK_RATE;
+  const tdropAmount = tdropPrice ? cashbackUsd / tdropPrice : null;
+
+  const cashbackExampleBody =
+    tdropAmount != null && tdropPrice != null
+      ? `$${EXAMPLE_SPEND_USD} spend → $${cashbackUsd} cashback → ≈ ${Math.round(
+          tdropAmount
+        ).toLocaleString()} TDROP at today's price ($${tdropPrice.toFixed(
+          6
+        )}/TDROP). No opt-in, no claim flow — it shows up in your EdgeCloud balance.`
+      : `$${EXAMPLE_SPEND_USD} spend → $${cashbackUsd} cashback in TDROP. Live price temporarily unavailable. No opt-in, no claim flow — it shows up in your EdgeCloud balance.`;
+
+  const cashbackSteps = [
+    {
+      n: 1,
+      title: "You spend $100 on GPU compute",
+      body: "Any EdgeCloud usage counts — inference, training, hosted notebooks, custom containers.",
+    },
+    {
+      n: 2,
+      title: "You automatically receive 5% back in TDROP",
+      body: cashbackExampleBody,
+    },
+    {
+      n: 3,
+      title: "Convert to USD credit or withdraw to your wallet",
+      body: "Use the credit to pay for more compute, or withdraw the TDROP to use elsewhere.",
+    },
+  ];
+
   return (
     <div className="space-y-12">
       {/* 1. HERO */}
@@ -175,6 +217,80 @@ export default function UseEdgeCloudPage() {
           full platform where you can run bigger workloads and manage your own
           deployments.
         </SimplifyThis>
+      </section>
+
+      {/* 2b. QUICKSTART CURL */}
+      <section>
+        <h2 className="text-xl font-semibold text-white mb-4">
+          8 lines to get started
+        </h2>
+        <CodeBlock raw={QUICKSTART_CURL} language="bash">
+          <span className="text-theta-teal">curl</span>
+          {" "}
+          <span className="text-amber-400">--request</span>
+          {" "}
+          <span className="text-purple-400">POST</span>
+          {" "}
+          <span className="text-theta-muted/40">\</span>
+          {"\n  "}
+          <span className="text-amber-400">--url</span>
+          {" "}
+          <span className="text-emerald-400">
+            https://theta-edge-cloud-ai-inference-api.p.rapidapi.com/v1/chat/completions
+          </span>
+          {" "}
+          <span className="text-theta-muted/40">\</span>
+          {"\n  "}
+          <span className="text-amber-400">--header</span>
+          {" "}
+          <span className="text-emerald-400">
+            &apos;Content-Type: application/json&apos;
+          </span>
+          {" "}
+          <span className="text-theta-muted/40">\</span>
+          {"\n  "}
+          <span className="text-amber-400">--header</span>
+          {" "}
+          <span className="text-emerald-400">
+            &apos;x-rapidapi-host: theta-edge-cloud-ai-inference-api.p.rapidapi.com&apos;
+          </span>
+          {" "}
+          <span className="text-theta-muted/40">\</span>
+          {"\n  "}
+          <span className="text-amber-400">--header</span>
+          {" "}
+          <span className="text-emerald-400">&apos;x-rapidapi-key: </span>
+          <span className="text-yellow-300">YOUR_KEY_HERE</span>
+          <span className="text-emerald-400">&apos;</span>
+          {" "}
+          <span className="text-theta-muted/40">\</span>
+          {"\n  "}
+          <span className="text-amber-400">--data</span>
+          {" "}
+          <span className="text-emerald-400">&apos;{"{"}</span>
+          {"\n    "}
+          <span className="text-pink-400">&quot;model&quot;</span>
+          <span className="text-white/70">: </span>
+          <span className="text-emerald-400">&quot;Qwen3-32B&quot;</span>
+          <span className="text-white/70">,</span>
+          {"\n    "}
+          <span className="text-pink-400">&quot;messages&quot;</span>
+          <span className="text-white/70">: [{"{"}</span>
+          <span className="text-pink-400">&quot;role&quot;</span>
+          <span className="text-white/70">: </span>
+          <span className="text-emerald-400">&quot;user&quot;</span>
+          <span className="text-white/70">, </span>
+          <span className="text-pink-400">&quot;content&quot;</span>
+          <span className="text-white/70">: </span>
+          <span className="text-emerald-400">&quot;Hello&quot;</span>
+          <span className="text-white/70">{"}"}]</span>
+          {"\n  "}
+          <span className="text-emerald-400">{"}"}&apos;</span>
+        </CodeBlock>
+        <p className="text-xs text-theta-muted mt-3 max-w-2xl leading-relaxed">
+          OpenAI-compatible endpoint — works with any OpenAI SDK by changing
+          the base URL.
+        </p>
       </section>
 
       {/* 3. AVAILABLE MODELS */}
