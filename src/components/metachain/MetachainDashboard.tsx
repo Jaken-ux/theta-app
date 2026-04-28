@@ -802,11 +802,21 @@ export default function MetachainDashboard({
                     </div>
                   </div>
                   {hasEnough ? (() => {
-                    // Compute rolling 7d average for each data point
+                    // Compute rolling 7d average for each data point.
+                    // Artifact days are excluded from the window — their rate
+                    // is clamped to 0 upstream, and counting that 0 would
+                    // drag the average toward zero on every day whose 7d
+                    // window includes an artifact. Mirrors the lib's own
+                    // avgAbsorptionRate7d in tfuel-economics.ts.
                     const withAvg = chartData.map((d, i) => {
                       const windowStart = Math.max(0, i - 6);
-                      const window = chartData.slice(windowStart, i + 1);
-                      const avg7d = window.reduce((s, w) => s + w.rate, 0) / window.length;
+                      const window = chartData
+                        .slice(windowStart, i + 1)
+                        .filter((w) => !w.isDataArtifact);
+                      const avg7d =
+                        window.length > 0
+                          ? window.reduce((s, w) => s + w.rate, 0) / window.length
+                          : 0;
                       return { ...d, avg7d: Math.round(avg7d * 10) / 10 };
                     });
 
