@@ -58,10 +58,20 @@ export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
  *     was only a few hours, so a single day's denominator was applied
  *     to a tiny window of supply growth, producing a +78.5% phantom
  *     spike.
+ *
+ *   2026-04-27 — raw supply delta of 1,306,523 TFUEL exceeded the
+ *     fixed daily block issuance of 1,238,400, producing a raw
+ *     absorption of -5.5%. Snapshot intervals on either side were
+ *     within ~15 min of 24h, so this is not snapshot-timing drift.
+ *     No on-chain unlock or treasury distribution has been identified
+ *     for this date. Treated as API artifact (suspected stale or
+ *     incorrect supply value at one of the snapshots) until a
+ *     concrete cause is found.
  */
 const KNOWN_ARTIFACT_DATES = new Set<string>([
   "2026-04-21",
   "2026-04-24",
+  "2026-04-27",
 ]);
 
 export interface DailyEntry {
