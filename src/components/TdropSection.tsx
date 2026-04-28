@@ -2,11 +2,10 @@ import Card from "./Card";
 import SimplifyThis from "./SimplifyThis";
 import type { TdropData } from "../lib/tdrop";
 
-function formatUsd(n: number | null, digits = 6): string {
+function formatUsd(n: number | null): string {
   if (n === null) return "—";
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(2)}K`;
-  return `$${n.toFixed(digits)}`;
+  if (n >= 1) return `$${n.toFixed(2)}`;
+  return `$${n.toFixed(6)}`;
 }
 
 function formatChange(pct: number | null): { text: string; color: string } {
@@ -16,22 +15,26 @@ function formatChange(pct: number | null): { text: string; color: string } {
   return { text: `${sign}${pct.toFixed(2)}% 24h`, color };
 }
 
+function formatCount(n: number | null): string {
+  if (n === null) return "—";
+  return Math.round(n).toLocaleString();
+}
+
 export default function TdropSection({ data }: { data: TdropData | null }) {
   const change = formatChange(data?.change24h ?? null);
 
   return (
     <section>
-      <h2 className="text-xl font-semibold text-white mb-2">
-        TDROP — AI Agent Economy Token
-      </h2>
+      <h2 className="text-xl font-semibold text-white mb-2">TDROP</h2>
       <p className="text-sm text-theta-muted mb-4 max-w-2xl">
-        TDROP powers Theta&apos;s AI agent economy. Holders can stake TDROP to
-        earn rewards through 2030 following the TDROP 2.0 governance proposal.
-        TDROP is also accepted as payment on Theta EdgeCloud.
+        As of April 2026, every dollar spent on Theta EdgeCloud GPU compute
+        earns 5% back in TDROP automatically. TDROP is also accepted as direct
+        payment for EdgeCloud services, and holders can stake TDROP to earn
+        rewards through 2030.
       </p>
 
       {data ? (
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <p className="text-sm text-theta-muted mb-1">TDROP Price</p>
             <p className="text-2xl font-semibold text-white tabular-nums">
@@ -41,12 +44,22 @@ export default function TdropSection({ data }: { data: TdropData | null }) {
           </Card>
 
           <Card>
-            <p className="text-sm text-theta-muted mb-1">Market Cap</p>
+            <p className="text-sm text-theta-muted mb-1">Total Supply</p>
             <p className="text-2xl font-semibold text-white tabular-nums">
-              {formatUsd(data.marketCapUsd, 2)}
+              {formatCount(data.totalSupply)}
+            </p>
+            <p className="text-xs text-theta-muted mt-1">TDROP minted on-chain</p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-theta-muted mb-1">
+              24h Transfer Activity
+            </p>
+            <p className="text-2xl font-semibold text-white tabular-nums">
+              {formatCount(data.transferCount24h)}
             </p>
             <p className="text-xs text-theta-muted mt-1">
-              Circulating supply × price
+              on-chain transactions
             </p>
           </Card>
 
@@ -68,15 +81,22 @@ export default function TdropSection({ data }: { data: TdropData | null }) {
         </Card>
       )}
 
+      <p className="text-xs text-theta-muted mt-4 max-w-2xl">
+        Price, supply, and transfer counts come straight from on-chain sources.
+        EdgeCloud rebate distributions and spend volumes are not publicly
+        available.
+      </p>
+
       <SimplifyThis>
         TDROP is a separate token from THETA and TFUEL. It started as the
-        rewards token for ThetaDrop (Theta&apos;s NFT marketplace) but has
-        grown into the token for Theta&apos;s AI agent economy — think small
-        autonomous programs that pay each other in TDROP to get things done.
-        You can stake TDROP to earn more TDROP, similar to how you stake THETA
-        to earn TFUEL. The staking rewards are scheduled to continue through
-        2030. Because there is no public API for the TDROP staking pool yet,
-        the APY shown above is maintained by hand — check{" "}
+        rewards token for ThetaDrop (Theta&apos;s NFT marketplace) but now does
+        double duty: it powers Theta&apos;s AI agent economy, and as of April
+        2026 you also earn 5% back in TDROP on every dollar you spend on
+        Theta EdgeCloud GPU compute. You can stake TDROP to earn more TDROP,
+        similar to how you stake THETA to earn TFUEL — staking rewards are
+        scheduled to continue through 2030. Because there is no public API for
+        the TDROP staking pool yet, the APY shown above is maintained by hand
+        — check{" "}
         <a
           href="https://www.thetadrop.com/stake"
           target="_blank"
