@@ -291,6 +291,18 @@ export default async function UseEdgeCloudPage() {
           OpenAI-compatible endpoint — works with any OpenAI SDK by changing
           the base URL.
         </p>
+
+        <SimplifyThis>
+          This is a single command you&apos;d paste into a terminal (the
+          text-based window where developers run things). It asks Theta&apos;s
+          AI to respond to the word &quot;Hello&quot;. The URL is the address
+          being called. The headers are like envelope info — what kind of
+          message it is, plus your subscription key (you get one for free from
+          RapidAPI). The &quot;data&quot; part is the actual question — which
+          model to use and what to ask. Replace YOUR_KEY_HERE with a real key,
+          run it, and you get the AI&apos;s answer back. Developers can copy
+          this exact pattern into Python, JavaScript, or any language.
+        </SimplifyThis>
       </section>
 
       {/* 3. AVAILABLE MODELS */}
