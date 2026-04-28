@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Card from "../../components/Card";
 import CodeBlock from "../../components/CodeBlock";
+import FaqItem from "../../components/FaqItem";
 import SimplifyThis from "../../components/SimplifyThis";
 import {
   PRICING_ROWS,
@@ -450,6 +451,59 @@ export default async function UseEdgeCloudPage() {
           your wallet to use elsewhere. There&apos;s no opt-in and no minimum
           spend; every dollar of GPU usage triggers it.
         </SimplifyThis>
+      </section>
+
+      {/* 6. FAQ */}
+      <section>
+        <h2 className="text-xl font-semibold text-white mb-4">
+          Common questions
+        </h2>
+        <div className="rounded-xl border border-theta-border bg-theta-card overflow-hidden">
+          <FaqItem question="Is this production-ready?">
+            Qwen3 32B is currently in beta — expect some variability in latency
+            and availability as the distributed pipeline is optimized. Other
+            EdgeCloud workloads (dedicated GPU deployments, Jupyter notebooks)
+            are production-ready. We label beta features clearly.
+          </FaqItem>
+          <FaqItem question="What's the latency like?">
+            Decentralized inference adds coordination overhead compared to a
+            single data center. Expect higher and more variable latency than
+            AWS or Azure for the same model. This makes EdgeCloud better suited
+            for batch processing and async tasks than real-time applications
+            requiring sub-100ms responses.
+          </FaqItem>
+          <FaqItem question="Is my data private?">
+            Requests pass through multiple community GPU nodes. Theta does not
+            offer data residency guarantees or HIPAA/GDPR compliance for
+            EdgeCloud inference at this time. For regulated data, use a
+            dedicated deployment rather than shared inference.
+          </FaqItem>
+          <FaqItem question="What models are available?">
+            Qwen3 32B (Alibaba), plus 20+ models via RapidAPI including
+            speech-to-text and image generation. The model library is expanding
+            — check edgecloud.thetatoken.org for the current list.
+          </FaqItem>
+          <FaqItem question="How does billing work?">
+            RapidAPI: pay per API call, billed through RapidAPI. Full
+            EdgeCloud: add credit via Stripe or TDROP, pay as you go. No
+            monthly minimums. 5% of your spend is returned as TDROP
+            automatically.
+          </FaqItem>
+          <FaqItem question="When should I NOT use this?">
+            If you need guaranteed SLAs, sub-100ms latency, data residency
+            compliance, or are processing regulated/sensitive data — use a
+            hyperscaler. EdgeCloud is best for cost-sensitive AI workloads
+            where some latency variation is acceptable.
+          </FaqItem>
+          <FaqItem question="How does it compare to Akash or io.net?">
+            Akash focuses on containerized workloads with broader hardware
+            options. io.net specializes in distributed GPU clusters for ML
+            training. Theta EdgeCloud differentiates through its on-demand
+            model APIs (no deployment needed), the 5% TDROP cashback, and its
+            hybrid cloud-edge architecture with enterprise validators like
+            Google, Samsung and Alibaba.
+          </FaqItem>
+        </div>
       </section>
     </div>
   );
