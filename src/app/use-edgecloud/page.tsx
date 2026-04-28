@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Card from "../../components/Card";
 import SimplifyThis from "../../components/SimplifyThis";
+import {
+  PRICING_ROWS,
+  lastVerifiedDate,
+} from "../../lib/edgecloud-pricing";
 
 export const metadata: Metadata = {
   title: "Run AI on Theta EdgeCloud",
@@ -71,37 +75,6 @@ const models = [
       "SSH access for training",
     ],
     status: { text: "LIVE", tone: "emerald" as const },
-  },
-];
-
-const pricingRows: { label: string; theta: string; aws: string; azure: string; gcp: string }[] = [
-  {
-    label: "LLM inference",
-    theta: "$0.20–0.40 / M tokens",
-    aws: "~$1–3 / M",
-    azure: "~$1–3 / M",
-    gcp: "~$1–2 / M",
-  },
-  {
-    label: "GPU hourly",
-    theta: "Set by operators",
-    aws: "$2–8 / hr",
-    azure: "$2–6 / hr",
-    gcp: "$1–5 / hr",
-  },
-  {
-    label: "Cashback",
-    theta: "5% in TDROP",
-    aws: "None",
-    azure: "None",
-    gcp: "None",
-  },
-  {
-    label: "Min commit",
-    theta: "Pay as you go",
-    aws: "Pay as you go",
-    azure: "Pay as you go",
-    gcp: "Pay as you go",
   },
 ];
 
@@ -270,11 +243,11 @@ export default function UseEdgeCloudPage() {
               </tr>
             </thead>
             <tbody>
-              {pricingRows.map((row, i) => (
+              {PRICING_ROWS.map((row, i) => (
                 <tr
                   key={row.label}
                   className={
-                    i < pricingRows.length - 1
+                    i < PRICING_ROWS.length - 1
                       ? "border-b border-theta-border/60"
                       : ""
                   }
@@ -300,9 +273,13 @@ export default function UseEdgeCloudPage() {
           </table>
         </div>
         <p className="text-xs text-theta-muted mt-3 max-w-2xl leading-relaxed">
-          Prices approximate as of April 2026. GPU rates on Theta vary by
-          operator and hardware. Source: Theta Labs, AWS, Azure public pricing
-          pages.
+          Prices approximate. GPU rates on Theta vary by operator and hardware.
+          Sources: Theta Labs, AWS Bedrock, Azure AI Foundry, Google Vertex AI
+          public pricing pages. Last verified{" "}
+          <span className="text-white/80 tabular-nums">
+            {lastVerifiedDate()}
+          </span>
+          .
         </p>
 
         <SimplifyThis>
