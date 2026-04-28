@@ -8,6 +8,14 @@ function formatUsd(n: number | null): string {
   return `$${n.toFixed(6)}`;
 }
 
+function formatUsdCompact(n: number | null): string {
+  if (n === null) return "—";
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(2)}K`;
+  return `$${n.toFixed(2)}`;
+}
+
 function formatChange(pct: number | null): { text: string; color: string } {
   if (pct === null) return { text: "—", color: "text-theta-muted" };
   const sign = pct >= 0 ? "+" : "";
@@ -34,13 +42,23 @@ export default function TdropSection({ data }: { data: TdropData | null }) {
       </p>
 
       {data ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <Card>
             <p className="text-sm text-theta-muted mb-1">TDROP Price</p>
             <p className="text-2xl font-semibold text-white tabular-nums">
               {formatUsd(data.priceUsd)}
             </p>
             <p className={`text-xs mt-1 ${change.color}`}>{change.text}</p>
+          </Card>
+
+          <Card>
+            <p className="text-sm text-theta-muted mb-1">Market Cap</p>
+            <p className="text-2xl font-semibold text-white tabular-nums">
+              {formatUsdCompact(data.marketCapUsd)}
+            </p>
+            <p className="text-xs text-theta-muted mt-1">
+              Per CoinGecko · circulating-based
+            </p>
           </Card>
 
           <Card>

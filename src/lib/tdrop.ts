@@ -28,6 +28,8 @@ const STAKING_APY_AS_OF = "April 2026";
 export interface TdropData {
   priceUsd: number | null;
   change24h: number | null;
+  /** CoinGecko market cap (uses CoinGecko's circulating supply, not on-chain totalSupply). */
+  marketCapUsd: number | null;
   totalSupply: number | null;
   transferCount24h: number | null;
   stakingApy: {
@@ -41,9 +43,10 @@ export interface TdropData {
 async function fetchPriceAndChange(): Promise<{
   price: number | null;
   change: number | null;
+  marketCap: number | null;
 }> {
   const res = await fetch(
-    "https://api.coingecko.com/api/v3/simple/price?ids=thetadrop&vs_currencies=usd&include_24hr_change=true",
+    "https://api.coingecko.com/api/v3/simple/price?ids=thetadrop&vs_currencies=usd&include_24hr_change=true&include_market_cap=true",
     { next: { revalidate: 300 } }
   );
   if (!res.ok) throw new Error(`CoinGecko returned ${res.status}`);
@@ -52,6 +55,7 @@ async function fetchPriceAndChange(): Promise<{
   return {
     price: typeof t.usd === "number" ? t.usd : null,
     change: typeof t.usd_24h_change === "number" ? t.usd_24h_change : null,
+    marketCap: typeof t.usd_market_cap === "number" ? t.usd_market_cap : null,
   };
 }
 
@@ -118,6 +122,8 @@ export async function fetchTdropData(): Promise<TdropData> {
   return {
     priceUsd: priceRes.status === "fulfilled" ? priceRes.value.price : null,
     change24h: priceRes.status === "fulfilled" ? priceRes.value.change : null,
+    marketCapUsd:
+      priceRes.status === "fulfilled" ? priceRes.value.marketCap : null,
     totalSupply:
       supplyRes.status === "fulfilled" ? supplyRes.value : null,
     transferCount24h:
