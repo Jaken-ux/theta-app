@@ -39,16 +39,73 @@ interface Stats {
     totalTxs: number;
   }[];
   edgecloud: {
-    allTime: { users: number; questions: number };
-    today: { users: number; questions: number };
+    allTime: {
+      users: number;
+      questions: number;
+      successes: number;
+      timeouts: number;
+      unavailables: number;
+      errors: number;
+    };
+    today: {
+      users: number;
+      questions: number;
+      successes: number;
+      timeouts: number;
+      unavailables: number;
+      errors: number;
+    };
     topUsers: {
       ipHash: string;
       totalQuestions: number;
+      successes: number;
+      timeouts: number;
+      unavailables: number;
+      errors: number;
       lastSeen: string;
       lastModel: string | null;
+      lastOutcome: string | null;
     }[];
-    last14Days: { date: string; users: number; questions: number }[];
+    last14Days: {
+      date: string;
+      users: number;
+      questions: number;
+      successes: number;
+    }[];
   };
+}
+
+function outcomeBadge(outcome: string | null): {
+  text: string;
+  classes: string;
+} {
+  switch (outcome) {
+    case "success":
+      return {
+        text: "Success",
+        classes: "bg-emerald-400/10 text-emerald-400 border-emerald-400/30",
+      };
+    case "timeout":
+      return {
+        text: "Timeout",
+        classes: "bg-amber-400/10 text-amber-400 border-amber-400/30",
+      };
+    case "unavailable":
+      return {
+        text: "No instances",
+        classes: "bg-amber-400/10 text-amber-400 border-amber-400/30",
+      };
+    case "error":
+      return {
+        text: "Error",
+        classes: "bg-red-400/10 text-red-400 border-red-400/30",
+      };
+    default:
+      return {
+        text: "—",
+        classes: "bg-[#2A3548]/40 text-[#7D8694] border-[#2A3548]",
+      };
+  }
 }
 
 function formatDate(dateStr: string): string {
@@ -547,30 +604,61 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              label="People (all time)"
-              value={stats.edgecloud.allTime.users}
-              sub="unique visitors"
-              color="#2AB8E6"
-            />
-            <StatCard
-              label="Questions (all time)"
-              value={stats.edgecloud.allTime.questions}
-              sub="prompts sent"
-              color="#10B981"
-            />
-            <StatCard
-              label="People Today"
-              value={stats.edgecloud.today.users}
-              color="#F59E0B"
-            />
-            <StatCard
-              label="Questions Today"
-              value={stats.edgecloud.today.questions}
-              color="#8B5CF6"
-            />
-          </div>
+          {(() => {
+            const at = stats.edgecloud.allTime;
+            const td = stats.edgecloud.today;
+            const allTimeRate =
+              at.questions > 0
+                ? Math.round((at.successes / at.questions) * 100)
+                : null;
+            const todayRate =
+              td.questions > 0
+                ? Math.round((td.successes / td.questions) * 100)
+                : null;
+            return (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard
+                    label="People (all time)"
+                    value={at.users}
+                    sub="unique visitors"
+                    color="#2AB8E6"
+                  />
+                  <StatCard
+                    label="Questions (all time)"
+                    value={at.questions}
+                    sub={`${at.successes} success · ${at.timeouts} timeout · ${at.unavailables} no-inst · ${at.errors} err`}
+                    color="#10B981"
+                  />
+                  <StatCard
+                    label="People Today"
+                    value={td.users}
+                    color="#F59E0B"
+                  />
+                  <StatCard
+                    label="Questions Today"
+                    value={td.questions}
+                    sub={
+                      todayRate != null
+                        ? `${todayRate}% successful`
+                        : "no traffic yet"
+                    }
+                    color="#8B5CF6"
+                  />
+                </div>
+                {allTimeRate != null && (
+                  <p className="text-xs text-[#7D8694]">
+                    All-time success rate:{" "}
+                    <span className="text-white font-semibold tabular-nums">
+                      {allTimeRate}%
+                    </span>{" "}
+                    ({at.successes.toLocaleString()} of{" "}
+                    {at.questions.toLocaleString()} attempts answered)
+                  </p>
+                )}
+              </>
+            );
+          })()}
 
           {/* 14-day trend */}
           {stats.edgecloud.last14Days.length > 0 && (
@@ -637,8 +725,17 @@ export default function AdminPage() {
                       <th className="text-left font-medium text-[#7D8694] pb-2">
                         Visitor
                       </th>
-                      <th className="text-right font-medium text-[#7D8694] pb-2">
-                        Questions
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        Total
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        ✓ Success
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        ✗ Failed
+                      </th>
+                      <th className="text-left font-medium text-[#7D8694] pb-2 pl-4">
+                        Last result
                       </th>
                       <th className="text-left font-medium text-[#7D8694] pb-2 pl-4">
                         Last model
@@ -649,28 +746,49 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.edgecloud.topUsers.map((u) => (
-                      <tr
-                        key={u.ipHash}
-                        className="border-b border-[#2A3548]/40 last:border-b-0"
-                      >
-                        <td className="py-2 font-mono text-xs text-[#B0B8C4]">
-                          {u.ipHash.slice(0, 10)}…
-                        </td>
-                        <td className="py-2 text-right text-white tabular-nums">
-                          {u.totalQuestions}
-                        </td>
-                        <td className="py-2 pl-4 text-[#B0B8C4]">
-                          {u.lastModel ?? "—"}
-                        </td>
-                        <td className="py-2 pl-4 text-[#7D8694] tabular-nums">
-                          {new Date(u.lastSeen).toLocaleString("sv-SE", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                        </td>
-                      </tr>
-                    ))}
+                    {stats.edgecloud.topUsers.map((u) => {
+                      const failed = u.timeouts + u.unavailables + u.errors;
+                      const badge = outcomeBadge(u.lastOutcome);
+                      return (
+                        <tr
+                          key={u.ipHash}
+                          className="border-b border-[#2A3548]/40 last:border-b-0"
+                        >
+                          <td className="py-2 font-mono text-xs text-[#B0B8C4]">
+                            {u.ipHash.slice(0, 10)}…
+                          </td>
+                          <td className="py-2 pl-4 text-right text-white tabular-nums">
+                            {u.totalQuestions}
+                          </td>
+                          <td className="py-2 pl-4 text-right text-emerald-400 tabular-nums">
+                            {u.successes}
+                          </td>
+                          <td
+                            className={`py-2 pl-4 text-right tabular-nums ${
+                              failed > 0 ? "text-red-400" : "text-[#7D8694]"
+                            }`}
+                          >
+                            {failed}
+                          </td>
+                          <td className="py-2 pl-4">
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded border ${badge.classes}`}
+                            >
+                              {badge.text}
+                            </span>
+                          </td>
+                          <td className="py-2 pl-4 text-[#B0B8C4]">
+                            {u.lastModel ?? "—"}
+                          </td>
+                          <td className="py-2 pl-4 text-[#7D8694] tabular-nums">
+                            {new Date(u.lastSeen).toLocaleString("sv-SE", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

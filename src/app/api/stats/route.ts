@@ -113,16 +113,24 @@ export async function GET(request: Request) {
            GROUP BY utm_source, utm_campaign
            ORDER BY visitors DESC LIMIT 10`
         ),
-        // EdgeCloud playground — all-time totals
+        // EdgeCloud playground — all-time totals + outcome breakdown
         pool.query(
           `SELECT COUNT(DISTINCT ip_hash) AS users,
-                  COALESCE(SUM(question_count), 0) AS questions
+                  COALESCE(SUM(question_count), 0) AS questions,
+                  COALESCE(SUM(success_count), 0) AS successes,
+                  COALESCE(SUM(timeout_count), 0) AS timeouts,
+                  COALESCE(SUM(unavailable_count), 0) AS unavailables,
+                  COALESCE(SUM(error_count), 0) AS errors
            FROM edgecloud_chat_usage`
         ),
-        // EdgeCloud playground — today
+        // EdgeCloud playground — today + outcome breakdown
         pool.query(
           `SELECT COUNT(DISTINCT ip_hash) AS users,
-                  COALESCE(SUM(question_count), 0) AS questions
+                  COALESCE(SUM(question_count), 0) AS questions,
+                  COALESCE(SUM(success_count), 0) AS successes,
+                  COALESCE(SUM(timeout_count), 0) AS timeouts,
+                  COALESCE(SUM(unavailable_count), 0) AS unavailables,
+                  COALESCE(SUM(error_count), 0) AS errors
            FROM edgecloud_chat_usage
            WHERE date = CURRENT_DATE`
         ),
@@ -130,8 +138,13 @@ export async function GET(request: Request) {
         pool.query(
           `SELECT ip_hash,
                   SUM(question_count) AS total_questions,
+                  SUM(success_count) AS successes,
+                  SUM(timeout_count) AS timeouts,
+                  SUM(unavailable_count) AS unavailables,
+                  SUM(error_count) AS errors,
                   MAX(last_seen) AS last_seen,
-                  MAX(last_model) AS last_model
+                  MAX(last_model) AS last_model,
+                  MAX(last_outcome) AS last_outcome
            FROM edgecloud_chat_usage
            GROUP BY ip_hash
            ORDER BY total_questions DESC
@@ -141,7 +154,8 @@ export async function GET(request: Request) {
         pool.query(
           `SELECT date,
                   COUNT(DISTINCT ip_hash) AS users,
-                  SUM(question_count) AS questions
+                  SUM(question_count) AS questions,
+                  SUM(success_count) AS successes
            FROM edgecloud_chat_usage
            WHERE date > CURRENT_DATE - INTERVAL '14 days'
            GROUP BY date
@@ -179,21 +193,35 @@ export async function GET(request: Request) {
         allTime: {
           users: parseInt(edgecloudTotals.rows[0].users),
           questions: parseInt(edgecloudTotals.rows[0].questions),
+          successes: parseInt(edgecloudTotals.rows[0].successes),
+          timeouts: parseInt(edgecloudTotals.rows[0].timeouts),
+          unavailables: parseInt(edgecloudTotals.rows[0].unavailables),
+          errors: parseInt(edgecloudTotals.rows[0].errors),
         },
         today: {
           users: parseInt(edgecloudToday.rows[0].users),
           questions: parseInt(edgecloudToday.rows[0].questions),
+          successes: parseInt(edgecloudToday.rows[0].successes),
+          timeouts: parseInt(edgecloudToday.rows[0].timeouts),
+          unavailables: parseInt(edgecloudToday.rows[0].unavailables),
+          errors: parseInt(edgecloudToday.rows[0].errors),
         },
         topUsers: edgecloudTopUsers.rows.map((r) => ({
           ipHash: r.ip_hash,
           totalQuestions: parseInt(r.total_questions),
+          successes: parseInt(r.successes ?? 0),
+          timeouts: parseInt(r.timeouts ?? 0),
+          unavailables: parseInt(r.unavailables ?? 0),
+          errors: parseInt(r.errors ?? 0),
           lastSeen: r.last_seen.toISOString(),
           lastModel: r.last_model ?? null,
+          lastOutcome: r.last_outcome ?? null,
         })),
         last14Days: edgecloudLast14.rows.map((r) => ({
           date: r.date.toISOString().slice(0, 10),
           users: parseInt(r.users),
           questions: parseInt(r.questions),
+          successes: parseInt(r.successes ?? 0),
         })),
       },
     });

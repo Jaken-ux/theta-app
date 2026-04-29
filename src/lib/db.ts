@@ -63,6 +63,8 @@ export async function getPool(): Promise<Pool> {
     // EdgeCloud playground usage — one row per (hashed-IP, date). The
     // per-day grain lets us draw a 14-day trend; sum question_count
     // across rows for a given ip_hash to get "questions per person".
+    // Outcome counters break that total down so the admin view can
+    // distinguish "100 asked, 90 succeeded" from "100 asked, 50 timed out".
     await pool.query(`
       CREATE TABLE IF NOT EXISTS edgecloud_chat_usage (
         ip_hash TEXT NOT NULL,
@@ -73,6 +75,22 @@ export async function getPool(): Promise<Pool> {
         PRIMARY KEY (ip_hash, date)
       )
     `);
+    // Backfill outcome columns onto pre-existing tables.
+    for (const col of [
+      "success_count INTEGER NOT NULL DEFAULT 0",
+      "timeout_count INTEGER NOT NULL DEFAULT 0",
+      "unavailable_count INTEGER NOT NULL DEFAULT 0",
+      "error_count INTEGER NOT NULL DEFAULT 0",
+      "last_outcome TEXT",
+    ]) {
+      const name = col.split(" ")[0];
+      const rest = col.split(" ").slice(1).join(" ");
+      await pool
+        .query(
+          `ALTER TABLE edgecloud_chat_usage ADD COLUMN IF NOT EXISTS ${name} ${rest}`
+        )
+        .catch(() => {});
+    }
     for (const col of cols) {
       const name = col.split(' ')[0];
       await pool.query(`ALTER TABLE theta_activity_history ADD COLUMN IF NOT EXISTS ${name} ${col.split(' ').slice(1).join(' ')}`).catch(() => {});
@@ -98,26 +116,59 @@ function hashIp(ip: string): string {
     .slice(0, 32);
 }
 
+export type ChatOutcome =
+  | "success"
+  | "timeout"
+  | "unavailable"
+  | "error";
+
 /**
- * Increment today's count for the given visitor. Safe to call
- * concurrently — the upsert resolves race conditions atomically.
- * Errors are not thrown so a DB hiccup never breaks the chat flow.
+ * Increment today's count for the given visitor and record which
+ * outcome category the request landed in. Safe to call concurrently —
+ * the upsert resolves race conditions atomically. Errors are not
+ * thrown so a DB hiccup never breaks the chat flow.
  */
 export async function recordEdgecloudChat(
   ip: string,
-  model: string
+  model: string,
+  outcome: ChatOutcome
 ): Promise<void> {
   try {
     const p = await getPool();
     const ipHash = hashIp(ip);
+    const successInc = outcome === "success" ? 1 : 0;
+    const timeoutInc = outcome === "timeout" ? 1 : 0;
+    const unavailableInc = outcome === "unavailable" ? 1 : 0;
+    const errorInc = outcome === "error" ? 1 : 0;
     await p.query(
-      `INSERT INTO edgecloud_chat_usage (ip_hash, date, question_count, last_seen, last_model)
-       VALUES ($1, CURRENT_DATE, 1, NOW(), $2)
+      `INSERT INTO edgecloud_chat_usage (
+         ip_hash, date, question_count,
+         success_count, timeout_count, unavailable_count, error_count,
+         last_seen, last_model, last_outcome
+       )
+       VALUES (
+         $1, CURRENT_DATE, 1,
+         $3, $4, $5, $6,
+         NOW(), $2, $7
+       )
        ON CONFLICT (ip_hash, date) DO UPDATE
-       SET question_count = edgecloud_chat_usage.question_count + 1,
-           last_seen = NOW(),
-           last_model = EXCLUDED.last_model`,
-      [ipHash, model]
+       SET question_count     = edgecloud_chat_usage.question_count + 1,
+           success_count      = edgecloud_chat_usage.success_count + $3,
+           timeout_count      = edgecloud_chat_usage.timeout_count + $4,
+           unavailable_count  = edgecloud_chat_usage.unavailable_count + $5,
+           error_count        = edgecloud_chat_usage.error_count + $6,
+           last_seen          = NOW(),
+           last_model         = EXCLUDED.last_model,
+           last_outcome       = EXCLUDED.last_outcome`,
+      [
+        ipHash,
+        model,
+        successInc,
+        timeoutInc,
+        unavailableInc,
+        errorInc,
+        outcome,
+      ]
     );
   } catch (e) {
     console.error("[recordEdgecloudChat] failed:", e);

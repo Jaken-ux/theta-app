@@ -180,6 +180,7 @@ export async function POST(req: Request) {
       const creditPattern =
         /balance|insufficient|credit|billing|quota.*exceeded|out of (funds|credit)/i;
       if (res.status === 402 || creditPattern.test(remoteMsg)) {
+        void recordEdgecloudChat(ip, modelKey, "error");
         return NextResponse.json(
           {
             error:
@@ -190,11 +191,13 @@ export async function POST(req: Request) {
       }
 
       if (res.status === 409 || /no instances/i.test(remoteMsg)) {
+        void recordEdgecloudChat(ip, modelKey, "unavailable");
         return NextResponse.json(
           { error: "No instances available — try again in a moment" },
           { status: 503 }
         );
       }
+      void recordEdgecloudChat(ip, modelKey, "error");
       return NextResponse.json(
         { error: "Something went wrong — try a different model" },
         { status: 502 }
@@ -203,6 +206,7 @@ export async function POST(req: Request) {
 
     const reqState = json?.body?.infer_requests?.[0];
     if (!reqState || reqState.state !== "success") {
+      void recordEdgecloudChat(ip, modelKey, "error");
       return NextResponse.json(
         {
           error:
@@ -221,7 +225,7 @@ export async function POST(req: Request) {
     // Count this as one "question" for admin analytics. Fire-and-forget;
     // the helper swallows DB errors internally so we never fail a
     // successful inference because of a logging hiccup.
-    void recordEdgecloudChat(ip, modelKey);
+    void recordEdgecloudChat(ip, modelKey, "success");
 
     return NextResponse.json({ response: stripThinkTags(raw) });
   } catch (e) {
@@ -229,12 +233,14 @@ export async function POST(req: Request) {
     const elapsed = Date.now() - startedAt;
     if (e instanceof Error && e.name === "AbortError") {
       console.log("[edgecloud-chat] aborted after", elapsed, "ms");
+      void recordEdgecloudChat(ip, modelKey, "timeout");
       return NextResponse.json(
         { error: "Request timed out — EdgeCloud may be busy" },
         { status: 504 }
       );
     }
     console.log("[edgecloud-chat] fetch threw after", elapsed, "ms:", e);
+    void recordEdgecloudChat(ip, modelKey, "error");
     return NextResponse.json(
       { error: "Something went wrong — try a different model" },
       { status: 500 }
