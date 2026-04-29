@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Card from "../../components/Card";
 import CodeBlock from "../../components/CodeBlock";
+import EdgeCloudPlayground from "../../components/EdgeCloudPlayground";
 import FaqItem from "../../components/FaqItem";
 import SimplifyThis from "../../components/SimplifyThis";
 import {
@@ -171,6 +172,9 @@ export default async function UseEdgeCloudPage() {
           </a>
         </div>
       </section>
+
+      {/* 1b. INTERACTIVE PLAYGROUND */}
+      <EdgeCloudPlayground />
 
       {/* 2. TWO PATHS */}
       <section>
