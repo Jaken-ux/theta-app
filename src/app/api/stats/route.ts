@@ -25,6 +25,10 @@ export async function GET(request: Request) {
       recentDays,
       topReferrers,
       topCampaigns,
+      edgecloudTotals,
+      edgecloudToday,
+      edgecloudTopUsers,
+      edgecloudLast14,
     ] = await Promise.all([
         // Total unique visitors (excluding devs)
         pool.query(
@@ -109,6 +113,40 @@ export async function GET(request: Request) {
            GROUP BY utm_source, utm_campaign
            ORDER BY visitors DESC LIMIT 10`
         ),
+        // EdgeCloud playground — all-time totals
+        pool.query(
+          `SELECT COUNT(DISTINCT ip_hash) AS users,
+                  COALESCE(SUM(question_count), 0) AS questions
+           FROM edgecloud_chat_usage`
+        ),
+        // EdgeCloud playground — today
+        pool.query(
+          `SELECT COUNT(DISTINCT ip_hash) AS users,
+                  COALESCE(SUM(question_count), 0) AS questions
+           FROM edgecloud_chat_usage
+           WHERE date = CURRENT_DATE`
+        ),
+        // EdgeCloud playground — top users (sum across all dates)
+        pool.query(
+          `SELECT ip_hash,
+                  SUM(question_count) AS total_questions,
+                  MAX(last_seen) AS last_seen,
+                  MAX(last_model) AS last_model
+           FROM edgecloud_chat_usage
+           GROUP BY ip_hash
+           ORDER BY total_questions DESC
+           LIMIT 10`
+        ),
+        // EdgeCloud playground — last 14 days trend
+        pool.query(
+          `SELECT date,
+                  COUNT(DISTINCT ip_hash) AS users,
+                  SUM(question_count) AS questions
+           FROM edgecloud_chat_usage
+           WHERE date > CURRENT_DATE - INTERVAL '14 days'
+           GROUP BY date
+           ORDER BY date`
+        ),
       ]);
 
     return NextResponse.json({
@@ -137,6 +175,27 @@ export async function GET(request: Request) {
         views: parseInt(r.views),
       })),
       monitoredSubchains: await getMonitoredSubchains().catch(() => []),
+      edgecloud: {
+        allTime: {
+          users: parseInt(edgecloudTotals.rows[0].users),
+          questions: parseInt(edgecloudTotals.rows[0].questions),
+        },
+        today: {
+          users: parseInt(edgecloudToday.rows[0].users),
+          questions: parseInt(edgecloudToday.rows[0].questions),
+        },
+        topUsers: edgecloudTopUsers.rows.map((r) => ({
+          ipHash: r.ip_hash,
+          totalQuestions: parseInt(r.total_questions),
+          lastSeen: r.last_seen.toISOString(),
+          lastModel: r.last_model ?? null,
+        })),
+        last14Days: edgecloudLast14.rows.map((r) => ({
+          date: r.date.toISOString().slice(0, 10),
+          users: parseInt(r.users),
+          questions: parseInt(r.questions),
+        })),
+      },
     });
   } catch (error) {
     console.error("Stats query failed:", error);

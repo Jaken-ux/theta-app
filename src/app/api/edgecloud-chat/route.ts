@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordEdgecloudChat } from "../../../lib/db";
 
 /**
  * Server-side proxy for the /use-edgecloud playground.
@@ -216,6 +217,12 @@ export async function POST(req: Request) {
       typeof reqState.output?.message === "string"
         ? reqState.output.message
         : "";
+
+    // Count this as one "question" for admin analytics. Fire-and-forget;
+    // the helper swallows DB errors internally so we never fail a
+    // successful inference because of a logging hiccup.
+    void recordEdgecloudChat(ip, modelKey);
+
     return NextResponse.json({ response: stripThinkTags(raw) });
   } catch (e) {
     clearTimeout(timer);

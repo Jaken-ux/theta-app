@@ -38,6 +38,17 @@ interface Stats {
     dailyTxs: number;
     totalTxs: number;
   }[];
+  edgecloud: {
+    allTime: { users: number; questions: number };
+    today: { users: number; questions: number };
+    topUsers: {
+      ipHash: string;
+      totalQuestions: number;
+      lastSeen: string;
+      lastModel: string | null;
+    }[];
+    last14Days: { date: string; users: number; questions: number }[];
+  };
 }
 
 function formatDate(dateStr: string): string {
@@ -520,6 +531,151 @@ export default function AdminPage() {
           <p className="text-[10px] text-[#5C6675] mt-3">
             When a new explorer comes online, add an adapter in src/lib/metachain/adapters/ and register it.
           </p>
+        </div>
+      )}
+
+      {/* EdgeCloud playground usage */}
+      {stats.edgecloud && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">
+              EdgeCloud Playground
+            </h2>
+            <p className="text-xs text-[#7D8694]">
+              Per-visitor question counts. IPs are hashed with the stats secret
+              before storage — no raw IP is kept.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="People (all time)"
+              value={stats.edgecloud.allTime.users}
+              sub="unique visitors"
+              color="#2AB8E6"
+            />
+            <StatCard
+              label="Questions (all time)"
+              value={stats.edgecloud.allTime.questions}
+              sub="prompts sent"
+              color="#10B981"
+            />
+            <StatCard
+              label="People Today"
+              value={stats.edgecloud.today.users}
+              color="#F59E0B"
+            />
+            <StatCard
+              label="Questions Today"
+              value={stats.edgecloud.today.questions}
+              color="#8B5CF6"
+            />
+          </div>
+
+          {/* 14-day trend */}
+          {stats.edgecloud.last14Days.length > 0 && (
+            <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+              <p className="text-sm font-medium text-white mb-4">
+                Playground activity (14 days)
+              </p>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stats.edgecloud.last14Days.map((d) => ({
+                      name: formatDate(d.date),
+                      questions: d.questions,
+                      users: d.users,
+                    }))}
+                  >
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: "#B0B8C4", fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={30}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "#2A3548",
+                        border: "1px solid #445064",
+                        borderRadius: "8px",
+                        color: "#eaecf0",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar
+                      dataKey="questions"
+                      fill="#8B5CF6"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Top users table */}
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+            <p className="text-sm font-medium text-white mb-4">
+              Top users by questions asked
+            </p>
+            {stats.edgecloud.topUsers.length === 0 ? (
+              <p className="text-sm text-[#7D8694]">
+                No playground activity yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#2A3548]">
+                      <th className="text-left font-medium text-[#7D8694] pb-2">
+                        Visitor
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2">
+                        Questions
+                      </th>
+                      <th className="text-left font-medium text-[#7D8694] pb-2 pl-4">
+                        Last model
+                      </th>
+                      <th className="text-left font-medium text-[#7D8694] pb-2 pl-4">
+                        Last seen
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.edgecloud.topUsers.map((u) => (
+                      <tr
+                        key={u.ipHash}
+                        className="border-b border-[#2A3548]/40 last:border-b-0"
+                      >
+                        <td className="py-2 font-mono text-xs text-[#B0B8C4]">
+                          {u.ipHash.slice(0, 10)}…
+                        </td>
+                        <td className="py-2 text-right text-white tabular-nums">
+                          {u.totalQuestions}
+                        </td>
+                        <td className="py-2 pl-4 text-[#B0B8C4]">
+                          {u.lastModel ?? "—"}
+                        </td>
+                        <td className="py-2 pl-4 text-[#7D8694] tabular-nums">
+                          {new Date(u.lastSeen).toLocaleString("sv-SE", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
