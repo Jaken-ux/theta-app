@@ -75,11 +75,20 @@ export async function getPool(): Promise<Pool> {
         PRIMARY KEY (ip_hash, date)
       )
     `);
+    // Migrate older schema: an earlier iteration named the column
+    // unavailable_count; spec settled on no_instances_count. Rename if
+    // present, swallow if not.
+    await pool
+      .query(
+        `ALTER TABLE edgecloud_chat_usage RENAME COLUMN unavailable_count TO no_instances_count`
+      )
+      .catch(() => {});
+
     // Backfill outcome columns onto pre-existing tables.
     for (const col of [
       "success_count INTEGER NOT NULL DEFAULT 0",
       "timeout_count INTEGER NOT NULL DEFAULT 0",
-      "unavailable_count INTEGER NOT NULL DEFAULT 0",
+      "no_instances_count INTEGER NOT NULL DEFAULT 0",
       "error_count INTEGER NOT NULL DEFAULT 0",
       "last_outcome TEXT",
     ]) {
@@ -91,6 +100,23 @@ export async function getPool(): Promise<Pool> {
         )
         .catch(() => {});
     }
+
+    // Per-model usage aggregate. Separate from edgecloud_chat_usage
+    // because that table's last_model field only tracks each user's
+    // most recent model — not accurate for per-model totals when a
+    // visitor uses multiple models. This table is keyed on
+    // (model, date) and sees every individual call.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS edgecloud_model_usage (
+        model TEXT NOT NULL,
+        date DATE NOT NULL,
+        success_count INTEGER NOT NULL DEFAULT 0,
+        timeout_count INTEGER NOT NULL DEFAULT 0,
+        no_instances_count INTEGER NOT NULL DEFAULT 0,
+        error_count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (model, date)
+      )
+    `);
     for (const col of cols) {
       const name = col.split(' ')[0];
       await pool.query(`ALTER TABLE theta_activity_history ADD COLUMN IF NOT EXISTS ${name} ${col.split(' ').slice(1).join(' ')}`).catch(() => {});
@@ -119,14 +145,16 @@ function hashIp(ip: string): string {
 export type ChatOutcome =
   | "success"
   | "timeout"
-  | "unavailable"
+  | "no_instances"
   | "error";
 
 /**
- * Increment today's count for the given visitor and record which
- * outcome category the request landed in. Safe to call concurrently —
- * the upsert resolves race conditions atomically. Errors are not
- * thrown so a DB hiccup never breaks the chat flow.
+ * Record one playground call. Writes to two tables:
+ *   - edgecloud_chat_usage (per-visitor-per-day) for "who's using this"
+ *   - edgecloud_model_usage (per-model-per-day)   for "which model is reliable"
+ *
+ * Safe to call concurrently — both upserts resolve races atomically.
+ * Errors are swallowed so a DB hiccup never breaks the chat flow.
  */
 export async function recordEdgecloudChat(
   ip: string,
@@ -138,38 +166,54 @@ export async function recordEdgecloudChat(
     const ipHash = hashIp(ip);
     const successInc = outcome === "success" ? 1 : 0;
     const timeoutInc = outcome === "timeout" ? 1 : 0;
-    const unavailableInc = outcome === "unavailable" ? 1 : 0;
+    const noInstancesInc = outcome === "no_instances" ? 1 : 0;
     const errorInc = outcome === "error" ? 1 : 0;
-    await p.query(
-      `INSERT INTO edgecloud_chat_usage (
-         ip_hash, date, question_count,
-         success_count, timeout_count, unavailable_count, error_count,
-         last_seen, last_model, last_outcome
-       )
-       VALUES (
-         $1, CURRENT_DATE, 1,
-         $3, $4, $5, $6,
-         NOW(), $2, $7
-       )
-       ON CONFLICT (ip_hash, date) DO UPDATE
-       SET question_count     = edgecloud_chat_usage.question_count + 1,
-           success_count      = edgecloud_chat_usage.success_count + $3,
-           timeout_count      = edgecloud_chat_usage.timeout_count + $4,
-           unavailable_count  = edgecloud_chat_usage.unavailable_count + $5,
-           error_count        = edgecloud_chat_usage.error_count + $6,
-           last_seen          = NOW(),
-           last_model         = EXCLUDED.last_model,
-           last_outcome       = EXCLUDED.last_outcome`,
-      [
-        ipHash,
-        model,
-        successInc,
-        timeoutInc,
-        unavailableInc,
-        errorInc,
-        outcome,
-      ]
-    );
+
+    await Promise.all([
+      p.query(
+        `INSERT INTO edgecloud_chat_usage (
+           ip_hash, date, question_count,
+           success_count, timeout_count, no_instances_count, error_count,
+           last_seen, last_model, last_outcome
+         )
+         VALUES (
+           $1, CURRENT_DATE, 1,
+           $3, $4, $5, $6,
+           NOW(), $2, $7
+         )
+         ON CONFLICT (ip_hash, date) DO UPDATE
+         SET question_count       = edgecloud_chat_usage.question_count + 1,
+             success_count        = edgecloud_chat_usage.success_count + $3,
+             timeout_count        = edgecloud_chat_usage.timeout_count + $4,
+             no_instances_count   = edgecloud_chat_usage.no_instances_count + $5,
+             error_count          = edgecloud_chat_usage.error_count + $6,
+             last_seen            = NOW(),
+             last_model           = EXCLUDED.last_model,
+             last_outcome         = EXCLUDED.last_outcome`,
+        [
+          ipHash,
+          model,
+          successInc,
+          timeoutInc,
+          noInstancesInc,
+          errorInc,
+          outcome,
+        ]
+      ),
+      p.query(
+        `INSERT INTO edgecloud_model_usage (
+           model, date,
+           success_count, timeout_count, no_instances_count, error_count
+         )
+         VALUES ($1, CURRENT_DATE, $2, $3, $4, $5)
+         ON CONFLICT (model, date) DO UPDATE
+         SET success_count        = edgecloud_model_usage.success_count + $2,
+             timeout_count        = edgecloud_model_usage.timeout_count + $3,
+             no_instances_count   = edgecloud_model_usage.no_instances_count + $4,
+             error_count          = edgecloud_model_usage.error_count + $5`,
+        [model, successInc, timeoutInc, noInstancesInc, errorInc]
+      ),
+    ]);
   } catch (e) {
     console.error("[recordEdgecloudChat] failed:", e);
   }

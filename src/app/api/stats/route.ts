@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       edgecloudToday,
       edgecloudTopUsers,
       edgecloudLast14,
+      edgecloudByModel,
     ] = await Promise.all([
         // Total unique visitors (excluding devs)
         pool.query(
@@ -119,7 +120,7 @@ export async function GET(request: Request) {
                   COALESCE(SUM(question_count), 0) AS questions,
                   COALESCE(SUM(success_count), 0) AS successes,
                   COALESCE(SUM(timeout_count), 0) AS timeouts,
-                  COALESCE(SUM(unavailable_count), 0) AS unavailables,
+                  COALESCE(SUM(no_instances_count), 0) AS no_instances,
                   COALESCE(SUM(error_count), 0) AS errors
            FROM edgecloud_chat_usage`
         ),
@@ -129,7 +130,7 @@ export async function GET(request: Request) {
                   COALESCE(SUM(question_count), 0) AS questions,
                   COALESCE(SUM(success_count), 0) AS successes,
                   COALESCE(SUM(timeout_count), 0) AS timeouts,
-                  COALESCE(SUM(unavailable_count), 0) AS unavailables,
+                  COALESCE(SUM(no_instances_count), 0) AS no_instances,
                   COALESCE(SUM(error_count), 0) AS errors
            FROM edgecloud_chat_usage
            WHERE date = CURRENT_DATE`
@@ -140,7 +141,7 @@ export async function GET(request: Request) {
                   SUM(question_count) AS total_questions,
                   SUM(success_count) AS successes,
                   SUM(timeout_count) AS timeouts,
-                  SUM(unavailable_count) AS unavailables,
+                  SUM(no_instances_count) AS no_instances,
                   SUM(error_count) AS errors,
                   MAX(last_seen) AS last_seen,
                   MAX(last_model) AS last_model,
@@ -160,6 +161,18 @@ export async function GET(request: Request) {
            WHERE date > CURRENT_DATE - INTERVAL '14 days'
            GROUP BY date
            ORDER BY date`
+        ),
+        // EdgeCloud playground — per-model totals (all-time)
+        pool.query(
+          `SELECT model,
+                  SUM(success_count) AS successes,
+                  SUM(timeout_count) AS timeouts,
+                  SUM(no_instances_count) AS no_instances,
+                  SUM(error_count) AS errors,
+                  SUM(success_count + timeout_count + no_instances_count + error_count) AS attempts
+           FROM edgecloud_model_usage
+           GROUP BY model
+           ORDER BY attempts DESC`
         ),
       ]);
 
@@ -195,7 +208,7 @@ export async function GET(request: Request) {
           questions: parseInt(edgecloudTotals.rows[0].questions),
           successes: parseInt(edgecloudTotals.rows[0].successes),
           timeouts: parseInt(edgecloudTotals.rows[0].timeouts),
-          unavailables: parseInt(edgecloudTotals.rows[0].unavailables),
+          noInstances: parseInt(edgecloudTotals.rows[0].no_instances),
           errors: parseInt(edgecloudTotals.rows[0].errors),
         },
         today: {
@@ -203,7 +216,7 @@ export async function GET(request: Request) {
           questions: parseInt(edgecloudToday.rows[0].questions),
           successes: parseInt(edgecloudToday.rows[0].successes),
           timeouts: parseInt(edgecloudToday.rows[0].timeouts),
-          unavailables: parseInt(edgecloudToday.rows[0].unavailables),
+          noInstances: parseInt(edgecloudToday.rows[0].no_instances),
           errors: parseInt(edgecloudToday.rows[0].errors),
         },
         topUsers: edgecloudTopUsers.rows.map((r) => ({
@@ -211,7 +224,7 @@ export async function GET(request: Request) {
           totalQuestions: parseInt(r.total_questions),
           successes: parseInt(r.successes ?? 0),
           timeouts: parseInt(r.timeouts ?? 0),
-          unavailables: parseInt(r.unavailables ?? 0),
+          noInstances: parseInt(r.no_instances ?? 0),
           errors: parseInt(r.errors ?? 0),
           lastSeen: r.last_seen.toISOString(),
           lastModel: r.last_model ?? null,
@@ -222,6 +235,14 @@ export async function GET(request: Request) {
           users: parseInt(r.users),
           questions: parseInt(r.questions),
           successes: parseInt(r.successes ?? 0),
+        })),
+        byModel: edgecloudByModel.rows.map((r) => ({
+          model: r.model,
+          attempts: parseInt(r.attempts ?? 0),
+          successes: parseInt(r.successes ?? 0),
+          timeouts: parseInt(r.timeouts ?? 0),
+          noInstances: parseInt(r.no_instances ?? 0),
+          errors: parseInt(r.errors ?? 0),
         })),
       },
     });

@@ -191,7 +191,7 @@ export async function POST(req: Request) {
       }
 
       if (res.status === 409 || /no instances/i.test(remoteMsg)) {
-        void recordEdgecloudChat(ip, modelKey, "unavailable");
+        void recordEdgecloudChat(ip, modelKey, "no_instances");
         return NextResponse.json(
           { error: "No instances available — try again in a moment" },
           { status: 503 }

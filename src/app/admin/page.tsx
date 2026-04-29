@@ -44,7 +44,7 @@ interface Stats {
       questions: number;
       successes: number;
       timeouts: number;
-      unavailables: number;
+      noInstances: number;
       errors: number;
     };
     today: {
@@ -52,7 +52,7 @@ interface Stats {
       questions: number;
       successes: number;
       timeouts: number;
-      unavailables: number;
+      noInstances: number;
       errors: number;
     };
     topUsers: {
@@ -60,7 +60,7 @@ interface Stats {
       totalQuestions: number;
       successes: number;
       timeouts: number;
-      unavailables: number;
+      noInstances: number;
       errors: number;
       lastSeen: string;
       lastModel: string | null;
@@ -71,6 +71,14 @@ interface Stats {
       users: number;
       questions: number;
       successes: number;
+    }[];
+    byModel: {
+      model: string;
+      attempts: number;
+      successes: number;
+      timeouts: number;
+      noInstances: number;
+      errors: number;
     }[];
   };
 }
@@ -90,7 +98,7 @@ function outcomeBadge(outcome: string | null): {
         text: "Timeout",
         classes: "bg-amber-400/10 text-amber-400 border-amber-400/30",
       };
-    case "unavailable":
+    case "no_instances":
       return {
         text: "No instances",
         classes: "bg-amber-400/10 text-amber-400 border-amber-400/30",
@@ -627,7 +635,7 @@ export default function AdminPage() {
                   <StatCard
                     label="Questions (all time)"
                     value={at.questions}
-                    sub={`${at.successes} success · ${at.timeouts} timeout · ${at.unavailables} no-inst · ${at.errors} err`}
+                    sub={`${at.successes} success · ${at.timeouts} timeout · ${at.noInstances} no-inst · ${at.errors} err`}
                     color="#10B981"
                   />
                   <StatCard
@@ -708,6 +716,113 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* Per-model success breakdown */}
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+            <p className="text-sm font-medium text-white mb-1">
+              Success rate by model
+            </p>
+            <p className="text-xs text-[#7D8694] mb-4">
+              All-time. Helps decide which model to recommend as default.
+            </p>
+            {stats.edgecloud.byModel.length === 0 ? (
+              <p className="text-sm text-[#7D8694]">
+                No model usage recorded yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#2A3548]">
+                      <th className="text-left font-medium text-[#7D8694] pb-2">
+                        Model
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        Attempts
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        ✓ Successes
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        Timeouts
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        No instances
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        Errors
+                      </th>
+                      <th className="text-right font-medium text-[#7D8694] pb-2 pl-4">
+                        Success rate
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.edgecloud.byModel.map((m) => {
+                      const rate =
+                        m.attempts > 0
+                          ? Math.round((m.successes / m.attempts) * 100)
+                          : null;
+                      const rateColor =
+                        rate == null
+                          ? "text-[#7D8694]"
+                          : rate >= 90
+                            ? "text-emerald-400"
+                            : rate >= 50
+                              ? "text-amber-400"
+                              : "text-red-400";
+                      return (
+                        <tr
+                          key={m.model}
+                          className="border-b border-[#2A3548]/40 last:border-b-0"
+                        >
+                          <td className="py-2 font-mono text-xs text-white">
+                            {m.model}
+                          </td>
+                          <td className="py-2 pl-4 text-right text-white tabular-nums">
+                            {m.attempts}
+                          </td>
+                          <td className="py-2 pl-4 text-right text-emerald-400 tabular-nums">
+                            {m.successes}
+                          </td>
+                          <td
+                            className={`py-2 pl-4 text-right tabular-nums ${
+                              m.timeouts > 0
+                                ? "text-amber-400"
+                                : "text-[#7D8694]"
+                            }`}
+                          >
+                            {m.timeouts}
+                          </td>
+                          <td
+                            className={`py-2 pl-4 text-right tabular-nums ${
+                              m.noInstances > 0
+                                ? "text-amber-400"
+                                : "text-[#7D8694]"
+                            }`}
+                          >
+                            {m.noInstances}
+                          </td>
+                          <td
+                            className={`py-2 pl-4 text-right tabular-nums ${
+                              m.errors > 0 ? "text-red-400" : "text-[#7D8694]"
+                            }`}
+                          >
+                            {m.errors}
+                          </td>
+                          <td
+                            className={`py-2 pl-4 text-right tabular-nums font-semibold ${rateColor}`}
+                          >
+                            {rate == null ? "—" : `${rate}%`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           {/* Top users table */}
           <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
             <p className="text-sm font-medium text-white mb-4">
@@ -747,7 +862,7 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {stats.edgecloud.topUsers.map((u) => {
-                      const failed = u.timeouts + u.unavailables + u.errors;
+                      const failed = u.timeouts + u.noInstances + u.errors;
                       const badge = outcomeBadge(u.lastOutcome);
                       return (
                         <tr
