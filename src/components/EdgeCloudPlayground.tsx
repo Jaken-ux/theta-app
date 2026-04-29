@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ModelOption {
@@ -39,6 +39,20 @@ const MODELS: ModelOption[] = [
 
 const MAX_CHARS = 500;
 
+type Status = "available" | "slow" | "unavailable" | "checking";
+
+interface StatusVisual {
+  dotClass: string;
+  label: string;
+}
+
+const STATUS_VISUALS: Record<Status, StatusVisual> = {
+  available: { dotClass: "bg-emerald-400", label: "Available" },
+  slow: { dotClass: "bg-amber-400", label: "Slow" },
+  unavailable: { dotClass: "bg-red-400", label: "Unavailable" },
+  checking: { dotClass: "bg-theta-muted/40 animate-pulse", label: "Checking…" },
+};
+
 export default function EdgeCloudPlayground() {
   const [model, setModel] = useState<string>("minimax");
   const [input, setInput] = useState("");
@@ -46,12 +60,87 @@ export default function EdgeCloudPlayground() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [statuses, setStatuses] = useState<Record<string, Status>>({
+    minimax: "checking",
+    "gpt-oss": "checking",
+    llama: "checking",
+    qwen3: "checking",
+  });
+  const [autoSelected, setAutoSelected] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch availability once on mount. The endpoint caches results for
+  // 5 minutes server-side, so multiple page loads in a row are cheap.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/edgecloud-health")
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return;
+        setStatuses({
+          minimax: j.minimax ?? "unavailable",
+          "gpt-oss": j["gpt-oss"] ?? "unavailable",
+          llama: j.llama ?? "unavailable",
+          qwen3: j.qwen3 ?? "unavailable",
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStatuses({
+          minimax: "unavailable",
+          "gpt-oss": "unavailable",
+          llama: "unavailable",
+          qwen3: "unavailable",
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Auto-select the first available model — but only once, and only if
+  // the user hasn't already touched the dropdown. If the default model
+  // turns out to be unavailable when health resolves, switch them to
+  // something working.
+  useEffect(() => {
+    if (autoSelected) return;
+    if (Object.values(statuses).every((s) => s === "checking")) return;
+    const currentStatus = statuses[model];
+    if (currentStatus === "available" || currentStatus === "slow") {
+      setAutoSelected(true);
+      return;
+    }
+    const firstAvailable = MODELS.find(
+      (m) => statuses[m.id] === "available"
+    )?.id;
+    if (firstAvailable && firstAvailable !== model) {
+      setModel(firstAvailable);
+    }
+    setAutoSelected(true);
+  }, [statuses, model, autoSelected]);
+
+  // Close dropdown on outside click.
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function onClick(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [dropdownOpen]);
 
   const isQwen3 = model === "qwen3";
   const charCount = input.length;
   const overLimit = charCount > MAX_CHARS;
   const empty = input.trim().length === 0;
   const selected = MODELS.find((m) => m.id === model) ?? MODELS[0];
+  const selectedStatus = statuses[model] ?? "checking";
 
   async function send() {
     if (empty || overLimit || loading) return;
@@ -104,30 +193,105 @@ export default function EdgeCloudPlayground() {
       </p>
 
       <div className="bg-theta-card border border-theta-border rounded-xl p-5 sm:p-6 space-y-4">
-        {/* Model selector */}
-        <div>
-          <label
-            htmlFor="ec-model"
-            className="block text-xs uppercase tracking-widest text-theta-muted font-semibold mb-2"
-          >
+        {/* Model dropdown — custom so we can color the status dots */}
+        <div ref={dropdownRef}>
+          <label className="block text-xs uppercase tracking-widest text-theta-muted font-semibold mb-2">
             Choose a model
           </label>
-          <select
-            id="ec-model"
-            value={model}
-            onChange={(e) => {
-              setModel(e.target.value);
-              setError(null);
-            }}
-            disabled={loading}
-            className="w-full bg-[#0A0F1C] border border-theta-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-theta-teal/60 transition-colors disabled:opacity-60"
-          >
-            {MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label} — {m.subtitle}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDropdownOpen((v) => !v)}
+              disabled={loading}
+              aria-haspopup="listbox"
+              aria-expanded={dropdownOpen}
+              className="w-full flex items-center justify-between gap-3 bg-[#0A0F1C] border border-theta-border rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-theta-teal/60 hover:border-theta-teal/40 transition-colors disabled:opacity-60"
+            >
+              <span className="flex items-center gap-2.5 min-w-0">
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_VISUALS[selectedStatus].dotClass}`}
+                  aria-hidden
+                />
+                <span className="truncate">
+                  <span className="font-semibold">{selected.label}</span>
+                  <span className="text-theta-muted ml-2 hidden sm:inline">
+                    — {selected.subtitle}
+                  </span>
+                </span>
+              </span>
+              <span className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs text-theta-muted hidden sm:inline">
+                  {STATUS_VISUALS[selectedStatus].label}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-theta-muted transition-transform ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </span>
+            </button>
+
+            <AnimatePresence>
+              {dropdownOpen && (
+                <motion.ul
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.12 }}
+                  role="listbox"
+                  className="absolute z-20 left-0 right-0 mt-1.5 bg-[#0A0F1C] border border-theta-border rounded-lg overflow-hidden shadow-2xl"
+                >
+                  {MODELS.map((m) => {
+                    const s = statuses[m.id] ?? "checking";
+                    const isSelected = m.id === model;
+                    return (
+                      <li key={m.id} role="option" aria-selected={isSelected}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModel(m.id);
+                            setDropdownOpen(false);
+                            setError(null);
+                          }}
+                          className={`w-full flex items-start gap-3 px-3.5 py-3 text-left text-sm transition-colors ${
+                            isSelected
+                              ? "bg-theta-teal/10"
+                              : "hover:bg-theta-teal/5"
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${STATUS_VISUALS[s].dotClass}`}
+                            aria-hidden
+                          />
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-white font-semibold">
+                              {m.label}
+                            </span>
+                            <span className="block text-xs text-theta-muted mt-0.5">
+                              {m.subtitle}
+                            </span>
+                          </span>
+                          <span className="text-xs text-theta-muted/80 mt-0.5 flex-shrink-0">
+                            {STATUS_VISUALS[s].label}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </motion.ul>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Qwen3 amber warning */}
@@ -172,11 +336,7 @@ export default function EdgeCloudPlayground() {
             className="w-full bg-[#0A0F1C] border border-theta-border rounded-lg px-3.5 py-3 text-sm text-white placeholder-theta-muted/50 resize-y focus:outline-none focus:border-theta-teal/60 transition-colors disabled:opacity-60 leading-relaxed font-sans"
           />
           <div className="flex justify-between items-center mt-2 text-xs">
-            <span
-              className={
-                overLimit ? "text-red-400" : "text-theta-muted/60"
-              }
-            >
+            <span className={overLimit ? "text-red-400" : "text-theta-muted/60"}>
               {charCount}/{MAX_CHARS}
             </span>
             <span className="text-theta-muted/50">
