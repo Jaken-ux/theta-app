@@ -66,6 +66,7 @@ export default function EdgeCloudPlayground() {
     llama: "checking",
     qwen3: "checking",
   });
+  const [creditsLow, setCreditsLow] = useState(false);
   const [autoSelected, setAutoSelected] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -84,6 +85,7 @@ export default function EdgeCloudPlayground() {
           llama: j.llama ?? "unavailable",
           qwen3: j.qwen3 ?? "unavailable",
         });
+        setCreditsLow(j.creditsLow === true);
       })
       .catch(() => {
         if (cancelled) return;
@@ -293,6 +295,32 @@ export default function EdgeCloudPlayground() {
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Demo credits running low — server-side check against the EdgeCloud
+            billing API. The exact balance is intentionally not exposed; we
+            just surface a soft warning so visitors aren't blindsided when
+            the playground stops responding. */}
+        {creditsLow && (
+          <div className="flex items-start gap-2.5 bg-amber-400/10 border border-amber-400/30 text-amber-300 rounded-lg px-3.5 py-2.5 text-sm leading-relaxed">
+            <svg
+              className="w-4 h-4 mt-0.5 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75m0 3v.008m9.75-.879a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>
+              Demo credits running low — playground may stop responding soon.
+              For sustained use, hit the API directly via RapidAPI.
+            </span>
+          </div>
+        )}
 
         {/* Qwen3 amber warning */}
         {isQwen3 && (

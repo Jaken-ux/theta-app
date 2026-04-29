@@ -21,17 +21,34 @@ interface HealthSnapshot {
   "gpt-oss": Status;
   llama: Status;
   qwen3: Status;
+  /** True when the demo account balance has dipped below the warning
+   *  threshold. The actual amount is intentionally not exposed so a
+   *  public visitor can't read off our remaining credit. */
+  creditsLow: boolean;
   checkedAt: string;
 }
 
-const ENDPOINTS: Record<keyof Omit<HealthSnapshot, "checkedAt">, string> = {
+const ENDPOINTS = {
   minimax: "minimax_m2_5",
   "gpt-oss": "gpt_oss_120b",
   llama: "llama_3_8b",
   qwen3: "qwen3",
-};
+} as const;
 
 const BASE_URL = "https://ondemand.thetaedgecloud.com/infer_request";
+
+// Hard-coded org_id since the demo account's organisation is fixed.
+// Override via env if we ever rotate accounts. Public-safe — it's an
+// identifier, not a credential.
+const ORG_ID =
+  process.env.EDGECLOUD_ORG_ID ?? "org_zxhz06am948ndtkatpzcyhharh8f";
+const BALANCE_URL = `https://api.thetaedgecloud.com/balance?orgID=${ORG_ID}`;
+
+// The /balance endpoint reports the value in cents (smallest currency
+// unit), not USD — verified against the dashboard which renders $2.00
+// while the API returns 199.7819. Convert before comparing.
+const CENTS_PER_USD = 100;
+const CREDITS_LOW_THRESHOLD_USD = 1;
 
 // Thresholds for classifying a model. The 8s timeout is short enough
 // that the health endpoint stays well under our 30s maxDuration even
@@ -41,6 +58,24 @@ const HARD_TIMEOUT_MS = 8_000;
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cached: { snapshot: HealthSnapshot; expiresAt: number } | null = null;
+
+async function fetchBalance(apiKey: string): Promise<number | null> {
+  try {
+    const res = await fetch(BALANCE_URL, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(6_000),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json().catch(() => null)) as
+      | { body?: { balances?: Array<{ balance?: number }> } }
+      | null;
+    const b = json?.body?.balances?.[0]?.balance;
+    return typeof b === "number" ? b : null;
+  } catch {
+    return null;
+  }
+}
 
 async function pingModel(slug: string, apiKey: string): Promise<Status> {
   const controller = new AbortController();
@@ -89,6 +124,7 @@ export async function GET() {
       "gpt-oss": "unavailable",
       llama: "unavailable",
       qwen3: "unavailable",
+      creditsLow: false,
       checkedAt: new Date().toISOString(),
     };
     return NextResponse.json(fallback, { status: 500 });
@@ -99,15 +135,29 @@ export async function GET() {
     string,
   ][];
 
-  const results = await Promise.all(
-    entries.map(async ([key, slug]) => [key, await pingModel(slug, apiKey)] as const)
-  );
+  // Balance fetch runs alongside the per-model pings — same cache window,
+  // one extra HTTP call per refresh. Failure to read balance returns null
+  // and is treated as "not low" so a transient billing-API outage doesn't
+  // produce a misleading scary banner.
+  const [balance, results] = await Promise.all([
+    fetchBalance(apiKey),
+    Promise.all(
+      entries.map(
+        async ([key, slug]) =>
+          [key, await pingModel(slug, apiKey)] as const
+      )
+    ),
+  ]);
+
+  const balanceUsd = balance !== null ? balance / CENTS_PER_USD : null;
 
   const snapshot: HealthSnapshot = {
     minimax: "unavailable",
     "gpt-oss": "unavailable",
     llama: "unavailable",
     qwen3: "unavailable",
+    creditsLow:
+      balanceUsd !== null && balanceUsd < CREDITS_LOW_THRESHOLD_USD,
     checkedAt: new Date().toISOString(),
   };
   for (const [key, status] of results) {
@@ -119,6 +169,10 @@ export async function GET() {
     "gpt-oss": snapshot["gpt-oss"],
     llama: snapshot.llama,
     qwen3: snapshot.qwen3,
+    creditsLow: snapshot.creditsLow,
+    // Logged to runtime logs only — never sent to the client.
+    balanceCents: balance,
+    balanceUsd: balanceUsd,
   });
 
   cached = { snapshot, expiresAt: now + CACHE_TTL_MS };

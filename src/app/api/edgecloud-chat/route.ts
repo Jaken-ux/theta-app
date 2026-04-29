@@ -170,6 +170,24 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const remoteMsg = json?.message ?? "";
       console.log("[edgecloud-chat] upstream error", res.status, remoteMsg);
+
+      // Out-of-credit signals come back in a few different shapes — explicit
+      // 402, generic 403/429 with billing-flavoured wording, or a 200 wrapper
+      // around a balance-related message. Surface a friendly, single-message
+      // response so users land on RapidAPI instead of being told to "try a
+      // different model" when no model can possibly help.
+      const creditPattern =
+        /balance|insufficient|credit|billing|quota.*exceeded|out of (funds|credit)/i;
+      if (res.status === 402 || creditPattern.test(remoteMsg)) {
+        return NextResponse.json(
+          {
+            error:
+              "Demo credits depleted — please try again later, or use the API directly via RapidAPI.",
+          },
+          { status: 402 }
+        );
+      }
+
       if (res.status === 409 || /no instances/i.test(remoteMsg)) {
         return NextResponse.json(
           { error: "No instances available — try again in a moment" },
