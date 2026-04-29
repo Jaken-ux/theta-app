@@ -14,19 +14,26 @@ import { NextResponse } from "next/server";
  *   Resp: { status, body: { infer_requests: [{ state, output: { message } }] } }
  */
 
+// Vercel platform timeout for this route. Default on Hobby is 10s, which
+// is shorter than even a healthy MiniMax response (~3-5s) once a cold
+// start is added. 60s covers the fast models comfortably; Qwen3 Parallax
+// can take 1-3 minutes and may still hit this on Hobby — Pro tier raises
+// the cap to 300s if Qwen3 turns out to need more headroom.
+export const maxDuration = 60;
+
 interface ModelConfig {
   slug: string;
-  /** Per-request abort timeout. Qwen3 Parallax goes through a slower
-   *  pipeline-parallel route across community GPUs, so it gets a much
-   *  larger budget than the centrally-hosted models. */
+  /** Per-request abort timeout. Capped just under maxDuration above so
+   *  the AbortController fires before Vercel kills the whole function —
+   *  produces a clean "Request timed out" response instead of a 504/FUNCTION_INVOCATION_TIMEOUT. */
   timeoutMs: number;
 }
 
 const MODELS: Record<string, ModelConfig> = {
-  minimax: { slug: "minimax_m2_5", timeoutMs: 30_000 },
-  "gpt-oss": { slug: "gpt_oss_120b", timeoutMs: 30_000 },
-  llama: { slug: "llama_3_8b", timeoutMs: 30_000 },
-  qwen3: { slug: "qwen3", timeoutMs: 180_000 },
+  minimax: { slug: "minimax_m2_5", timeoutMs: 55_000 },
+  "gpt-oss": { slug: "gpt_oss_120b", timeoutMs: 55_000 },
+  llama: { slug: "llama_3_8b", timeoutMs: 55_000 },
+  qwen3: { slug: "qwen3", timeoutMs: 55_000 },
 };
 
 const BASE_URL = "https://ondemand.thetaedgecloud.com/infer_request";
@@ -101,17 +108,33 @@ export async function POST(req: Request) {
 
   const apiKey = process.env.EDGECLOUD_API_KEY;
   if (!apiKey) {
+    console.error("[edgecloud-chat] EDGECLOUD_API_KEY is not set in this environment");
     return NextResponse.json(
       { error: "Server is missing EDGECLOUD_API_KEY" },
       { status: 500 }
     );
   }
 
+  const url = `${BASE_URL}/${cfg.slug}/completions`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
+  const startedAt = Date.now();
+
+  // Vercel function logs surface this. Mask the key so it never leaks
+  // into a log search; just confirm length so we know the env var
+  // is actually populated in the running environment.
+  console.log("[edgecloud-chat] →", {
+    url,
+    model: modelKey,
+    msgLen: message.length,
+    timeoutMs: cfg.timeoutMs,
+    keyLen: apiKey.length,
+    keyPrefix: apiKey.slice(0, 4),
+    auth: "Bearer ***",
+  });
 
   try {
-    const res = await fetch(`${BASE_URL}/${cfg.slug}/completions`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -127,6 +150,8 @@ export async function POST(req: Request) {
       signal: controller.signal,
     });
     clearTimeout(timer);
+    const elapsed = Date.now() - startedAt;
+    console.log("[edgecloud-chat] ← status", res.status, "elapsed", elapsed, "ms");
 
     const json = (await res.json().catch(() => null)) as
       | {
@@ -144,6 +169,7 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       const remoteMsg = json?.message ?? "";
+      console.log("[edgecloud-chat] upstream error", res.status, remoteMsg);
       if (res.status === 409 || /no instances/i.test(remoteMsg)) {
         return NextResponse.json(
           { error: "No instances available — try again in a moment" },
@@ -175,12 +201,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ response: stripThinkTags(raw) });
   } catch (e) {
     clearTimeout(timer);
+    const elapsed = Date.now() - startedAt;
     if (e instanceof Error && e.name === "AbortError") {
+      console.log("[edgecloud-chat] aborted after", elapsed, "ms");
       return NextResponse.json(
         { error: "Request timed out — EdgeCloud may be busy" },
         { status: 504 }
       );
     }
+    console.log("[edgecloud-chat] fetch threw after", elapsed, "ms:", e);
     return NextResponse.json(
       { error: "Something went wrong — try a different model" },
       { status: 500 }
