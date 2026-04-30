@@ -393,12 +393,20 @@ export async function POST(req: Request) {
     // successful inference because of a logging hiccup. Topic
     // classification is keyword-only and only flows on the success
     // path — the user's raw text is never stored, only the bucket.
-    await recordEdgecloudChat(
-      ip,
-      modelKey,
-      "success",
-      classifyTopic(message)
-    );
+    const topic = classifyTopic(message);
+
+    // Short-term diagnostic: when classifyTopic returns "other" we don't
+    // know what bucket the user actually wanted. Log the raw text to
+    // Vercel runtime logs (NOT to the database) so we can read the
+    // questions and decide whether to add new keyword buckets.
+    // Vercel auto-deletes runtime logs after the platform retention
+    // window (~1 day on Hobby), so this is transient — no row added,
+    // no privacy promise broken.
+    if (topic === "other") {
+      console.log("[other-question]", message);
+    }
+
+    await recordEdgecloudChat(ip, modelKey, "success", topic);
 
     return NextResponse.json({ response: stripThinkTags(raw) });
   } catch (e) {
