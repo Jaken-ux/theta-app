@@ -186,6 +186,39 @@ function stripThinkTags(s: string): string {
   return s.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
 }
 
+/**
+ * Bucket the user's question into one of a fixed set of topics for
+ * admin analytics. First match wins, so the topic order matters —
+ * "stake my THETA" should classify as staking, not tokens. Pure
+ * keyword matching, no model call, no extra latency.
+ *
+ * The raw question text is never persisted — only the topic label.
+ */
+const TOPIC_KEYWORDS: { name: string; keywords: string[] }[] = [
+  { name: "staking", keywords: ["stak", "apy", "guardian", "node", "earn"] },
+  {
+    name: "edgecloud",
+    keywords: ["gpu", "compute", "inference", "edgecloud", "api"],
+  },
+  {
+    name: "indexes",
+    keywords: ["index", "score", "metachain", "main chain"],
+  },
+  { name: "tokens", keywords: ["theta", "tfuel", "tdrop", "price"] },
+  {
+    name: "getting-started",
+    keywords: ["how to", "start", "begin", "buy"],
+  },
+];
+
+function classifyTopic(message: string): string {
+  const lower = message.toLowerCase();
+  for (const t of TOPIC_KEYWORDS) {
+    if (t.keywords.some((k) => lower.includes(k))) return t.name;
+  }
+  return "other";
+}
+
 export async function POST(req: Request) {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -357,8 +390,15 @@ export async function POST(req: Request) {
 
     // Count this as one "question" for admin analytics. Fire-and-forget;
     // the helper swallows DB errors internally so we never fail a
-    // successful inference because of a logging hiccup.
-    void recordEdgecloudChat(ip, modelKey, "success");
+    // successful inference because of a logging hiccup. Topic
+    // classification is keyword-only and only flows on the success
+    // path — the user's raw text is never stored, only the bucket.
+    void recordEdgecloudChat(
+      ip,
+      modelKey,
+      "success",
+      classifyTopic(message)
+    );
 
     return NextResponse.json({ response: stripThinkTags(raw) });
   } catch (e) {

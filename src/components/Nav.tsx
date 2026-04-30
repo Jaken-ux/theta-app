@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
+interface NavLink {
+  href: string;
+  label: string;
+  /** Renders with teal-outlined CTA styling and a sparkles icon. */
+  isCTA?: boolean;
+}
+
+const links: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/network", label: "Network" },
   { href: "/metachain", label: "Metachain" },
@@ -13,7 +20,21 @@ const links = [
   { href: "/get-started", label: "Get Started" },
   { href: "/theta-explained", label: "Deep Dive" },
   { href: "/contact", label: "Contact" },
+  { href: "/use-edgecloud#playground", label: "Ask AI", isCTA: true },
 ];
+
+function SparklesIcon() {
+  return (
+    <svg
+      className="w-3.5 h-3.5 flex-shrink-0"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M11 3l1.5 4 4 1.5-4 1.5L11 14l-1.5-4-4-1.5 4-1.5L11 3zm8 9l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5z" />
+    </svg>
+  );
+}
 
 export default function Nav() {
   const pathname = usePathname();
@@ -59,18 +80,21 @@ export default function Nav() {
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex gap-1">
+        <div className="hidden md:flex gap-1 items-center">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                pathname === link.href
-                  ? "bg-theta-teal/10 text-theta-teal"
-                  : "text-theta-muted hover:text-white"
+              className={`px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5 ${
+                link.isCTA
+                  ? "border border-theta-teal/40 bg-theta-teal/5 text-theta-teal hover:bg-theta-teal/15 hover:border-theta-teal/60 ml-1"
+                  : pathname === link.href
+                    ? "bg-theta-teal/10 text-theta-teal"
+                    : "text-theta-muted hover:text-white"
               }`}
             >
-              {link.label}
+              {link.isCTA && <SparklesIcon />}
+              <span>{link.label}</span>
             </Link>
           ))}
         </div>
@@ -105,14 +129,19 @@ export default function Nav() {
                   href={link.href}
                   onClick={() => handleLinkClick(link.href)}
                   className={`flex items-center justify-between px-3 py-3 rounded-lg text-base transition-colors ${
-                    isActive
-                      ? "bg-theta-teal/10 text-theta-teal"
-                      : isLoading
-                      ? "bg-[#151D2E] text-white"
-                      : "text-theta-muted hover:text-white hover:bg-[#151D2E]"
+                    link.isCTA
+                      ? "border border-theta-teal/40 bg-theta-teal/5 text-theta-teal hover:bg-theta-teal/15"
+                      : isActive
+                        ? "bg-theta-teal/10 text-theta-teal"
+                        : isLoading
+                          ? "bg-[#151D2E] text-white"
+                          : "text-theta-muted hover:text-white hover:bg-[#151D2E]"
                   }`}
                 >
-                  <span>{link.label}</span>
+                  <span className="inline-flex items-center gap-2">
+                    {link.isCTA && <SparklesIcon />}
+                    {link.label}
+                  </span>
                   {isLoading && (
                     <svg className="w-4 h-4 animate-spin text-theta-teal" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.2" />

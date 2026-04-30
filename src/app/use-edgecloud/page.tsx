@@ -173,8 +173,12 @@ export default async function UseEdgeCloudPage() {
         </div>
       </section>
 
-      {/* 1b. INTERACTIVE PLAYGROUND */}
-      <EdgeCloudPlayground />
+      {/* 1b. INTERACTIVE PLAYGROUND — anchor target for the "Ask AI" nav
+          link. scroll-mt-20 leaves clearance under the sticky nav (h-14)
+          so the section heading isn't hidden when scrolled-to via hash. */}
+      <div id="playground" className="scroll-mt-20">
+        <EdgeCloudPlayground />
+      </div>
 
       {/* 2. TWO PATHS */}
       <section>

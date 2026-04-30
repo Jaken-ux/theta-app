@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       edgecloudTopUsers,
       edgecloudLast14,
       edgecloudByModel,
+      edgecloudByTopic,
     ] = await Promise.all([
         // Total unique visitors (excluding devs)
         pool.query(
@@ -174,6 +175,14 @@ export async function GET(request: Request) {
            GROUP BY model
            ORDER BY attempts DESC`
         ),
+        // EdgeCloud playground — top question topics (last 30 days)
+        pool.query(
+          `SELECT topic, SUM(count)::int AS count
+           FROM edgecloud_topic_usage
+           WHERE date > CURRENT_DATE - INTERVAL '30 days'
+           GROUP BY topic
+           ORDER BY count DESC`
+        ),
       ]);
 
     return NextResponse.json({
@@ -243,6 +252,10 @@ export async function GET(request: Request) {
           timeouts: parseInt(r.timeouts ?? 0),
           noInstances: parseInt(r.no_instances ?? 0),
           errors: parseInt(r.errors ?? 0),
+        })),
+        topTopics30d: edgecloudByTopic.rows.map((r) => ({
+          topic: r.topic,
+          count: parseInt(r.count ?? 0),
         })),
       },
     });

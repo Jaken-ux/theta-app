@@ -80,6 +80,10 @@ interface Stats {
       noInstances: number;
       errors: number;
     }[];
+    topTopics30d: {
+      topic: string;
+      count: number;
+    }[];
   };
 }
 
@@ -821,6 +825,57 @@ export default function AdminPage() {
                 </table>
               </div>
             )}
+          </div>
+
+          {/* Top question topics (last 30 days) */}
+          <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+            <p className="text-sm font-medium text-white mb-1">
+              Top question topics (last 30 days)
+            </p>
+            <p className="text-xs text-[#7D8694] mb-4">
+              Keyword-classified at request time. Only the topic label is
+              stored — never the raw question text.
+            </p>
+            {stats.edgecloud.topTopics30d.length === 0 ? (
+              <p className="text-sm text-[#7D8694]">
+                No questions classified in the last 30 days yet.
+              </p>
+            ) : (() => {
+              const total = stats.edgecloud.topTopics30d.reduce(
+                (s, t) => s + t.count,
+                0
+              );
+              const max = Math.max(
+                ...stats.edgecloud.topTopics30d.map((t) => t.count)
+              );
+              return (
+                <div className="space-y-2">
+                  {stats.edgecloud.topTopics30d.map((t) => {
+                    const pct = total > 0 ? (t.count / total) * 100 : 0;
+                    const barWidth = max > 0 ? (t.count / max) * 100 : 0;
+                    return (
+                      <div key={t.topic} className="flex items-center gap-3">
+                        <span className="text-sm text-white w-32 truncate">
+                          {t.topic}
+                        </span>
+                        <div className="flex-1 bg-[#0A0F1C] rounded h-2 overflow-hidden">
+                          <div
+                            className="h-full bg-theta-teal/70"
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-[#B0B8C4] tabular-nums w-12 text-right">
+                          {t.count}
+                        </span>
+                        <span className="text-xs text-[#7D8694] tabular-nums w-12 text-right">
+                          {pct.toFixed(0)}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Top users table */}

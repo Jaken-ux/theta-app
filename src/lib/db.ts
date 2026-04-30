@@ -91,6 +91,7 @@ export async function getPool(): Promise<Pool> {
       "no_instances_count INTEGER NOT NULL DEFAULT 0",
       "error_count INTEGER NOT NULL DEFAULT 0",
       "last_outcome TEXT",
+      "question_topic VARCHAR(100)",
     ]) {
       const name = col.split(" ")[0];
       const rest = col.split(" ").slice(1).join(" ");
@@ -115,6 +116,19 @@ export async function getPool(): Promise<Pool> {
         no_instances_count INTEGER NOT NULL DEFAULT 0,
         error_count INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (model, date)
+      )
+    `);
+
+    // Per-topic usage aggregate. Same pattern as model_usage — the
+    // question_topic column on edgecloud_chat_usage only retains the
+    // last topic per (user, day), so an aggregate keyed on (topic,
+    // date) is required to give correct counts for the admin view.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS edgecloud_topic_usage (
+        topic VARCHAR(100) NOT NULL,
+        date DATE NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (topic, date)
       )
     `);
     for (const col of cols) {
@@ -149,17 +163,23 @@ export type ChatOutcome =
   | "error";
 
 /**
- * Record one playground call. Writes to two tables:
- *   - edgecloud_chat_usage (per-visitor-per-day) for "who's using this"
+ * Record one playground call. Writes to up to three tables:
+ *   - edgecloud_chat_usage  (per-visitor-per-day) for "who's using this"
  *   - edgecloud_model_usage (per-model-per-day)   for "which model is reliable"
+ *   - edgecloud_topic_usage (per-topic-per-day)   when a topic is supplied
  *
- * Safe to call concurrently — both upserts resolve races atomically.
+ * Safe to call concurrently — every upsert resolves races atomically.
  * Errors are swallowed so a DB hiccup never breaks the chat flow.
+ *
+ * `topic` is intentionally optional: error/timeout exit paths skip
+ * topic classification because the question never produced a usable
+ * answer, and we only want topic counts for delivered conversations.
  */
 export async function recordEdgecloudChat(
   ip: string,
   model: string,
-  outcome: ChatOutcome
+  outcome: ChatOutcome,
+  topic?: string
 ): Promise<void> {
   try {
     const p = await getPool();
@@ -168,18 +188,19 @@ export async function recordEdgecloudChat(
     const timeoutInc = outcome === "timeout" ? 1 : 0;
     const noInstancesInc = outcome === "no_instances" ? 1 : 0;
     const errorInc = outcome === "error" ? 1 : 0;
+    const topicValue = topic ?? null;
 
-    await Promise.all([
+    const queries: Promise<unknown>[] = [
       p.query(
         `INSERT INTO edgecloud_chat_usage (
            ip_hash, date, question_count,
            success_count, timeout_count, no_instances_count, error_count,
-           last_seen, last_model, last_outcome
+           last_seen, last_model, last_outcome, question_topic
          )
          VALUES (
            $1, CURRENT_DATE, 1,
            $3, $4, $5, $6,
-           NOW(), $2, $7
+           NOW(), $2, $7, $8
          )
          ON CONFLICT (ip_hash, date) DO UPDATE
          SET question_count       = edgecloud_chat_usage.question_count + 1,
@@ -189,7 +210,9 @@ export async function recordEdgecloudChat(
              error_count          = edgecloud_chat_usage.error_count + $6,
              last_seen            = NOW(),
              last_model           = EXCLUDED.last_model,
-             last_outcome         = EXCLUDED.last_outcome`,
+             last_outcome         = EXCLUDED.last_outcome,
+             question_topic       = COALESCE(EXCLUDED.question_topic,
+                                             edgecloud_chat_usage.question_topic)`,
         [
           ipHash,
           model,
@@ -198,6 +221,7 @@ export async function recordEdgecloudChat(
           noInstancesInc,
           errorInc,
           outcome,
+          topicValue,
         ]
       ),
       p.query(
@@ -213,7 +237,21 @@ export async function recordEdgecloudChat(
              error_count          = edgecloud_model_usage.error_count + $5`,
         [model, successInc, timeoutInc, noInstancesInc, errorInc]
       ),
-    ]);
+    ];
+
+    if (topicValue) {
+      queries.push(
+        p.query(
+          `INSERT INTO edgecloud_topic_usage (topic, date, count)
+           VALUES ($1, CURRENT_DATE, 1)
+           ON CONFLICT (topic, date) DO UPDATE
+           SET count = edgecloud_topic_usage.count + 1`,
+          [topicValue]
+        )
+      );
+    }
+
+    await Promise.all(queries);
   } catch (e) {
     console.error("[recordEdgecloudChat] failed:", e);
   }
