@@ -50,10 +50,20 @@ export default function ActivityTrendChart({
     samples: e.sampleCount,
   }));
 
+  // Compare against a rolling window, not the first-ever entry. The
+  // first-ever entry is just "the day we deployed" — comparing against
+  // it forever turns into a meaningless reference point as the series
+  // grows. 7 days is a meaningful weekly delta; if we have fewer than
+  // 8 entries we shrink the window to whatever's available.
+  const lookbackDays =
+    history.length >= 2 ? Math.min(7, history.length - 1) : 0;
   const trend =
     history.length >= 2
-      ? history[history.length - 1].score - history[0].score
+      ? history[history.length - 1].score -
+        history[history.length - 1 - lookbackDays].score
       : null;
+  const periodLabel =
+    lookbackDays === 1 ? "yesterday" : `${lookbackDays} days ago`;
 
   const content = (
     <>
@@ -109,10 +119,10 @@ export default function ActivityTrendChart({
               }}
             >
               {Math.abs(trend) < 2
-                ? `Stable (${trend >= 0 ? "+" : ""}${trend} pts)`
+                ? `Stable (${trend >= 0 ? "+" : ""}${trend} pts vs ${periodLabel})`
                 : trend > 0
-                ? `+${trend} pts since start`
-                : `${trend} pts since start`}
+                ? `+${trend} pts vs ${periodLabel}`
+                : `${trend} pts vs ${periodLabel}`}
             </p>
           )}
 

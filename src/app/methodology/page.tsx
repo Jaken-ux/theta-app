@@ -518,6 +518,15 @@ export default function MethodologyPage() {
               <p>absorptionRate[N] = absorption[N] / blockIssuance</p>
             </div>
 
+            <p className="text-xs text-[#B0B8C4]">
+              The first and last day of the series have no neighbour on
+              one side and fall back to a 2-day trailing average. Days
+              that are pre-flagged as known artifacts (see below) are
+              skipped when their neighbours compute the average, so a
+              bad raw value can&apos;t bleed into surrounding days&apos;
+              smoothed result.
+            </p>
+
             {/* Why absorption instead of burn */}
             <div className="bg-[#0A0F1C] border border-[#2A3548] rounded-lg p-4 space-y-2">
               <p className="text-xs text-white font-medium">
@@ -538,10 +547,57 @@ export default function MethodologyPage() {
             <p className="text-xs text-[#B0B8C4]">
               Supply data comes from Theta&apos;s{" "}
               <span className="font-mono">/api/supply/tfuel</span>{" "}
-              endpoint, stored daily in our database. The 7-day rolling
-              average smooths timing artifacts from the supply endpoint
-              not updating at exact midnight UTC.
+              endpoint, stored daily in our database. Snapshot-timing
+              drift is corrected by the 3-day centered smoothing above,
+              not by the 7-day chart average. The displayed 7-day trend
+              line is computed from the smoothed values and explicitly
+              excludes any day flagged as an artifact, so a single bad
+              snapshot can&apos;t pull the trend down.
             </p>
+          </div>
+        </div>
+
+        {/* Known data artifacts */}
+        <div>
+          <p className="text-sm text-white font-medium mb-3">
+            Known data artifacts
+          </p>
+          <div className="bg-[#0D1117] border border-[#2A3548] rounded-xl p-4 text-sm space-y-3">
+            <p className="text-xs text-[#D1D5DB]">
+              Some specific dates are pre-flagged because the raw value
+              was provably wrong and would otherwise bias the trend.
+              Flagged days are clamped to <span className="font-mono">absorption: 0</span>{" "}
+              and rendered as a muted bar on the chart so the history
+              stays visible without misleading the eye. Each entry below
+              names the date, the raw anomaly, and the cause.
+            </p>
+            <ul className="space-y-2 text-xs text-[#D1D5DB] list-disc list-inside">
+              <li>
+                <span className="text-white font-mono">2026-04-21</span>{" "}
+                — raw absorption was −22.9% (supply growth exceeded one
+                day&apos;s issuance). Pre-fix snapshot timing drift —
+                consecutive snapshots were &gt;24 h apart, so a single
+                day&apos;s denominator was applied to two days of growth.
+              </li>
+              <li>
+                <span className="text-white font-mono">2026-04-24</span>{" "}
+                — raw absorption was +78.5%. Bug-fix transition day:
+                the Apr 24 snapshot was the last write before the 21:14
+                UTC fix in 9f0c2aa, and Apr 25 was the first clean cron
+                at 00:05 UTC. The interval was only a few hours, so the
+                full daily denominator was applied to a tiny supply
+                delta, producing a phantom spike.
+              </li>
+              <li>
+                <span className="text-white font-mono">2026-04-27</span>{" "}
+                — raw absorption was −5.5% with snapshots ~24 h apart on
+                both sides, so this is not timing drift. No on-chain
+                unlock or treasury distribution has been identified;
+                treated as a suspected supply-API artifact (stale or
+                incorrect value at one of the snapshots) until a concrete
+                cause is found.
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -571,11 +627,15 @@ export default function MethodologyPage() {
               each bar as the average of three days (the day before, the
               day itself, the day after). Drift errors come in pairs, so
               having both neighbours in the window cancels them from both
-              sides. Days where even the smoothed value is still negative
-              (very rare) are flagged as artifacts and excluded from the
-              7-day average. Going forward, we also store the exact UTC
-              timestamp of each supply snapshot so future calculations
-              can normalise by the actual interval length.
+              sides. The first and last day of the series fall back to a
+              2-day trailing average since they have no neighbour on one
+              side. Days where the smoothed value is still negative
+              (rare) are flagged as artifacts; specific dates with
+              documented causes are also pre-flagged — see &quot;Known
+              data artifacts&quot; above. Artifact days are excluded
+              from the 7-day average. Going forward, we also store the
+              exact UTC timestamp of each supply snapshot so future
+              calculations can normalise by the actual interval length.
             </li>
             <li>
               <span className="text-white">
@@ -591,7 +651,9 @@ export default function MethodologyPage() {
 
       {/* Last updated */}
       <p className="text-xs text-[#7D8694] border-t border-[#2A3548] pt-6">
-        Last updated: April 2026. Baselines will be recalibrated after 30
+        Last updated: 2026-04-30 (absorption-rate methodology revised to
+        reflect 3-day centered smoothing, edge-fallback handling, and
+        known data artifacts). Baselines will be recalibrated after 30
         days of data collection.
       </p>
 
