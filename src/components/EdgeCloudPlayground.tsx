@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ModelOption {
   id: string;
@@ -42,6 +44,115 @@ const MODELS: ModelOption[] = [
 ];
 
 const MAX_CHARS = 500;
+
+// ReactMarkdown component overrides so the assistant's output
+// renders to match the dark theme of the rest of the app. Defined at
+// module scope so the object identity is stable across renders.
+//
+// Tables in particular need GFM (remark-gfm) to parse — without it
+// the model's pipe-syntax tables would render as plain pipe text.
+//
+// `pre`'s arbitrary child variants flatten the inline-code styling
+// so block code (always wrapped in <pre>) doesn't inherit the pill
+// background that we use for inline `code`.
+const markdownComponents = {
+  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3
+      className="text-base font-semibold text-theta-teal mt-4 mb-2 first:mt-0"
+      {...props}
+    />
+  ),
+  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h3
+      className="text-base font-semibold text-theta-teal mt-4 mb-2 first:mt-0"
+      {...props}
+    />
+  ),
+  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h4
+      className="text-sm font-semibold text-theta-teal mt-3 mb-1.5 first:mt-0"
+      {...props}
+    />
+  ),
+  h4: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+    <h5
+      className="text-sm font-semibold text-theta-teal mt-3 mb-1.5 first:mt-0"
+      {...props}
+    />
+  ),
+  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
+    <p className="mb-3 last:mb-0 leading-relaxed" {...props} />
+  ),
+  strong: (props: React.HTMLAttributes<HTMLElement>) => (
+    <strong className="text-white font-semibold" {...props} />
+  ),
+  em: (props: React.HTMLAttributes<HTMLElement>) => (
+    <em className="italic text-white/80" {...props} />
+  ),
+  ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
+    <ul
+      className="list-disc list-outside pl-5 mb-3 space-y-1 last:mb-0"
+      {...props}
+    />
+  ),
+  ol: (props: React.HTMLAttributes<HTMLOListElement>) => (
+    <ol
+      className="list-decimal list-outside pl-5 mb-3 space-y-1 last:mb-0"
+      {...props}
+    />
+  ),
+  li: (props: React.HTMLAttributes<HTMLLIElement>) => (
+    <li className="text-white/90 leading-relaxed" {...props} />
+  ),
+  a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a
+      className="text-theta-teal hover:underline"
+      target="_blank"
+      rel="noopener noreferrer"
+      {...props}
+    />
+  ),
+  code: (props: React.HTMLAttributes<HTMLElement>) => (
+    <code
+      className="bg-theta-card px-1.5 py-0.5 rounded text-xs font-mono text-theta-teal"
+      {...props}
+    />
+  ),
+  pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
+    <pre
+      className="bg-theta-card border border-theta-border rounded-lg p-3 text-xs font-mono text-white/90 overflow-x-auto my-3 last:mb-0 [&>code]:bg-transparent [&>code]:p-0 [&>code]:rounded-none [&>code]:text-white/90"
+      {...props}
+    />
+  ),
+  blockquote: (props: React.BlockquoteHTMLAttributes<HTMLQuoteElement>) => (
+    <blockquote
+      className="border-l-2 border-theta-teal/40 pl-3 my-3 last:mb-0 text-theta-muted italic"
+      {...props}
+    />
+  ),
+  table: (props: React.TableHTMLAttributes<HTMLTableElement>) => (
+    <div className="overflow-x-auto my-3 last:mb-0 rounded-lg border border-theta-border">
+      <table className="w-full text-xs" {...props} />
+    </div>
+  ),
+  thead: (props: React.HTMLAttributes<HTMLTableSectionElement>) => (
+    <thead className="bg-theta-teal/15 text-theta-teal" {...props} />
+  ),
+  th: (props: React.ThHTMLAttributes<HTMLTableCellElement>) => (
+    <th
+      className="text-left px-3 py-2 font-semibold border-b border-theta-border whitespace-nowrap"
+      {...props}
+    />
+  ),
+  td: (props: React.TdHTMLAttributes<HTMLTableCellElement>) => (
+    <td
+      className="px-3 py-2 border-t border-theta-border/40 text-white/85 align-top"
+      {...props}
+    />
+  ),
+  hr: () => <hr className="border-theta-border my-4" />,
+};
+const markdownPlugins = [remarkGfm];
 
 type Status = "available" | "slow" | "unavailable" | "checking";
 
@@ -436,8 +547,17 @@ export default function EdgeCloudPlayground() {
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>
-              <div className="bg-[#0A0F1C] border border-theta-border rounded-lg px-4 py-3.5 text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">
-                {response || "(empty response)"}
+              <div className="bg-[#0A0F1C] border border-theta-border rounded-lg px-4 py-3.5 text-sm text-white/90 leading-relaxed break-words">
+                {response ? (
+                  <ReactMarkdown
+                    remarkPlugins={markdownPlugins}
+                    components={markdownComponents}
+                  >
+                    {response}
+                  </ReactMarkdown>
+                ) : (
+                  <span className="text-theta-muted">(empty response)</span>
+                )}
               </div>
             </motion.div>
           )}
