@@ -190,8 +190,8 @@ export default function EdgeCloudPlayground() {
         Try Theta EdgeCloud AI — right now
       </h2>
       <p className="text-sm text-theta-muted mb-5 max-w-2xl">
-        Real AI inference running on Theta&apos;s decentralized GPU network.
-        No account needed.
+        Ask anything about Theta Network. Powered by live on-chain data and
+        Theta EdgeCloud&apos;s decentralized GPU network. No account needed.
       </p>
 
       <div className="bg-theta-card border border-theta-border rounded-xl p-5 sm:p-6 space-y-4">
@@ -358,7 +358,7 @@ export default function EdgeCloudPlayground() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={loading}
-            placeholder="Ask anything — try 'Explain blockchain in one sentence' or 'What is Theta EdgeCloud?'"
+            placeholder="Ask anything about Theta Network — staking rewards, EdgeCloud pricing, what the indexes mean, how to get started..."
             rows={4}
             maxLength={MAX_CHARS + 50}
             className="w-full bg-[#0A0F1C] border border-theta-border rounded-lg px-3.5 py-3 text-sm text-white placeholder-theta-muted/50 resize-y focus:outline-none focus:border-theta-teal/60 transition-colors disabled:opacity-60 leading-relaxed font-sans"

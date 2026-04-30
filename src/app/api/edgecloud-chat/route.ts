@@ -1,6 +1,122 @@
 import { NextResponse } from "next/server";
 import { recordEdgecloudChat } from "../../../lib/db";
 
+// System prompt + live data injected into every Theta inference call.
+// Defined at module scope so it isn't reallocated per request.
+const SYSTEM_PROMPT = `You are a helpful assistant on ThetaSimplified.com — a site dedicated to making Theta Network understandable for everyone. You specialize in:
+- Theta Network ecosystem (THETA, TFUEL, TDROP tokens)
+- Theta EdgeCloud (decentralized AI compute platform)
+- On-chain metrics and what they mean
+- Staking and earning on Theta
+- How to use EdgeCloud for AI workloads
+
+Be concise, accurate, and friendly. If asked about price predictions or financial advice, decline politely and redirect to on-chain data instead. If you don't know something specific about Theta, say so honestly.`;
+
+// Index-tier maps mirror the methodology page so the labels we send
+// to the model match what users see on the dashboard.
+function mainChainTier(score: number): string {
+  if (score >= 100) return "Elevated";
+  if (score >= 50) return "Active";
+  return "Quiet";
+}
+
+function metachainTier(score: number): string {
+  if (score >= 250) return "Mature";
+  if (score >= 100) return "Thriving";
+  if (score >= 50) return "Growing";
+  return "Early";
+}
+
+// Cache the live-data block so a chat burst from one instance only
+// pings the internal APIs once per minute. The numbers themselves
+// only change once a day; 60s is plenty fresh.
+const LIVE_CONTEXT_TTL_MS = 60_000;
+let cachedContext: { text: string; expiresAt: number } | null = null;
+
+async function fetchLiveContext(baseUrl: string): Promise<string> {
+  const now = Date.now();
+  if (cachedContext && now < cachedContext.expiresAt) {
+    return cachedContext.text;
+  }
+
+  const safeJson = async (path: string): Promise<unknown> => {
+    try {
+      const res = await fetch(`${baseUrl}${path}`, {
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+
+  const [summary, metachain] = await Promise.all([
+    safeJson("/api/weekly-summary"),
+    safeJson("/api/metachain"),
+  ]);
+
+  const lines: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const s = summary as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const m = metachain as any;
+
+  const mainScore = s?.metrics?.activityIndex?.current;
+  if (typeof mainScore === "number") {
+    lines.push(
+      `- Main Chain Activity Index: ${Math.round(mainScore)} (${mainChainTier(mainScore)})`
+    );
+  }
+
+  const metaScore = s?.metrics?.metachainIndex?.current;
+  if (typeof metaScore === "number") {
+    lines.push(
+      `- Metachain Utilization Index: ${Math.round(metaScore)} (${metachainTier(metaScore)})`
+    );
+  }
+
+  const absorptionRate = m?.tfuelEconomics?.avgAbsorptionRate7d;
+  if (typeof absorptionRate === "number") {
+    lines.push(
+      `- TFUEL 7-day absorption rate: ${(absorptionRate * 100).toFixed(1)}%`
+    );
+  }
+
+  const txs = s?.metrics?.metachainTxs?.current;
+  if (typeof txs === "number") {
+    lines.push(
+      `- Total ecosystem transactions: ~${Math.round(txs).toLocaleString()}/day`
+    );
+  }
+
+  const thetaPrice = s?.metrics?.thetaPrice?.current;
+  if (typeof thetaPrice === "number") {
+    lines.push(`- THETA price: $${thetaPrice.toFixed(4)}`);
+  }
+
+  const tfuelPrice = s?.metrics?.tfuelPrice?.current;
+  if (typeof tfuelPrice === "number") {
+    lines.push(`- TFUEL price: $${tfuelPrice.toFixed(4)}`);
+  }
+
+  const periodEnd = s?.periodEnd;
+  if (typeof periodEnd === "string") {
+    const d = new Date(periodEnd);
+    if (!isNaN(d.getTime())) {
+      lines.push(`- Data as of: ${d.toISOString().slice(0, 10)}`);
+    }
+  }
+
+  const text =
+    lines.length > 0
+      ? `\n\nCurrent live data from thetasimplified.com (updated daily):\n${lines.join("\n")}`
+      : "";
+
+  cachedContext = { text, expiresAt: now + LIVE_CONTEXT_TTL_MS };
+  return text;
+}
+
 /**
  * Server-side proxy for the /use-edgecloud playground.
  *
@@ -121,6 +237,16 @@ export async function POST(req: Request) {
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
   const startedAt = Date.now();
 
+  // Build the system message: persona + live snapshot. Same-origin
+  // fetches use the request's host so this works in dev, prod, and
+  // preview deploys without extra config.
+  const host = req.headers.get("host") ?? "localhost:3000";
+  const protocol =
+    req.headers.get("x-forwarded-proto") ??
+    (host.includes("localhost") ? "http" : "https");
+  const liveContext = await fetchLiveContext(`${protocol}://${host}`);
+  const systemContent = SYSTEM_PROMPT + liveContext;
+
   // Vercel function logs surface this. Mask the key so it never leaks
   // into a log search; just confirm length so we know the env var
   // is actually populated in the running environment.
@@ -132,6 +258,8 @@ export async function POST(req: Request) {
     keyLen: apiKey.length,
     keyPrefix: apiKey.slice(0, 4),
     auth: "Bearer ***",
+    sysLen: systemContent.length,
+    liveContextChars: liveContext.length,
   });
 
   try {
@@ -143,7 +271,10 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         input: {
-          messages: [{ role: "user", content: message }],
+          messages: [
+            { role: "system", content: systemContent },
+            { role: "user", content: message },
+          ],
           max_tokens: MAX_OUTPUT_TOKENS,
           stream: false,
         },
