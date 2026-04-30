@@ -10,17 +10,21 @@ interface ModelOption {
   beta: boolean;
 }
 
+// Order matters: the first available model wins the auto-select on
+// page load, so put the most reliable model first. gpt-oss-120b
+// follows the system prompt consistently; MiniMax-M2.5 is faster
+// but sometimes refuses to consult the live-data context we inject.
 const MODELS: ModelOption[] = [
+  {
+    id: "gpt-oss",
+    label: "gpt-oss-120b",
+    subtitle: "OpenAI open-source, strong reasoning — recommended",
+    beta: false,
+  },
   {
     id: "minimax",
     label: "MiniMax-M2.5",
     subtitle: "Fast, great for general questions",
-    beta: false,
-  },
-  {
-    id: "gpt-oss",
-    label: "gpt-oss-120b",
-    subtitle: "OpenAI open-source, strong reasoning",
     beta: false,
   },
   {
@@ -54,7 +58,7 @@ const STATUS_VISUALS: Record<Status, StatusVisual> = {
 };
 
 export default function EdgeCloudPlayground() {
-  const [model, setModel] = useState<string>("minimax");
+  const [model, setModel] = useState<string>("gpt-oss");
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
