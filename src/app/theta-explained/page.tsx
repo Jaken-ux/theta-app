@@ -15,7 +15,7 @@ const topics = [
     sections: [
       {
         heading: "Two-layer consensus",
-        body: "Theta uses a modified BFT (Byzantine Fault Tolerant) consensus split into two layers. A small committee of ~12-15 Validator Nodes proposes and signs blocks in round-robin fashion. Then thousands of Guardian Nodes vote on checkpoints every 100 blocks (~10 minutes). Once 2/3+ of guardian stake signs a checkpoint, those blocks become irreversible. Validators provide speed. Guardians provide decentralized finality.",
+        body: "Theta uses a modified BFT (Byzantine Fault Tolerant) consensus split into two layers. Up to 31 active Validator Nodes (ranked by stake size) propose and sign blocks in round-robin fashion. Then thousands of Guardian Nodes vote on checkpoints every 100 blocks (~10 minutes). Once 2/3+ of guardian stake signs a checkpoint, those blocks become irreversible. Validators provide speed. Guardians provide decentralized finality.",
       },
       {
         heading: "Block time and finality",
@@ -80,7 +80,7 @@ const topics = [
     sections: [
       {
         heading: "Validator Nodes",
-        body: "The validator set is fixed and permissioned — ~12-15 nodes run by Theta Labs and enterprise partners (Google, Samsung, Sony, Binance, CAA). You cannot permissionlessly become a validator. Minimum stake: 200,000 THETA. Validators propose blocks in round-robin and earn 75% of transaction fees.",
+        body: "The validator role is permissionless by protocol design — anyone can run a Validator Node by staking 200,000 THETA and meeting the hardware requirements (32GB RAM, 8-core CPU, 2TB SSD, 200Mbps symmetric network). However, the protocol caps active validators at 31 slots, awarded by stake size: the 31 nodes with the highest THETA staked are active proposers, while additional staked nodes are 'candidates' that earn no rewards. In practice, the active set is dominated by enterprise partners (Google, Samsung, Sony, Binance, CAA, Blockchain Ventures) whose stake sizes are difficult to displace economically. The system is permissionless in mechanism but economically curated in outcome. Active validators propose blocks in round-robin and earn 75% of transaction fees.",
       },
       {
         heading: "Guardian Nodes",
@@ -137,8 +137,8 @@ const topics = [
         body: "Theta's main chain processes 10,000-20,000 transactions/day. This is 1-2 orders of magnitude below comparably-valued L1 blockchains. The explanation that activity moved to subchains and off-chain compute is plausible — but not independently verifiable.",
       },
       {
-        heading: "Centralized validator set",
-        body: "12-15 validators, all selected by Theta Labs. There is no permissionless path to becoming a validator. This means Theta Labs and a few partners could theoretically collude to censor transactions. The guardian layer mitigates this — guardians can refuse to finalize malicious checkpoints — but it remains a structural centralization point.",
+        heading: "Concentrated validator set",
+        body: "While the validator role is technically permissionless (200K THETA stake + required hardware = eligible), the 31-slot cap combined with enterprise partners holding very large THETA stakes means new validators face significant economic barriers to displacing existing ones. This is decentralization through economic gravity, not by gatekeeping. The 31 highest-staked nodes could theoretically collude to censor transactions, but the guardian layer mitigates this — thousands of guardians can refuse to finalize malicious checkpoints. Whether 31 active validator slots provides meaningful decentralization is a judgment call: Ethereum has thousands of validators, while many newer L1s have similar cap structures.",
       },
       {
         heading: "Dependence on Theta Labs",
@@ -165,7 +165,7 @@ const topics = [
     sections: [
       {
         heading: "Validator Nodes — The proposers",
-        body: "A small, fixed committee (~12-15 nodes) run by enterprise partners. They propose blocks in round-robin fashion every ~6 seconds. Requires 200,000 THETA minimum stake. Not open to the public. These are the fast engine of the network.",
+        body: "Up to 31 active proposers, ranked by stake size. They propose blocks in round-robin fashion every ~6 seconds. Requires 200,000 THETA minimum stake plus the hardware spec (32GB RAM, 8-core CPU, 2TB SSD, 200Mbps symmetric network) — anyone meeting these can run a Validator Node. In practice the active set is dominated by enterprise partners (Google, Samsung, Sony, Binance, CAA) due to their large stakes. These are the fast engine of the network.",
       },
       {
         heading: "Guardian Nodes — The verifiers",
