@@ -17,10 +17,8 @@ const links: NavLink[] = [
   { href: "/metachain", label: "Metachain" },
   { href: "/earn", label: "Earn" },
   { href: "/use-edgecloud", label: "Use EdgeCloud" },
-  { href: "/get-started", label: "Get Started" },
   { href: "/theta-explained", label: "Deep Dive" },
   { href: "/contact", label: "Contact" },
-  { href: "/use-edgecloud#playground", label: "Ask AI", isCTA: true },
 ];
 
 function SparklesIcon() {

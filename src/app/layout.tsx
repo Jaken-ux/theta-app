@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import Nav from "../components/Nav";
 import PageTracker from "../components/PageTracker";
+import FloatingChatButton from "../components/FloatingChatButton";
 import { Analytics } from "@vercel/analytics/react";
 
 const geistSans = localFont({
@@ -107,6 +108,7 @@ export default function RootLayout({
             How we calculate this &rarr;
           </Link>
         </footer>
+        <FloatingChatButton />
         <Analytics />
       </body>
     </html>

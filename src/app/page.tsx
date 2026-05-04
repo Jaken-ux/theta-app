@@ -211,6 +211,26 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* ━━━ NEW-USER CTA STRIP ━━━ */}
+      <motion.section
+        className="border-y border-[#2A3548] bg-emerald-400/[0.04]"
+        {...fadeUp}
+      >
+        <Link
+          href="/get-started"
+          className="block px-4 sm:px-6 py-5 group"
+        >
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-center gap-2 sm:gap-4 text-center sm:text-left">
+            <span className="text-base sm:text-lg font-semibold text-white">
+              New to Theta?
+            </span>
+            <span className="text-sm sm:text-base text-emerald-400 group-hover:underline">
+              Start here →
+            </span>
+          </div>
+        </Link>
+      </motion.section>
+
       {/* ━━━ SOCIAL PROOF BAR ━━━ */}
       <motion.section
         className="py-20 border-y border-[#2A3548]"

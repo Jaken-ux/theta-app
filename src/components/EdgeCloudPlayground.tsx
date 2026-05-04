@@ -168,7 +168,18 @@ const STATUS_VISUALS: Record<Status, StatusVisual> = {
   checking: { dotClass: "bg-theta-muted/40 animate-pulse", label: "Checking…" },
 };
 
-export default function EdgeCloudPlayground() {
+export default function EdgeCloudPlayground({
+  compact = false,
+}: {
+  /**
+   * When true, render only the inner card (model picker, input, response)
+   * without the section heading, intro paragraph, or bottom disclaimer.
+   * Use this when embedding the chat in a floating panel or other host
+   * that already provides its own framing chrome. Default false = full
+   * page version used on /use-edgecloud.
+   */
+  compact?: boolean;
+} = {}) {
   const [model, setModel] = useState<string>("gpt-oss");
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
@@ -299,17 +310,33 @@ export default function EdgeCloudPlayground() {
     ? "Routing through decentralized GPU nodes... this may take 1-3 minutes"
     : "Sending to Theta EdgeCloud...";
 
-  return (
-    <section>
-      <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">
-        Try Theta EdgeCloud AI — right now
-      </h2>
-      <p className="text-sm text-theta-muted mb-5 max-w-2xl">
-        Ask anything about Theta Network. Powered by live on-chain data and
-        Theta EdgeCloud&apos;s decentralized GPU network. No account needed.
-      </p>
+  // Compact mode swaps the outer <section> + headings + disclaimers for
+  // a plain wrapper so the host (e.g. floating panel) controls the chrome.
+  const Wrapper = compact
+    ? ({ children }: { children: React.ReactNode }) => <>{children}</>
+    : ({ children }: { children: React.ReactNode }) => <section>{children}</section>;
 
-      <div className="bg-theta-card border border-theta-border rounded-xl p-5 sm:p-6 space-y-4">
+  return (
+    <Wrapper>
+      {!compact && (
+        <>
+          <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">
+            Try Theta EdgeCloud AI — right now
+          </h2>
+          <p className="text-sm text-theta-muted mb-5 max-w-2xl">
+            Ask anything about Theta Network. Powered by live on-chain data and
+            Theta EdgeCloud&apos;s decentralized GPU network. No account needed.
+          </p>
+        </>
+      )}
+
+      <div
+        className={
+          compact
+            ? "space-y-4"
+            : "bg-theta-card border border-theta-border rounded-xl p-5 sm:p-6 space-y-4"
+        }
+      >
         {/* Model dropdown — custom so we can color the status dots */}
         <div ref={dropdownRef}>
           <label className="block text-xs uppercase tracking-widest text-theta-muted font-semibold mb-2">
@@ -580,10 +607,12 @@ export default function EdgeCloudPlayground() {
         </AnimatePresence>
       </div>
 
-      <p className="text-xs text-theta-muted mt-3 max-w-2xl leading-relaxed">
-        Powered by Theta EdgeCloud. Responses cost fractions of a cent. Rate
-        limited to 10 requests per hour.
-      </p>
-    </section>
+      {!compact && (
+        <p className="text-xs text-theta-muted mt-3 max-w-2xl leading-relaxed">
+          Powered by Theta EdgeCloud. Responses cost fractions of a cent. Rate
+          limited to 10 requests per hour.
+        </p>
+      )}
+    </Wrapper>
   );
 }
