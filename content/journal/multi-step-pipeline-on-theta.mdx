@@ -9,6 +9,39 @@ A follow-up to my earlier MCP test. The first one was a single image generation.
 
 No glue code. No API juggling. Just one prompt to Claude.
 
+## The prompt
+
+Here's the exact prompt sent to Claude:
+
+```
+I want to test the Theta EdgeCloud MCP server's ability to orchestrate a multi-step pipeline using three different Theta models. Use the Theta MCP tools for each AI step — don't do the AI work yourself.
+
+Pipeline:
+
+Step 1 — Text generation
+Use GPT OSS 120B (gpt_oss_120b) on Theta to write a short, vivid 2-3 sentence description of what Theta Network's decentralized GPU infrastructure looks like as a physical metaphor. Imagine it as a landscape, a city, a creature, or some other visual concept. Make it visually rich and specific.
+
+Step 2 — Image generation
+Take the description from Step 1 and craft an image generation prompt from it. Make the prompt detailed enough to produce a striking image (style, mood, lighting, perspective). Then use FLUX (flux) on Theta to generate the image.
+
+Step 3 — Vision / image interpretation
+Take the image generated in Step 2 and pass it to LLaVA (llava) on Theta. Ask LLaVA to describe what it sees in the image, in its own words.
+
+Step 4 — Comparison and summary
+Give me a clear summary that includes:
+- The exact text generated in Step 1 (by GPT OSS 120B)
+- The image prompt used in Step 2
+- The image generated in Step 3 (display it)
+- LLaVA's description of the image (Step 3 output)
+- A short comparison: how does LLaVA's interpretation match or diverge from the original text in Step 1?
+- Which Theta model was used for each step
+- Approximate time each step took
+
+Don't combine steps. Don't do the writing, prompting, or vision interpretation locally — route every AI generation step through the Theta MCP server. I want to see the full orchestration in action: text → image → vision → comparison.
+```
+
+That single message is what kicked off everything below.
+
 ## The pipeline
 
 | Step | Task | Theta model |
