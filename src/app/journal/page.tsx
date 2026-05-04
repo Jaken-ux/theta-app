@@ -1,56 +1,78 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { getAllPosts } from "@/lib/journal";
 
-/**
- * Hidden journal index — not linked from the nav, not indexed by
- * search engines (see robots.ts), not advertised anywhere yet.
- * Renders an empty list when posts is empty so visiting the page
- * directly returns nothing meaningful, by design.
- *
- * To start publishing: replace `posts` with the actual post source
- * (file-based MDX, DB, etc.) and add a link in the nav.
- */
 export const metadata: Metadata = {
   title: "Journal",
   robots: { index: false, follow: false },
 };
 
-interface JournalEntry {
-  slug: string;
-  title: string;
-  publishedAt: string;
-  excerpt: string;
+function formatDate(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
-const posts: JournalEntry[] = [];
-
 export default function JournalIndex() {
+  const posts = getAllPosts();
+
   return (
-    <div className="space-y-8">
+    <div className="max-w-3xl mx-auto space-y-10">
       <header>
-        <h1 className="text-3xl font-bold text-white mb-2">Journal</h1>
-        <p className="text-theta-muted text-sm">
-          Notes from the work behind Theta Simplified.
+        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+          Journal
+        </h1>
+        <p className="text-theta-muted text-sm sm:text-base leading-relaxed">
+          Notes from the work behind Theta Simplified — tests, debugging,
+          ecosystem analysis, and the occasional late-night rabbit hole.
         </p>
       </header>
 
-      {posts.length === 0 ? null : (
-        <ul className="space-y-6">
+      {posts.length === 0 ? (
+        <p className="text-sm text-theta-muted">No entries yet.</p>
+      ) : (
+        <ul className="space-y-8">
           {posts.map((p) => (
             <li
               key={p.slug}
-              className="border-b border-theta-border pb-6 last:border-b-0"
+              className="border-b border-theta-border pb-8 last:border-b-0"
             >
-              <a href={`/journal/${p.slug}`} className="block group">
-                <p className="text-xs text-theta-muted/70 tabular-nums mb-1">
-                  {p.publishedAt}
+              <Link
+                href={`/journal/${p.slug}`}
+                className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-theta-teal/60 rounded-lg"
+              >
+                {p.featuredImage ? (
+                  <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-lg border border-theta-border bg-theta-card">
+                    <Image
+                      src={p.featuredImage}
+                      alt=""
+                      fill
+                      sizes="(min-width: 768px) 768px, 100vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                ) : null}
+                <p className="text-xs text-theta-muted/70 tabular-nums mb-2">
+                  {formatDate(p.date)}
                 </p>
-                <h2 className="text-lg font-semibold text-white group-hover:text-theta-teal transition-colors">
+                <h2 className="text-xl sm:text-2xl font-semibold text-white group-hover:text-theta-teal transition-colors">
                   {p.title}
                 </h2>
-                <p className="text-sm text-theta-muted mt-1 leading-relaxed">
-                  {p.excerpt}
-                </p>
-              </a>
+                {p.excerpt ? (
+                  <p className="text-sm sm:text-base text-theta-muted mt-2 leading-relaxed">
+                    {p.excerpt}
+                  </p>
+                ) : null}
+                <span className="inline-block mt-3 text-sm text-theta-teal group-hover:underline">
+                  Read more &rarr;
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
