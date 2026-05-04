@@ -1,0 +1,87 @@
+---
+title: "Running a multi-step AI pipeline on Theta — text, image, vision"
+date: "2026-05-04"
+excerpt: "Three Theta models, three modalities, one MCP-orchestrated flow. What worked, what didn't, and what 'no instances available' actually means in practice."
+featuredImage: "/images/journal/theta-megacity-flux.webp"
+---
+
+A follow-up to my earlier MCP test. The first one was a single image generation. This one is a chained pipeline: text generation → image generation → vision interpretation, with three different Theta models running through the MCP server in a single conversation.
+
+No glue code. No API juggling. Just one prompt to Claude.
+
+## The pipeline
+
+| Step | Task | Theta model |
+|------|------|-------------|
+| 1 | Generate a visual metaphor for Theta's GPU network | GPT OSS 120B |
+| 2 | Turn that metaphor into a generated image | FLUX |
+| 3 | Send the image back into a Theta vision model and have it describe what it sees | LLaVA (planned) → BLIP (fallback) |
+
+## Step 1 — GPT OSS 120B
+
+Prompt: write a short, vivid 2-3 sentence physical metaphor for Theta's decentralized GPU infrastructure.
+
+Output:
+
+> "A glittering megacity of glass towers rises from the horizon, each spire a GPU humming with electric veins that pulse in sync like neon arteries. Between them, luminous fiber-optic skyways weave a constantly shifting lattice, letting data torrents cascade like waterfalls of light across the skyline. At night the whole landscape glows as a single, breathing organism, each node sharing its heat and power to keep the city alive."
+
+Time: ~2 seconds.
+
+## Step 2 — FLUX
+
+The text from Step 1 was used to construct an image prompt with explicit style, lighting, and perspective directives. FLUX rendered at 1024×1024, 28 steps, guidance 3.5.
+
+Time: ~9 seconds.
+
+The result is the featured image at the top of this post.
+
+## Step 3 — Vision interpretation
+
+This is where the test got interesting.
+
+The plan was to send the image to LLaVA and ask it to describe what it sees. LLaVA is a conversational vision model — it can interpret an image and discuss it.
+
+LLaVA returned `state: created` and stayed there. No instance available. Theta's decentralized GPU allocation works on operator availability, and at that moment no node was running LLaVA.
+
+I switched to BLIP — a different vision model on Theta — and got an immediate response.
+
+BLIP's description of the image:
+
+> "futuristic city in the middle of the night"
+
+That's the full output. BLIP is an image captioner, not a conversational vision model. It returns short, literal labels.
+
+Time: ~3 seconds.
+
+## Comparison: GPT's text vs BLIP's reading
+
+| Element | GPT OSS 120B wrote | BLIP saw |
+|---------|---------------------|----------|
+| Place | "megacity of glass towers" | "city" |
+| Atmosphere | "at night, glowing organism" | "in the middle of the night" |
+| Style | "futuristic cyberpunk" (implicit) | "futuristic" |
+| GPU metaphor | "each spire a GPU with electric veins" | — |
+| Detail | "fiber-optic skyways, data torrents" | — |
+| Living organism | "single breathing organism" | — |
+
+BLIP captured the surface — futuristic city at night — but lost every layer of metaphor. That's not a Theta limitation. It's BLIP's design. For a richer reading, LLaVA would have been the right model. It just wasn't available at that moment.
+
+## Three observations
+
+**Multi-step pipelines work.** Three different models, three modalities, all routed through MCP from a single conversational prompt. No code written by me.
+
+**"No instances available" is a real constraint.** Decentralized GPU networks don't guarantee model availability the way AWS does. For production pipelines, fallback logic is required. I did this manually here. A real application would need to handle it programmatically.
+
+**Model choice matters more than people realize.** BLIP and LLaVA both fall under "vision," but they're built for different things. Picking the right Theta model for a step is part of the design work — not something MCP solves for you.
+
+## What this would look like at scale
+
+The full pipeline — three model calls, three modalities — registered as roughly $0.01 in EdgeCloud credit. The exact figure is below the resolution of the dashboard, but the order of magnitude is clear: fractions of a cent per run.
+
+| Pipeline runs | Approximate cost |
+|---------------|------------------|
+| 100 | ~$1 |
+| 10,000 | ~$100 |
+| 1,000,000 | ~$10,000 |
+
+A media company indexing 10,000 images with this flow runs around $100 in compute. The pipeline composes. Once it works for one, it works for ten thousand — same MCP orchestration, no rewriting.
