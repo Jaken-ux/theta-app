@@ -310,14 +310,14 @@ export default function EdgeCloudPlayground({
     ? "Routing through decentralized GPU nodes... this may take 1-3 minutes"
     : "Sending to Theta EdgeCloud...";
 
-  // Compact mode swaps the outer <section> + headings + disclaimers for
-  // a plain wrapper so the host (e.g. floating panel) controls the chrome.
-  const Wrapper = compact
-    ? ({ children }: { children: React.ReactNode }) => <>{children}</>
-    : ({ children }: { children: React.ReactNode }) => <section>{children}</section>;
-
+  // Always render the same <section> root so the DOM hierarchy is
+  // stable across renders. Earlier this used an inline `Wrapper`
+  // component that was re-created on every render, causing React to
+  // remount the whole subtree on each keystroke — and the textarea
+  // lost focus after one character. Section as a root is harmless
+  // even when nested inside the floating chat panel.
   return (
-    <Wrapper>
+    <section>
       {!compact && (
         <>
           <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">
@@ -613,6 +613,6 @@ export default function EdgeCloudPlayground({
           limited to 10 requests per hour.
         </p>
       )}
-    </Wrapper>
+    </section>
   );
 }
