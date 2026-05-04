@@ -23,7 +23,9 @@ interface JournalPost {
   body: string;
 }
 
-function lookupPost(_slug: string): JournalPost | null {
+function lookupPost(): JournalPost | null {
+  // No-op for now. When the first post is published, replace this with
+  // a real loader that takes the slug and returns the matching post.
   return null;
 }
 
@@ -32,8 +34,8 @@ export default async function JournalPost({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  const post = lookupPost(slug);
+  await params;
+  const post = lookupPost();
   if (!post) notFound();
 
   return (
