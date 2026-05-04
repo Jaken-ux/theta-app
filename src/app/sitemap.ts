@@ -1,7 +1,15 @@
 import type { MetadataRoute } from "next";
+import { getAllPosts } from "@/lib/journal";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://thetasimplified.com";
+
+  const journalPosts = getAllPosts().map((p) => ({
+    url: `${baseUrl}/journal/${p.slug}`,
+    lastModified: p.date ? new Date(p.date) : new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
 
   return [
     {
@@ -46,6 +54,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    {
+      url: `${baseUrl}/journal`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...journalPosts,
     {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),

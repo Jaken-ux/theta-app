@@ -26,15 +26,20 @@ export async function generateMetadata({
   const ogImage = post.featuredImage
     ? `https://thetasimplified.com${post.featuredImage}`
     : undefined;
+  const url = `https://thetasimplified.com/journal/${post.slug}`;
   return {
     title: post.title,
     description: post.excerpt,
-    robots: { index: false, follow: false },
+    alternates: { canonical: url },
     openGraph: {
       type: "article",
       title: post.title,
       description: post.excerpt,
-      images: ogImage ? [{ url: ogImage }] : undefined,
+      url,
+      publishedTime: post.date || undefined,
+      authors: post.author ? [post.author] : undefined,
+      tags: post.tags,
+      images: ogImage ? [{ url: ogImage, width: 1600, height: 900 }] : undefined,
     },
     twitter: {
       card: "summary_large_image",

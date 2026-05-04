@@ -7,7 +7,20 @@ export const metadata: Metadata = {
   title: "Builder Journal",
   description:
     "Experiments, working setups, and the actual process behind Thetasimplified.",
-  robots: { index: false, follow: false },
+  alternates: { canonical: "https://thetasimplified.com/journal" },
+  openGraph: {
+    type: "website",
+    title: "Builder Journal — Thetasimplified",
+    description:
+      "Experiments, working setups, and the actual process behind Thetasimplified.",
+    url: "https://thetasimplified.com/journal",
+  },
+  twitter: {
+    card: "summary",
+    title: "Builder Journal — Thetasimplified",
+    description:
+      "Experiments, working setups, and the actual process behind Thetasimplified.",
+  },
 };
 
 function formatDate(iso: string): string {

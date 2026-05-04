@@ -18,6 +18,7 @@ const links: NavLink[] = [
   { href: "/earn", label: "Earn" },
   { href: "/use-edgecloud", label: "Use EdgeCloud" },
   { href: "/theta-explained", label: "Deep Dive" },
+  { href: "/journal", label: "Journal" },
   { href: "/contact", label: "Contact" },
 ];
 

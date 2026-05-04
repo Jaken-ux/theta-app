@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/admin", "/journal"],
+      disallow: ["/api/", "/admin"],
     },
     sitemap: "https://thetasimplified.com/sitemap.xml",
   };
