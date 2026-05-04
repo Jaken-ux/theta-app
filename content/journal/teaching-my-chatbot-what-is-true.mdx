@@ -1,0 +1,91 @@
+---
+title: "Teaching my chatbot what's actually true"
+date: "2026-05-04"
+excerpt: "I built an AI chatbot for Thetasimplified that sounded confident and was confidently wrong. Here's how I taught it what's true — and what I learned about not trusting fluent answers."
+featuredImage: "/images/journal/chatbot.png"
+readTime: "5 min"
+author: "Jacob"
+tags:
+  - Chatbot
+  - Hallucinations
+  - Fact Cards
+  - Builder Log
+---
+
+A few weeks ago I added an AI chatbot to Thetasimplified. The idea was simple: someone lands on the site, has a question about THETA, TFUEL, the validator setup, the Edge Network — and instead of digging through three pages, they just ask. The bot answers in plain language, with the live data already on the site as context.
+
+It worked beautifully. The bot was articulate. It explained things confidently. The answers read like they came from someone who knew the protocol cold.
+
+And then I started actually checking what it said.
+
+## Confident, articulate, wrong
+
+The first thing I caught was block time. The bot told a user that Theta produces a new block roughly every 2 seconds. The actual target is around 6 seconds. Not even close.
+
+Then I asked about TFUEL burns. It said "50% of TFUEL paid to Edge Network nodes is burned." The real number is 25%.
+
+Then I asked about THETA's supply. It started talking about THETA being inflationary alongside TFUEL. THETA is hard-capped at 1 billion tokens. It is never minted. Ever. The protocol literally cannot create more THETA.
+
+Three core protocol facts, three confident hallucinations, in the span of about ten minutes of testing. Each answer sounded right. None of them were.
+
+That was the moment I realised what I'd actually built. I hadn't built a Theta expert. I'd built a fluent talker that happened to be answering Theta questions. Fluency and accuracy are not the same thing, and the model wasn't going to tell me when it was guessing.
+
+## The fact card
+
+The fix had to be structural. Correcting individual answers would have been whack-a-mole — fix block time, the next user asks about validator slots and gets a different fabrication.
+
+So I built what I started calling a fact card. It's a single TypeScript file — `theta-facts.ts` — containing every protocol constant I want the bot to never get wrong. Block time. Block reward. Daily TFUEL issuance. Burn percentage. THETA total supply. Validator architecture. Node tier stake requirements. Each entry has a value, a source, and — increasingly — an explicit "DO NOT" instruction next to it. *DO NOT describe THETA as inflationary. DO NOT quote a 50% burn rate.*
+
+That fact card gets injected into the bot's system prompt on every request. It doesn't replace the model. It just gives the model something solid to anchor to before it starts generating.
+
+Block time, supply, burn rate — all locked down on the first pass.
+
+## Round two: the subtler hallucinations
+
+I thought the worst was over. It wasn't. The next round of testing surfaced a second category of mistakes — ones I'd missed because I'd been testing protocol basics, not the kind of detail-oriented questions a curious user actually asks.
+
+The bot fabricated EdgeCloud pricing. Specific numbers. *"850 TFUEL/hour for a regular node, 30 TFUEL/hour for a T4 GPU, 8 TFUEL per GB-month storage."* Confident, specific, and entirely made up. EdgeCloud uses operator-set pricing — there are no fixed protocol-level rates. The bot had taken the shape of the question and filled in plausible-sounding numbers.
+
+It invented weights for our own indexes. The Main Chain Activity Index uses four components weighted 40/15/35/10 — this is published on `/methodology`. The bot would happily say things like *"the index is weighted 40% transactions, 30% TFUEL, 20% nodes, 10% throughput."* Inventions. Same shape as ours, different numbers.
+
+It got POGS wrong. Said it was excluded from the Metachain Utilization Index "because it's a community-issued token." That's not why. POGS is excluded because the chain has been offline for more than 30 days, and the registry automatically removes inactive chains and redistributes their weight. Curatorial reasoning where there was actually a mechanical rule.
+
+It described the absorption rate calculation as "sum of burned tokens divided by minted tokens, sampled from on-chain logs." Wrong methodology entirely. The real method reads total supply at two timepoints, computes the delta, derives absorption from the gap between issuance and supply growth, then smooths with a 3-day centered rolling average and a 7-day trailing average. The bot had described a plausible-sounding methodology that wasn't ours.
+
+Each one got added to the fact card. Each one got an explicit "DO NOT" next to it. The pattern was always the same: the bot would invent numbers when asked specifics, and the fix was always to give it the real numbers and tell it never to substitute.
+
+## The "use our own data" rule
+
+The second insight came from a slightly different failure mode. Sometimes the bot wasn't fabricating — it was just sending people to the wrong place.
+
+A user asks about how the Main Chain Activity Index is calculated. The bot replies with a generic explanation of "blockchain activity scoring" and links them to `thetatoken.org` for more info. But Thetatoken.org doesn't have our methodology — *we* have it, on `/methodology`, with the exact weights and tiers I spent days getting right.
+
+So I added another rule to the system prompt: when we have authoritative data on the site, cite that. Don't punt to external sources when the answer is right here. If a user asks about EdgeCloud pricing, route them to `thetaedgecloud.com/pricing`. If they ask about index methodology, route them to `/methodology`. If they ask about live network stats, the bot already has those — don't tell them to "check a block explorer."
+
+The bot is not the source of truth. The site is. The bot's job is to translate the site into a conversation.
+
+## From one page to all pages
+
+Originally I had the floating chat scoped to just `/use-edgecloud` while I was shaking out the failure modes. Going site-wide before the bot was reliable would have meant exposing the worst of it on every page — which would have been worse than not having a bot at all.
+
+Once the fact card covered the protocol mechanics, the index formulas, the methodology, the EdgeCloud pricing nuance, the POGS exclusion rule, and the "use our own data" instruction — and once testing stopped surfacing new categories of mistakes — I unlocked the floating button across the whole site.
+
+It's there now. On `/network`, on `/metachain`, on `/journal`. Same engine, same guardrails. Ten requests an hour per visitor. An admin override for me so I can keep stress-testing without rate-limiting myself.
+
+## What I'm taking from this
+
+A few things I didn't appreciate before I started.
+
+**Fluent does not mean correct.** A confident, articulate answer from an AI tells you nothing about whether it's right. The model has no internal signal for "I'm guessing now." It just generates the most plausible next token. If you don't test it, you have no idea what it's saying.
+
+**Test before you trust.** I had to actually sit down and ask the bot questions I knew the answer to, then read its replies word by word. Not skim. Read. Most of the hallucinations would have looked fine on a quick scan.
+
+**Build structural guardrails, not corrections.** Patching individual answers does nothing for the next user with a slightly different question. A fact card that lives in the system prompt scales. A correction in a Slack thread doesn't.
+
+**Make the bot point to your data.** The site already has authoritative information. The bot should cite the site, not bypass it. The whole point of building the site was to be a source of truth. The bot's job is to surface that, not to substitute its own answers for it.
+
+**The work is never finished.** Every new feature, every new methodology page, every new piece of live data is another potential source of hallucination. The fact card is going to keep growing as long as the site does.
+
+I'd rather have a bot that admits "I don't know, check `/methodology`" than one that confidently makes up an answer. Getting the model to that posture turned out to be most of the work.
+
+— Jacob
