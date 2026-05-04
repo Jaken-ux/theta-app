@@ -236,9 +236,15 @@ function Sparkline({
 
 function WeeklyChange({ current, history }: { current: number; history: { score: number }[] }) {
   if (history.length < 2) return null;
-  // Compare current to the oldest entry in history (up to 7 days back)
-  const oldest = history[history.length - 1];
-  const diff = current - oldest.score;
+  // Compare current to ~7 days ago. history is newest-first, so index 7
+  // is the entry from a week back (or the oldest available if history is
+  // shorter). Previously we read history[length-1], which silently became
+  // a 28-day delta once the API started returning a month of data —
+  // outlier days at the far end of the window produced misleading
+  // "trends" that didn't reflect the past week.
+  const referenceIdx = Math.min(7, history.length - 1);
+  const reference = history[referenceIdx];
+  const diff = current - reference.score;
   const isPositive = diff > 0;
   const isZero = Math.abs(diff) < 0.5;
 
