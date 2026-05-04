@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import { getAllSlugs, getPostBySlug } from "@/lib/journal";
 
 export async function generateStaticParams() {
@@ -114,6 +115,32 @@ const mdxComponents = {
     />
   ),
   hr: () => <hr className="my-10 border-theta-border" />,
+  table: (props: React.TableHTMLAttributes<HTMLTableElement>) => (
+    <div className="my-7 overflow-x-auto rounded-lg border border-theta-border">
+      <table
+        className="w-full text-[15px] leading-[1.55] border-collapse"
+        {...props}
+      />
+    </div>
+  ),
+  thead: (props: React.HTMLAttributes<HTMLTableSectionElement>) => (
+    <thead className="bg-theta-card/70 text-white" {...props} />
+  ),
+  tbody: (props: React.HTMLAttributes<HTMLTableSectionElement>) => (
+    <tbody className="text-theta-muted" {...props} />
+  ),
+  tr: (props: React.HTMLAttributes<HTMLTableRowElement>) => (
+    <tr className="border-b border-theta-border/60 last:border-b-0" {...props} />
+  ),
+  th: (props: React.ThHTMLAttributes<HTMLTableCellElement>) => (
+    <th
+      className="px-4 py-2.5 text-left font-semibold text-white"
+      {...props}
+    />
+  ),
+  td: (props: React.TdHTMLAttributes<HTMLTableCellElement>) => (
+    <td className="px-4 py-2.5 align-top" {...props} />
+  ),
   strong: (props: React.HTMLAttributes<HTMLElement>) => (
     <strong className="text-white font-semibold" {...props} />
   ),
@@ -206,7 +233,13 @@ export default async function JournalEntry({
       ) : null}
 
       <div className="text-theta-muted">
-        <MDXRemote source={post.content} components={mdxComponents} />
+        <MDXRemote
+          source={post.content}
+          components={mdxComponents}
+          options={{
+            mdxOptions: { remarkPlugins: [remarkGfm] },
+          }}
+        />
       </div>
 
       <div className="mt-16 pt-8 border-t border-theta-border">
