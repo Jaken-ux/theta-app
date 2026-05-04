@@ -81,6 +81,34 @@ export const THETA_FACTS = {
     source: "docs.thetatoken.org/docs/setup-theta-edge-node",
   },
 
+  // ── EdgeCloud pricing (operator-set, NOT protocol-fixed) ──
+  edgeCloudPricing: {
+    value:
+      "EdgeCloud uses dynamic, operator-set pricing — there are NO fixed protocol-level rates for vCPU/hour, GPU/hour, RAM, or storage. Operators set their own rates per node, hardware tier, and workload. DO NOT quote specific TFUEL/hour or TFUEL/GB numbers as if they were standard rates — anything like '850 TFUEL/hour for a regular node', '30 TFUEL/hour for a T4 GPU', or '8 TFUEL per GB-month storage' is fabricated. For real costs, refer users to thetaedgecloud.com/pricing for live operator listings, or thetasimplified.com/use-edgecloud for the comparison vs AWS/Azure/GCP.",
+    source: "Theta EdgeCloud documentation",
+  },
+
+  // ── Main Chain Activity Index — exact formula and tiers ──
+  mainChainIndexFormula: {
+    value:
+      "Main Chain Activity Index — weighted sum of four components: (1) daily transactions weight 40%, baseline 42,000; (2) TFUEL 24h volume weight 15%, baseline $12M; (3) wallet activity weight 35%, baseline 100% of recent blocks containing user transactions; (4) staking participants weight 10%, baseline 22,000 nodes. Each component score = (observed / baseline) × 100. Final index = 0.40·tx + 0.15·vol + 0.35·wallet + 0.10·nodes. Index is uncapped (can exceed 100). Tiers: 0-50 Quiet, 50-100 Active, 100-300 Elevated. DO NOT invent alternative weights or tier thresholds — these are the exact published values. For full method see thetasimplified.com/methodology.",
+    source: "thetasimplified.com/methodology",
+  },
+
+  // ── Metachain Utilization Index — exact formula, tiers, POGS status ──
+  metachainIndexFormula: {
+    value:
+      "Metachain Utilization Index — weighted average of subchain scores. Raw weights: Main Chain 1.0, Lavita 0.7, TPulse 0.7, Passaways 0.5, Grove 0.5, POGS 0.3, Ecosystem Growth 0.5. Total raw weight = 4.2. Normalized weights as percentages: Main Chain 23.8%, Lavita 16.7%, TPulse 16.7%, Passaways 11.9%, Grove 11.9%, POGS 7.1%, Ecosystem Growth 11.9%. Tiers: 0-50 Early, 50-100 Growing, 100-250 Thriving, 250-500 Mature. POGS (chain ID tsub9065) IS part of the index design with 7.1% weight; it is NOT excluded for being a community-issued token. The POGS chain has been inactive since March 2026 (low/zero transactions), so its score is essentially zero — that is INACTIVITY, not curatorial exclusion. At runtime, chains detected as offline have their weight redistributed to active chains. DO NOT invent alternative weights like '40% transactions, 30% TFUEL, 20% nodes' — those are fabricated.",
+    source: "thetasimplified.com/methodology",
+  },
+
+  // ── Absorption rate — supply-delta method, NOT burn sampling ──
+  absorptionMethod: {
+    value:
+      "TFUEL absorption rate is computed via the SUPPLY-DELTA method, NOT by sampling on-chain burn logs. Method: read total TFUEL circulating supply from the Theta Explorer API at two timepoints (~24h apart), compute supply growth (delta), derive raw absorption = (fixed daily block issuance of 1,238,400 TFUEL) − (supply growth). Smoothed via 3-day centered rolling average to correct for snapshot timing drift. Days where smoothed value is still negative are flagged as artifacts and excluded from the 7-day average. DO NOT describe absorption as 'sum of burned tokens divided by minted tokens' or 'reading TFUEL burned from on-chain logs' — both are wrong methodology. For full details see thetasimplified.com/methodology.",
+    source: "thetasimplified.com/methodology and src/lib/tfuel-economics.ts",
+  },
+
   // ── Common confusions to flag ──
   thetaVsTfuel: {
     value:
@@ -109,6 +137,10 @@ export function formatFactsForPrompt(): string {
     `- Validator architecture: ${THETA_FACTS.validatorSlots.value}`,
     `- Node stake requirements: ${THETA_FACTS.nodeStakeRequirements.value}`,
     `- Edge Node hardware: ${THETA_FACTS.edgeNodeHardware.value}`,
+    `- EdgeCloud pricing: ${THETA_FACTS.edgeCloudPricing.value}`,
+    `- Main Chain Activity Index formula: ${THETA_FACTS.mainChainIndexFormula.value}`,
+    `- Metachain Utilization Index formula: ${THETA_FACTS.metachainIndexFormula.value}`,
+    `- Absorption rate methodology: ${THETA_FACTS.absorptionMethod.value}`,
     "",
     `IMPORTANT: ${THETA_FACTS.thetaVsTfuel.value}`,
   ];
