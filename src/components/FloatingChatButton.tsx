@@ -21,6 +21,14 @@ import EdgeCloudPlayground from "./EdgeCloudPlayground";
  */
 export default function FloatingChatButton() {
   const [open, setOpen] = useState(false);
+  // Desktop-only "expand" toggle — bumps the panel from compact
+  // (~420×720) to roomy (~900×viewport-height). Resets to compact
+  // every time the panel re-opens, so each conversation starts in
+  // the same predictable size.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!open) setExpanded(false);
+  }, [open]);
 
   // Lock body scroll when panel is open on mobile so background
   // doesn't scroll under the chat. Harmless on desktop.
@@ -116,10 +124,15 @@ export default function FloatingChatButton() {
               transition={{ duration: 0.2, ease: "easeOut" }}
               role="dialog"
               aria-label="Theta AI chat"
-              className="fixed z-[1002] bg-theta-card border border-theta-border shadow-2xl flex flex-col
-                         inset-x-2 bottom-2 top-16 rounded-xl
-                         sm:inset-auto sm:bottom-24 sm:right-6 sm:top-auto sm:left-auto
-                         sm:w-[420px] sm:max-h-[min(720px,calc(100vh-7rem))] sm:rounded-2xl"
+              className={`fixed z-[1002] bg-theta-card border border-theta-border shadow-2xl flex flex-col
+                          inset-x-2 bottom-2 top-16 rounded-xl
+                          sm:inset-auto sm:bottom-24 sm:right-6 sm:top-auto sm:left-auto sm:rounded-2xl
+                          transition-[width,max-height] duration-200 ease-out
+                          ${
+                            expanded
+                              ? "sm:w-[min(900px,calc(100vw-3rem))] sm:max-h-[calc(100vh-7rem)]"
+                              : "sm:w-[420px] sm:max-h-[min(720px,calc(100vh-7rem))]"
+                          }`}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-3 border-b border-theta-border flex-shrink-0">
@@ -136,26 +149,68 @@ export default function FloatingChatButton() {
                     Ask Theta AI
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label="Close chat"
-                  className="text-theta-muted hover:text-white transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+                <div className="flex items-center gap-1">
+                  {/* Expand/minimize — desktop only. Mobile is already
+                      near-fullscreen so the toggle would do nothing
+                      visible. */}
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((v) => !v)}
+                    aria-label={expanded ? "Shrink chat panel" : "Expand chat panel"}
+                    aria-pressed={expanded}
+                    className="hidden sm:inline-flex items-center justify-center w-7 h-7 rounded-md text-theta-muted hover:text-white hover:bg-theta-teal/10 transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+                    {expanded ? (
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 4v4H5M5 15h4v4M19 9h-4V5M15 19v-4h4"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 9V5h4M19 9V5h-4M5 15v4h4M19 15v4h-4"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label="Close chat"
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md text-theta-muted hover:text-white hover:bg-theta-teal/10 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Body — scrolls if content exceeds height. min-h-0 is
