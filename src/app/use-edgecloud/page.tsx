@@ -167,7 +167,7 @@ export default async function UseEdgeCloudPage() {
           />
         </svg>
         <p className="text-sm leading-relaxed">
-          AI responses may contain errors. Always verify with official
+          AI may make mistakes. Verify important facts with official Theta
           sources at{" "}
           <a
             href="https://thetatoken.org"

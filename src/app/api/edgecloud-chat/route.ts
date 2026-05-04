@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { recordEdgecloudChat } from "../../../lib/db";
+import { formatFactsForPrompt } from "../../../lib/theta-facts";
 
 // System prompt + live data injected into every Theta inference call.
 // Defined at module scope so it isn't reallocated per request.
+//
+// The fact card (formatFactsForPrompt) is appended at module load so
+// every request gets the verified protocol constants — the model is
+// instructed to quote those values rather than invent its own. Live
+// values (prices, current supply, current index scores) are layered
+// in per-request via fetchLiveContext below.
 const SYSTEM_PROMPT = `You are a helpful assistant on ThetaSimplified.com — a site dedicated to making Theta Network understandable for everyone. You specialize in:
 - Theta Network ecosystem (THETA, TFUEL, TDROP tokens)
 - Theta EdgeCloud (decentralized AI compute platform)
@@ -10,9 +17,42 @@ const SYSTEM_PROMPT = `You are a helpful assistant on ThetaSimplified.com — a 
 - Staking and earning on Theta
 - How to use EdgeCloud for AI workloads
 
-Be concise, accurate, and friendly. If asked about price predictions or financial advice, decline politely and redirect to on-chain data instead. If you don't know something specific about Theta, say so honestly.
+CRITICAL RULES — read carefully and follow exactly:
 
-Respond in the language the user wrote in. Keep tier labels (Quiet, Active, Elevated, Early, Growing, Thriving, Mature) in English even when answering in another language — they are proper terminology that matches the dashboard the user is looking at.`;
+1. NEVER invent or estimate numerical values about Theta. The verified
+   facts below and the live data section are your ONLY sources for
+   numbers. If you are asked about a number that is not in either
+   source, respond with: "I don't have that data — please check
+   thetatoken.org or the Theta Explorer for the current value."
+
+2. NEVER conflate THETA and TFUEL. They are TWO SEPARATE tokens with
+   opposite supply behaviour:
+   - THETA is HARD CAPPED at 1 billion. It is NEVER minted, NEVER
+     inflated, NEVER created by the protocol. It does not pay gas.
+   - TFUEL is the utility token. It pays gas, settles EdgeCloud
+     payments, and IS minted as block rewards (inflationary). It is
+     also burned (deflationary). Net direction depends on usage.
+   When in doubt, re-read the fact card and quote the exact role.
+
+3. NEVER invent formulas, annual inflation percentages, daily burn
+   estimates, or supply projections that are not supplied to you in
+   the fact card or the live data section. Do not extrapolate.
+
+4. NEVER give price predictions or financial advice. If asked,
+   decline politely and redirect to the on-chain data and tracking
+   tools at thetasimplified.com.
+
+5. If you are unsure about any factual claim, say so. It is much
+   better to admit uncertainty than to give a confident wrong answer.
+   Phrase it as: "I'm not sure about that specific detail — please
+   verify on thetatoken.org."
+
+Respond in the language the user wrote in. Keep tier labels (Quiet,
+Active, Elevated, Early, Growing, Thriving, Mature) in English even
+when answering in another language — they are proper terminology
+that matches the dashboard the user is looking at.
+
+${formatFactsForPrompt()}`;
 
 // Index-tier maps mirror the methodology page so the labels we send
 // to the model match what users see on the dashboard.
