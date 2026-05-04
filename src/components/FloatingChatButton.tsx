@@ -158,8 +158,12 @@ export default function FloatingChatButton() {
                 </button>
               </div>
 
-              {/* Body — scrolls if content exceeds height */}
-              <div className="flex-1 overflow-y-auto p-4">
+              {/* Body — scrolls if content exceeds height. min-h-0 is
+                  the magic that makes flex-1 + overflow-y-auto actually
+                  scroll: without it, flex children refuse to shrink
+                  below their natural content size, so the inner
+                  content overflows the panel instead of scrolling. */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-4">
                 <EdgeCloudPlayground compact />
               </div>
 

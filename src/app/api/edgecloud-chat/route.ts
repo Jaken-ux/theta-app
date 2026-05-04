@@ -157,7 +157,12 @@ const MODELS: Record<string, ModelConfig> = {
 
 const BASE_URL = "https://ondemand.thetaedgecloud.com/infer_request";
 const MAX_INPUT_CHARS = 500;
-const MAX_OUTPUT_TOKENS = 500;
+// Output budget. 500 was too tight — long technical answers (tables,
+// numbered lists, multi-paragraph) hit the cap mid-word. 1500 gives
+// roughly 1100 English words of headroom which covers nearly every
+// playground question. Worst-case cost per request still bounded
+// at ~$0.012 (vs ~$0.004 at the old cap) — negligible at our volume.
+const MAX_OUTPUT_TOKENS = 1500;
 
 // In-memory rate limit: 10 requests per IP per hour.
 // Caveat: serverless instances don't share state and cold starts reset
