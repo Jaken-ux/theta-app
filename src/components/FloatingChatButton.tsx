@@ -1,15 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import EdgeCloudPlayground from "./EdgeCloudPlayground";
-
-// Pages where the floating chat is allowed to appear. Temporarily
-// scoped to /use-edgecloud only while we shake out hallucination
-// issues — going site-wide would expose the failure mode on every
-// page. Add more entries here when ready to roll out.
-const ENABLED_PATHS = new Set<string>(["/use-edgecloud"]);
 
 /**
  * Site-wide floating chat button.
@@ -27,7 +20,6 @@ const ENABLED_PATHS = new Set<string>(["/use-edgecloud"]);
  * right-6 on desktop) to stay clear of OS gesture areas.
  */
 export default function FloatingChatButton() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   // Desktop-only "expand" toggle — bumps the panel from compact
   // (~420×720) to roomy (~900×viewport-height). Resets to compact
@@ -58,11 +50,6 @@ export default function FloatingChatButton() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
-
-  // Path gate must come after all hook calls so React's hook order
-  // stays stable across renders. Returning null here is fine — the
-  // hooks above were called the same way as on enabled pages.
-  if (!ENABLED_PATHS.has(pathname)) return null;
 
   return (
     <>
