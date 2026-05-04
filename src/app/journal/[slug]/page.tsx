@@ -16,10 +16,31 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = getPostBySlug(slug);
+  if (!post) {
+    return {
+      title: "Journal entry",
+      robots: { index: false, follow: false },
+    };
+  }
+  const ogImage = post.featuredImage
+    ? `https://thetasimplified.com${post.featuredImage}`
+    : undefined;
   return {
-    title: post ? post.title : "Journal entry",
-    description: post?.excerpt,
+    title: post.title,
+    description: post.excerpt,
     robots: { index: false, follow: false },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.excerpt,
+      images: ogImage ? [{ url: ogImage }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+      images: ogImage ? [ogImage] : undefined,
+    },
   };
 }
 
@@ -135,12 +156,40 @@ export default async function JournalEntry({
       </Link>
 
       <header className="mb-10">
-        <p className="text-xs sm:text-sm text-theta-muted/80 tabular-nums mb-3">
-          {formatDate(post.date)}
-        </p>
         <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
           {post.title}
         </h1>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-theta-muted/80 tabular-nums mt-4">
+          <time>{formatDate(post.date)}</time>
+          {post.readTime ? (
+            <>
+              <span aria-hidden className="text-theta-muted/40">
+                ·
+              </span>
+              <span>{post.readTime} read</span>
+            </>
+          ) : null}
+          {post.author ? (
+            <>
+              <span aria-hidden className="text-theta-muted/40">
+                ·
+              </span>
+              <span>{post.author}</span>
+            </>
+          ) : null}
+        </div>
+        {post.tags && post.tags.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5 mt-4">
+            {post.tags.map((tag) => (
+              <li
+                key={tag}
+                className="px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide rounded-full border border-theta-border bg-theta-dark/60 text-theta-muted"
+              >
+                {tag}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </header>
 
       {post.featuredImage ? (

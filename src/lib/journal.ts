@@ -8,6 +8,9 @@ export interface JournalPostMeta {
   date: string;
   excerpt: string;
   featuredImage?: string;
+  readTime?: string;
+  tags?: string[];
+  author?: string;
 }
 
 export interface JournalPost extends JournalPostMeta {
@@ -32,6 +35,11 @@ function parseFile(filename: string): JournalPost {
     excerpt: String(data.excerpt ?? ""),
     featuredImage:
       typeof data.featuredImage === "string" ? data.featuredImage : undefined,
+    readTime: typeof data.readTime === "string" ? data.readTime : undefined,
+    tags: Array.isArray(data.tags)
+      ? data.tags.filter((t): t is string => typeof t === "string")
+      : undefined,
+    author: typeof data.author === "string" ? data.author : undefined,
     content,
   };
 }
@@ -47,6 +55,9 @@ export function getAllPosts(): JournalPostMeta[] {
         date: post.date,
         excerpt: post.excerpt,
         featuredImage: post.featuredImage,
+        readTime: post.readTime,
+        tags: post.tags,
+        author: post.author,
       })
     );
 }
