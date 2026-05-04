@@ -277,9 +277,22 @@ export default function EdgeCloudPlayground({
     setResponse(null);
     setCopied(false);
     try {
+      // If the visitor is the site admin (i.e. previously authenticated
+      // to /admin and has the stats key cached in localStorage), pass
+      // the key as an X-Admin-Key header so the server can skip the
+      // 10/hour rate limit during systematic quality testing.
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      const adminKey =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("theta-admin-key")
+          : null;
+      if (adminKey) headers["X-Admin-Key"] = adminKey;
+
       const res = await fetch("/api/edgecloud-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ message: input.trim(), model }),
       });
       const json = await res.json().catch(() => ({}));

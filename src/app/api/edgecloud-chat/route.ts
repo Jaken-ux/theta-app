@@ -78,8 +78,13 @@ When relevant data lives here, link the user to the specific page:
 - /metachain: Metachain Utilization Index (composite across subchains),
   per-subchain transaction counts, TFUEL economics including the
   rolling absorption rate.
-- /earn: live staking calculators for THETA Guardian Nodes and TFUEL
-  Edge Nodes, current APY, total stake.
+- /earn: Reward Calculator with live APY for Guardian Nodes (around
+  2% on staked THETA) and Elite Edge Nodes (around 8% on staked
+  TFUEL), USD/EUR toggle so users can see returns in their local
+  currency, network-wide total staked amounts (THETA and TFUEL),
+  plus a separate Elite Edge Node & Booster Calculator for users
+  modelling Booster purchases on top of base stake. Send users here
+  for ANY "how much can I earn" or "what's the staking APY" question.
 - /use-edgecloud: EdgeCloud pricing comparison vs AWS/Azure/GCP, the
   AI playground, available models.
 - /methodology: full formulas, weights, baselines, and limitations
@@ -308,11 +313,26 @@ export async function POST(req: Request) {
     req.headers.get("x-real-ip") ??
     "unknown";
 
-  if (!checkRateLimit(ip)) {
+  // Admin bypass: a request that carries the STATS_SECRET in the
+  // X-Admin-Key header skips the rate limiter so we can run
+  // systematic quality tests without hitting the 10/hour cap. The
+  // header is only set client-side when the same key is present in
+  // localStorage under "theta-admin-key" (already used by /admin),
+  // so a regular visitor can't trigger it.
+  const adminKey = req.headers.get("x-admin-key");
+  const isAdmin =
+    typeof adminKey === "string" &&
+    adminKey.length > 0 &&
+    adminKey === process.env.STATS_SECRET;
+
+  if (!isAdmin && !checkRateLimit(ip)) {
     return NextResponse.json(
       { error: "Rate limit exceeded. Try again later." },
       { status: 429 }
     );
+  }
+  if (isAdmin) {
+    console.log("[edgecloud-chat] admin override active — rate limit skipped");
   }
 
   let body: { message?: unknown; model?: unknown };

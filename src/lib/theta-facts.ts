@@ -67,6 +67,20 @@ export const THETA_FACTS = {
     source: "Theta validator documentation",
   },
 
+  // ── Node tiers and minimum stake to participate ──
+  nodeStakeRequirements: {
+    value:
+      "Four node tiers with different stake floors: (1) Regular Edge Node — NO token stake required, just runs the EdgeCloud client and takes standard jobs. (2) Elite Edge Node — requires at least 10,000 TFUEL staked on the node to qualify for premium jobs and higher rewards. (3) Guardian Node — requires at least 1,000 THETA staked. (4) Validator Node — requires 200,000 THETA staked plus hardware spec.",
+    source: "Theta protocol docs + Reward Calculator on thetasimplified.com/earn",
+  },
+
+  // ── Edge Node hardware ──
+  edgeNodeHardware: {
+    value:
+      "Theta's official MINIMUM hardware for Edge Node (regular or Elite): 4+ CPU cores, 16+ GB RAM, 64+ GB disk (256+ GB recommended for AI jobs), 5+ Mbps internet up and down, optional Nvidia GPU with CUDA for higher-paying jobs. These are minimums — competitive earning typically needs more (8+ cores, 100+ Mbps, modern GPU). DO NOT quote specific over-specced configurations like '8 vCPU, RTX 3060, 100 Mbps' as if they were protocol requirements — they are NOT. Point users to docs.thetatoken.org/docs/setup-theta-edge-node for the official spec.",
+    source: "docs.thetatoken.org/docs/setup-theta-edge-node",
+  },
+
   // ── Common confusions to flag ──
   thetaVsTfuel: {
     value:
@@ -93,6 +107,8 @@ export function formatFactsForPrompt(): string {
     `- TFUEL initial supply: ${THETA_FACTS.tfuelInitialSupply.value}`,
     `- TFUEL role: ${THETA_FACTS.tfuelRole.value}`,
     `- Validator architecture: ${THETA_FACTS.validatorSlots.value}`,
+    `- Node stake requirements: ${THETA_FACTS.nodeStakeRequirements.value}`,
+    `- Edge Node hardware: ${THETA_FACTS.edgeNodeHardware.value}`,
     "",
     `IMPORTANT: ${THETA_FACTS.thetaVsTfuel.value}`,
   ];
