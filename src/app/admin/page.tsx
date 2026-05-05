@@ -145,6 +145,14 @@ export default function AdminPage() {
         setStats(null);
         return;
       }
+      // Auth succeeded — also drop a cookie so server-side routes
+      // (e.g. /journal/[slug] for draft posts) can recognize the
+      // admin without requiring localStorage. 30-day expiry, Secure
+      // only on HTTPS so localhost dev still works.
+      const isSecure = window.location.protocol === "https:";
+      document.cookie = `theta-admin-token=${encodeURIComponent(
+        secret
+      )}; path=/; max-age=2592000; SameSite=Lax${isSecure ? "; Secure" : ""}`;
       setStats(await res.json());
     } catch {
       setError("Failed to connect");

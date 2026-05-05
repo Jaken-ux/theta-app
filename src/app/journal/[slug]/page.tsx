@@ -1,12 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAllSlugs, getPostBySlug } from "@/lib/journal";
 
+/**
+ * Server-side check for the admin preview cookie. The cookie is set
+ * client-side on /admin once the stats key is validated. We compare
+ * against STATS_SECRET so anyone without the secret cannot fake the
+ * cookie and access drafts.
+ */
+async function isAdminViewer(): Promise<boolean> {
+  const secret = process.env.STATS_SECRET;
+  if (!secret) return false;
+  const store = await cookies();
+  const token = store.get("theta-admin-token")?.value;
+  return Boolean(token) && token === secret;
+}
+
 export async function generateStaticParams() {
+  // Only published slugs are pre-rendered. Drafts render on demand
+  // (and require the admin cookie to be visible).
   return getAllSlugs().map((slug) => ({ slug }));
 }
 
@@ -27,10 +44,14 @@ export async function generateMetadata({
     ? `https://thetasimplified.com${post.featuredImage}`
     : undefined;
   const url = `https://thetasimplified.com/journal/${post.slug}`;
+  // Drafts are noindex even if Google somehow gets the URL — defense
+  // in depth on top of the cookie gate below.
+  const robots = post.published ? undefined : { index: false, follow: false };
   return {
     title: post.title,
     description: post.excerpt,
     alternates: { canonical: url },
+    robots,
     openGraph: {
       type: "article",
       title: post.title,
@@ -176,6 +197,10 @@ export default async function JournalEntry({
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) notFound();
+  // Draft posts: only the authenticated admin can view. Everyone
+  // else sees a 404 — same response as a slug that doesn't exist,
+  // so draft slugs aren't enumerable from outside.
+  if (!post.published && !(await isAdminViewer())) notFound();
 
   return (
     <article className="max-w-2xl mx-auto px-1 sm:px-0">

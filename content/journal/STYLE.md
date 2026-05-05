@@ -87,6 +87,12 @@ Before publishing, ask: would a Theta-interested reader who just landed here fro
   exceptions. The em-dash, not a hyphen. This makes the journal feel
   like a personal log, not a content stream — and reads consistently
   across the whole archive.
+- **Default new posts to draft.** New `.mdx` files should not include
+  `published: true` until Jacob explicitly says to ship. Drafts are
+  invisible on `/journal`, kept out of the sitemap, never pre-rendered,
+  and 404 to anyone without the admin cookie — but the URL is reachable
+  by Jacob for review. To publish: add `published: true` to the
+  frontmatter. To unpublish later: remove the line or set it to false.
 
 ## Pre-publish checklist
 
