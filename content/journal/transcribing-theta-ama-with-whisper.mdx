@@ -1,0 +1,92 @@
+---
+title: "Transcribing Theta's own AMA on Theta's own Whisper"
+date: "2026-05-05"
+excerpt: "65 minutes of audio. About 5 minutes of processing. Cost so small Theta's billing UI didn't flinch. Here's what happened when I ran Whisper on Theta EdgeCloud against Theta Labs' own April AMA."
+featuredImage: "/images/journal/transcribe.webp"
+published: false
+tags:
+  - Whisper
+  - EdgeCloud
+  - AMA
+  - Builder Log
+---
+
+Theta Labs publishes their monthly AMA as a one-hour YouTube livestream. There's no official transcript, no podcast feed, no searchable text. If you miss the stream, you watch the replay or you don't get the content.
+
+A few people in the community have manually transcribed past AMAs. Nobody runs it on a pipeline.
+
+So I tried something obvious: take Theta Labs' own audio, run it through Theta EdgeCloud's own Whisper service, and see what happens.
+
+## The setup
+
+Three steps:
+
+1. Pull audio from the YouTube livestream using `yt-dlp`
+2. Confirm the file with `ffmpeg`
+3. Upload to Whisper via the Theta EdgeCloud playground
+
+The audio file: 65 minutes, ~50 MB after extraction. Standard mp3, nothing special.
+
+The first version of this experiment was a 10-minute pilot. That ran fine for the first 8 minutes, then the output broke down into incoherent text in the last 30 seconds. I assumed it was a context-window limit and considered splitting the full hour into segments.
+
+That assumption was wrong. The full hour ran clean from start to finish. The pilot's tail was likely a quirk of how I clipped the audio, not a model limit.
+
+## What it cost
+
+This is where it got interesting.
+
+**Processing time:** about 5 minutes 15 seconds for 65 minutes of audio. Roughly 12x faster than realtime.
+
+**Cost:** I can't tell you exactly.
+
+The credit balance read $6.88 before the job and $6.88 after. The TDROP rebate counter sat at 4.20 before and 4.20 after. Theta's Billing History tab only logs deposits, not individual API calls. There's no per-job receipt visible to a customer.
+
+What I know for certain: a full hour of Whisper transcription on Theta EdgeCloud cost less than half a cent. The actual number is somewhere below the precision of the dashboard.
+
+For comparison, OpenAI's hosted Whisper API charges $0.006 per minute. An hour there is around $0.36. On Theta EdgeCloud it was a rounding error.
+
+That's a useful data point even if the exact number isn't measurable. The order-of-magnitude difference is the story, not the second decimal place.
+
+A small product note for Theta Labs if anyone reads this: usage-level transparency would help. For anyone evaluating the platform on cost-sensitive workloads, "see what each call cost you" is table stakes.
+
+## What it produced
+
+The transcript runs about 56 KB of plain text. Coherent from beginning to end. Speaker turns blur into each other (Whisper doesn't do speaker diarization out of the box) but the conversation is readable.
+
+A few things stood out.
+
+**Theta-specific terminology landed mostly correct.** EdgeCloud, MiniMax M 2.5, GPT OSS 120B, h200s, RTX GPUs, TNT20, TFUEL — all transcribed accurately. That matters. Generic Whisper models often mangle product names and crypto vocabulary.
+
+**The most stubborn error was also the most ironic.** Whisper consistently heard "Theta" as "data." Theta's own infrastructure couldn't catch its own name. There's a real fix here: Whisper supports prompt biasing where you pre-load expected vocabulary. A Theta-tuned variant — with "Theta," "TFUEL," "TDROP," "EdgeCloud" weighted up — would likely close that gap. That feels like a product opportunity, not just a bug.
+
+**Some named entities slipped.** "Deutsche Telekom" came through as "george telecom." "Wes" appeared as "weston" in one spot. "Cloudician" (the Alibaba Cloud validator partner) came through as "cloudation." Names are where general-purpose ASR usually breaks down, and this followed the pattern.
+
+**The structure held.** Question, answer, follow-up — all readable. Numbers came through (500,000 TFUEL, 70,000 for Bitcoin, 22% in the last week). The shape of the conversation survives.
+
+Roughly 90% of the content is usable as-is. The remaining 10% is light cleanup — find/replace "data" → "Theta," fix a few names, smooth a few stutters.
+
+## Why this matters
+
+This isn't a benchmark. It's a use case.
+
+Theta Labs sells EdgeCloud to media, sports, and academic customers — exactly the kinds of organizations that have hours of audio and video they'd like to make searchable. Universities have lecture archives. Sports teams have press conferences. Media companies have podcast catalogs.
+
+What I just did, in miniature, is what a customer at scale would do: take an hour of audio, get back searchable text, pay nearly nothing. The pipeline is real.
+
+For the Theta community specifically, there's a smaller version of the same idea. Monthly AMA → automatic transcript → published on a community site → searchable, indexable, accessible to anyone who missed the stream. The economics already work. It's a question of whether someone wants to run it as a recurring job.
+
+I'm thinking about it.
+
+## What I'd want to test next
+
+A few questions this run didn't answer:
+
+- **Does prompt biasing fix the "data" problem?** Worth a controlled test.
+- **What happens at 5 hours? At 10?** The order-of-magnitude cost claim deserves verification at scale.
+- **Multi-speaker labeling.** Whisper alone doesn't do diarization. Pairing it with a separate speaker-segmentation pass on the same audio would make the output much more useful for AMAs and panel-style content.
+
+Each of those is its own small experiment. None of them require permission from anyone. That's the part I keep coming back to: Theta EdgeCloud lets a single person run the kind of test that used to need a team and a budget. The bar is the time to set it up, not the cost to run it.
+
+That's the thing worth reporting.
+
+— Jacob
