@@ -81,6 +81,13 @@ Adapt as the topic requires. A post about a working setup might go: setup → fi
 
 Before publishing, ask: would a Theta-interested reader who just landed here from Twitter feel like the post respected their time? If the answer requires hedging, cut more.
 
+## Always-on rules
+
+- **Sign every post with `— Jacob` on its own line at the very end.** No
+  exceptions. The em-dash, not a hyphen. This makes the journal feel
+  like a personal log, not a content stream — and reads consistently
+  across the whole archive.
+
 ## Pre-publish checklist
 
 - [ ] First sentence states the problem or result. No setup.
@@ -90,3 +97,4 @@ Before publishing, ask: would a Theta-interested reader who just landed here fro
 - [ ] Concrete examples present wherever a claim is made.
 - [ ] Lessons bolded, one-line each.
 - [ ] No filler closer ("Stay tuned", "More to come", "What do you think?").
+- [ ] Post ends with `— Jacob` on its own line.
