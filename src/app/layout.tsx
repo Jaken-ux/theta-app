@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Link from "next/link";
 import Nav from "../components/Nav";
-import PageTracker from "../components/PageTracker";
 import FloatingChatButton from "../components/FloatingChatButton";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -96,16 +95,22 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} antialiased`}>
         <Nav />
-        <PageTracker />
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           {children}
         </main>
-        <footer className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 pt-8 text-center">
+        <footer className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 pt-8 text-center text-[13px] text-[#7D8694] flex items-center justify-center gap-x-5 gap-y-2 flex-wrap">
           <Link
             href="/methodology"
-            className="text-[13px] text-[#7D8694] hover:text-[#B0B8C4] transition-colors"
+            className="hover:text-[#B0B8C4] transition-colors"
           >
             How we calculate this &rarr;
+          </Link>
+          <span aria-hidden className="text-[#7D8694]/40">·</span>
+          <Link
+            href="/privacy"
+            className="hover:text-[#B0B8C4] transition-colors"
+          >
+            Privacy
           </Link>
         </footer>
         <FloatingChatButton />

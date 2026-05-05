@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -13,22 +11,6 @@ import {
 } from "recharts";
 
 interface Stats {
-  totalUniqueVisitors: number;
-  totalPageViews: number;
-  today: {
-    newVisitors: number;
-    returningVisitors: number;
-    pageViews: number;
-  };
-  topPages: { page: string; views: number }[];
-  last14Days: { date: string; uniqueVisitors: number; pageViews: number }[];
-  topReferrers: { referrer: string; visitors: number; views: number }[];
-  topCampaigns: {
-    source: string;
-    campaign: string | null;
-    visitors: number;
-    views: number;
-  }[];
   monitoredSubchains: {
     subchainId: string;
     firstSeen: string;
@@ -152,8 +134,6 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isDev, setIsDev] = useState<boolean | null>(null);
-  const [devToggling, setDevToggling] = useState(false);
 
   async function loadStats(secret: string) {
     setLoading(true);
@@ -173,55 +153,12 @@ export default function AdminPage() {
     }
   }
 
-  async function checkDevStatus(secret: string) {
-    const visitorId = localStorage.getItem("theta-visitor-id");
-    if (!visitorId) {
-      setIsDev(false);
-      return;
-    }
-    try {
-      const res = await fetch(
-        `/api/mark-dev?key=${encodeURIComponent(secret)}&visitorId=${encodeURIComponent(visitorId)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setIsDev(data.isDev);
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  async function toggleDev() {
-    const visitorId = localStorage.getItem("theta-visitor-id");
-    if (!visitorId || isDev === null) return;
-    setDevToggling(true);
-    try {
-      const res = await fetch(`/api/mark-dev?key=${encodeURIComponent(key)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visitorId, isDev: !isDev }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setIsDev(data.isDev);
-        // Reload stats to reflect change
-        loadStats(key);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setDevToggling(false);
-    }
-  }
-
   // Check if key is stored
   useEffect(() => {
     const stored = localStorage.getItem("theta-admin-key");
     if (stored) {
       setKey(stored);
       loadStats(stored);
-      checkDevStatus(stored);
     }
   }, []);
 
@@ -258,12 +195,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  const chartData = [...stats.last14Days].reverse().map((d) => ({
-    name: formatDate(d.date),
-    visitors: d.uniqueVisitors,
-    views: d.pageViews,
-  }));
 
   const activeNewChains = stats.monitoredSubchains?.filter((s) => s.explorerActive) ?? [];
 
@@ -302,248 +233,17 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white">Visitor Stats</h1>
+          <h1 className="text-2xl font-bold text-white">Admin</h1>
           <p className="text-sm text-[#B0B8C4]">
-            Private visitor statistics
-            {isDev && (
-              <span className="text-[#F59E0B]"> · This device excluded from stats</span>
-            )}
+            EdgeCloud playground usage and subchain monitor.
           </p>
         </div>
-        <div className="flex gap-2">
-          {isDev !== null && (
-            <button
-              onClick={toggleDev}
-              disabled={devToggling}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
-                isDev
-                  ? "bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/30"
-                  : "bg-[#151D2E] border border-[#2A3548] text-[#B0B8C4] hover:text-white"
-              }`}
-            >
-              {devToggling
-                ? "..."
-                : isDev
-                  ? "Include this device"
-                  : "Exclude this device"}
-            </button>
-          )}
-          <button
-            onClick={() => loadStats(key)}
-            className="px-4 py-2 text-sm bg-[#151D2E] border border-[#2A3548] rounded-lg text-[#B0B8C4] hover:text-white transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* Top stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard
-          label="Total Unique Visitors"
-          value={stats.totalUniqueVisitors}
-          color="#2AB8E6"
-        />
-        <StatCard
-          label="Total Page Views"
-          value={stats.totalPageViews}
-          color="#10B981"
-        />
-        <StatCard
-          label="New Today"
-          value={stats.today.newVisitors}
-          sub="first-time visitors"
-          color="#F59E0B"
-        />
-        <StatCard
-          label="Returning Today"
-          value={stats.today.returningVisitors}
-          sub="came back"
-          color="#8B5CF6"
-        />
-        <StatCard
-          label="Views Today"
-          value={stats.today.pageViews}
-          sub="page loads"
-          color="#2AB8E6"
-        />
-      </div>
-
-      {/* Charts */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        {/* Unique visitors trend */}
-        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
-          <p className="text-sm font-medium text-white mb-4">Unique Visitors (14 days)</p>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="vis-grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2AB8E6" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#2AB8E6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={30}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "#2A3548",
-                    border: "1px solid #445064",
-                    borderRadius: "8px",
-                    color: "#eaecf0",
-                    fontSize: "12px",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="visitors"
-                  stroke="#2AB8E6"
-                  strokeWidth={2}
-                  fill="url(#vis-grad)"
-                  dot
-                  activeDot={{ r: 4, fill: "#2AB8E6" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Page views trend */}
-        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
-          <p className="text-sm font-medium text-white mb-4">Page Views (14 days)</p>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "#B0B8C4", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={30}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "#2A3548",
-                    border: "1px solid #445064",
-                    borderRadius: "8px",
-                    color: "#eaecf0",
-                    fontSize: "12px",
-                  }}
-                />
-                <Bar dataKey="views" fill="#10B981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Top pages */}
-      <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
-        <p className="text-sm font-medium text-white mb-4">Top Pages</p>
-        <div className="space-y-2">
-          {stats.topPages.map((p, i) => {
-            const maxViews = stats.topPages[0]?.views || 1;
-            const pct = (p.views / maxViews) * 100;
-            return (
-              <div key={p.page} className="flex items-center gap-4">
-                <span className="text-xs text-[#7D8694] w-5 text-right">{i + 1}</span>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-white font-mono">{p.page}</span>
-                    <span className="text-sm text-[#B0B8C4] tabular-nums">{p.views.toLocaleString()}</span>
-                  </div>
-                  <div className="h-1.5 bg-[#0D1117] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#2AB8E6]"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Traffic sources */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
-          <p className="text-sm font-medium text-white mb-1">Top Referrers</p>
-          <p className="text-xs text-[#7D8694] mb-4">Last 30 days · by unique visitors</p>
-          {stats.topReferrers.length === 0 ? (
-            <p className="text-xs text-[#7D8694]">No referrer data yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {stats.topReferrers.map((r, i) => {
-                const max = stats.topReferrers[0]?.visitors || 1;
-                const pct = (r.visitors / max) * 100;
-                return (
-                  <div key={r.referrer} className="flex items-center gap-4">
-                    <span className="text-xs text-[#7D8694] w-5 text-right">{i + 1}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-white font-mono truncate">{r.referrer}</span>
-                        <span className="text-sm text-[#B0B8C4] tabular-nums">{r.visitors.toLocaleString()}</span>
-                      </div>
-                      <div className="h-1.5 bg-[#0D1117] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-[#8B5CF6]" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
-          <p className="text-sm font-medium text-white mb-1">UTM Campaigns</p>
-          <p className="text-xs text-[#7D8694] mb-4">Last 30 days · tagged traffic only</p>
-          {stats.topCampaigns.length === 0 ? (
-            <p className="text-xs text-[#7D8694]">
-              Tag your links with <span className="font-mono">?utm_source=x&amp;utm_campaign=name</span> to track them here.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {stats.topCampaigns.map((c, i) => {
-                const max = stats.topCampaigns[0]?.visitors || 1;
-                const pct = (c.visitors / max) * 100;
-                const label = c.campaign ? `${c.source} · ${c.campaign}` : c.source;
-                return (
-                  <div key={`${c.source}-${c.campaign ?? ""}-${i}`} className="flex items-center gap-4">
-                    <span className="text-xs text-[#7D8694] w-5 text-right">{i + 1}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-white font-mono truncate">{label}</span>
-                        <span className="text-sm text-[#B0B8C4] tabular-nums">{c.visitors.toLocaleString()}</span>
-                      </div>
-                      <div className="h-1.5 bg-[#0D1117] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-[#F59E0B]" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => loadStats(key)}
+          className="px-4 py-2 text-sm bg-[#151D2E] border border-[#2A3548] rounded-lg text-[#B0B8C4] hover:text-white transition-colors"
+        >
+          Refresh
+        </button>
       </div>
 
       {/* Subchain monitor */}
