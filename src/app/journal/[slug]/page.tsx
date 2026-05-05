@@ -7,6 +7,14 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAllSlugs, getPostBySlug } from "@/lib/journal";
 
+// Force dynamic rendering. Next 14 refuses to render unmatched
+// slug params on-demand when the route is marked SSG and the page
+// reads cookies — the result is a 500 the first time anyone hits a
+// draft URL. Forcing dynamic gives up the static cache for published
+// posts, but the journal is low-traffic and the predictability is
+// worth more than the optimization.
+export const dynamic = "force-dynamic";
+
 /**
  * Server-side check for the admin preview cookie. The cookie is set
  * client-side on /admin once the stats key is validated. We compare
