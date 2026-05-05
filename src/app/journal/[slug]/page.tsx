@@ -11,14 +11,29 @@ import { getAllSlugs, getPostBySlug } from "@/lib/journal";
  * Server-side check for the admin preview cookie. The cookie is set
  * client-side on /admin once the stats key is validated. We compare
  * against STATS_SECRET so anyone without the secret cannot fake the
- * cookie and access drafts.
+ * cookie and access drafts. cookies() is synchronous in Next 14 — no
+ * await — and any failure (e.g. called outside a request context)
+ * resolves to "not admin" rather than throwing a 500.
  */
-async function isAdminViewer(): Promise<boolean> {
-  const secret = process.env.STATS_SECRET;
-  if (!secret) return false;
-  const store = await cookies();
-  const token = store.get("theta-admin-token")?.value;
-  return Boolean(token) && token === secret;
+function isAdminViewer(): boolean {
+  try {
+    const secret = process.env.STATS_SECRET;
+    if (!secret) return false;
+    const store = cookies();
+    const token = store.get("theta-admin-token")?.value;
+    if (!token) return false;
+    // Cookie was URL-encoded on the client when set, so decode before
+    // comparing. Wrap in try/catch — malformed cookies should not 500.
+    let decoded = token;
+    try {
+      decoded = decodeURIComponent(token);
+    } catch {
+      return false;
+    }
+    return decoded === secret;
+  } catch {
+    return false;
+  }
 }
 
 export async function generateStaticParams() {
@@ -200,7 +215,7 @@ export default async function JournalEntry({
   // Draft posts: only the authenticated admin can view. Everyone
   // else sees a 404 — same response as a slug that doesn't exist,
   // so draft slugs aren't enumerable from outside.
-  if (!post.published && !(await isAdminViewer())) notFound();
+  if (!post.published && !isAdminViewer()) notFound();
 
   return (
     <article className="max-w-2xl mx-auto px-1 sm:px-0">
