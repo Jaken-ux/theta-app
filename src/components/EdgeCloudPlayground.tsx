@@ -622,8 +622,9 @@ export default function EdgeCloudPlayground({
 
       {!compact && (
         <p className="text-xs text-theta-muted mt-3 max-w-2xl leading-relaxed">
-          Powered by Theta EdgeCloud. Responses cost fractions of a cent. Rate
-          limited to 10 requests per hour.
+          Powered by Theta EdgeCloud. AI may make mistakes — verify important
+          facts. Responses cost fractions of a cent. Rate limited to 10 requests
+          per hour.
         </p>
       )}
     </section>
