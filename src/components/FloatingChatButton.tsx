@@ -30,13 +30,26 @@ export default function FloatingChatButton() {
     if (!open) setExpanded(false);
   }, [open]);
 
-  // Lock body scroll when panel is open on mobile so background
-  // doesn't scroll under the chat. Harmless on desktop.
+  // Lock body scroll only on mobile (below the sm breakpoint, 640px).
+  // On desktop the panel is a small floating widget — letting the page
+  // scroll behind it matches the Intercom/Drift/Crisp pattern, so a
+  // visitor can keep reading the page while the chat is open. On
+  // narrow viewports the panel is near-fullscreen and scroll-chaining
+  // (scroll inside chat → falls through to page) is confusing, so we
+  // still lock there.
   useEffect(() => {
     if (!open) return;
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 639px)");
+
     const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    function apply() {
+      document.body.style.overflow = mq.matches ? "hidden" : original;
+    }
+    apply();
+    mq.addEventListener("change", apply);
     return () => {
+      mq.removeEventListener("change", apply);
       document.body.style.overflow = original;
     };
   }, [open]);
