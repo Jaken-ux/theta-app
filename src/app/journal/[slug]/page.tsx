@@ -124,12 +124,24 @@ const mdxComponents = {
       {...props}
     />
   ),
-  a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a
-      className="text-theta-teal underline decoration-theta-teal/40 underline-offset-2 hover:decoration-theta-teal transition-colors"
-      {...props}
-    />
-  ),
+  a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    // External links (anything not starting with "/" or "#" and not
+    // pointing to thetasimplified.com) open in a new tab so the
+    // reader doesn't lose their place in the journal post. Internal
+    // links and anchor jumps stay in the current tab.
+    const href = props.href ?? "";
+    const isExternal =
+      /^https?:\/\//i.test(href) && !/thetasimplified\.com/i.test(href);
+    return (
+      <a
+        className="text-theta-teal underline decoration-theta-teal/40 underline-offset-2 hover:decoration-theta-teal transition-colors"
+        {...(isExternal
+          ? { target: "_blank", rel: "noopener noreferrer" }
+          : {})}
+        {...props}
+      />
+    );
+  },
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
     <ul
       className="list-disc pl-6 my-5 text-[17px] leading-[1.7] text-theta-muted space-y-2 marker:text-theta-teal/60"
