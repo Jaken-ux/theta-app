@@ -1,0 +1,136 @@
+---
+title: "How I built TFUEL absorption rate — and what broke along the way"
+date: "2026-05-06"
+excerpt: "TFUEL absorption rate is a number I track because it's the cleanest signal that TFUEL is being used as fuel, not just generated. Here's how the metric works, what went wrong building it, and why the historical data isn't fully reliable."
+featuredImage: "/images/journal/[bildnamn-tbd].png"
+published: false
+tags:
+  - TFUEL
+  - Methodology
+  - Builder Log
+  - Notes
+---
+
+There's a number I look at almost every day called TFUEL absorption rate. It's the percentage of daily TFUEL issuance that gets consumed by burns and fees, versus the part that just gets generated and accumulates.
+
+I look at it because it's the cleanest answer I've found to a simple question: is anyone actually burning TFUEL?
+
+Issuance is automatic. Block rewards happen whether the network is being used or not. Absorption only happens when someone pays a fee or burns TFUEL for some on-chain action. So if absorption is going up over time, more of what's being created is actually being used. If it's flat or falling, TFUEL is accumulating faster than people are spending it.
+
+Simple in theory. Less simple in practice.
+
+This is the story of how I built that metric, what went wrong along the way, and why I tell anyone who asks that the historical data isn't fully reliable.
+
+## Why this metric matters
+
+The word TFUEL says what the token is supposed to be: fuel. Something that gets burned to do work. If that's the design, then the closest thing to a truth-test is whether burns are actually happening at meaningful rates.
+
+A lot of token-economy claims start from issuance and stop there. "X tokens were minted this month, here's the implied annualized rate." That number is real but it's incomplete. What matters more is what happens to those tokens after they're minted. Do they sit, get traded, or get used?
+
+Absorption rate is the cleanest version of that question I've been able to construct. It doesn't tell me everything — but it tells me one thing well, and that one thing matters.
+
+## The first version, and why it broke
+
+The original approach was direct: read TFUEL supply at two points twenty-four hours apart, subtract the known daily issuance (about 1.24 million TFUEL — 86 per block, 14,400 blocks per day), and call the residual "net absorption." Divide by issuance, get a percentage.
+
+On paper, clean math. In practice, weird things started showing up almost immediately.
+
+**Negative absorption days.** Some days the math said absorption was below zero — meaning more TFUEL existed at the end of the day than at the start, even after accounting for what should have been issued. That's physically impossible. TFUEL doesn't appear out of nowhere.
+
+**Spikes above 50%.** Other days showed absorption rates so high they would have implied half the day's issuance was being burned. Nothing I knew about actual usage matched that.
+
+**No clear pattern in the anomalies.** They didn't cluster around big events. They appeared at random.
+
+I tried smoothing first. Rolling averages, outlier capping, the usual statistical defenses. They made the chart look cleaner but didn't explain anything. I deleted some days entirely — flagged them as artifacts and excluded them from the calculation. That helped visually but it was a workaround, not a fix.
+
+What I eventually found was that the snapshot wasn't being taken at a consistent time of day. It was being captured whenever the most recent visitor happened to load the relevant page. Two snapshots taken nineteen hours apart instead of twenty-four produce a number that looks like absorption but isn't. The math wasn't wrong. The inputs were lying about when they were taken.
+
+The actual fix went in on April 24. From that point on, the snapshot timing has been consistent, and the daily values stabilized.
+
+A few days later, on April 28, I went one step further and excluded known artifact days from the rolling 7-day average so the trend line wouldn't be distorted by old bad data. That's the point at which I'd say the trend graph became reliable.
+
+So if I needed to give a single cutoff date for "from here, the data tells the truth," it would be April 28, 2026.
+
+## How it works now
+
+The current approach uses the same underlying idea — supply delta — but with the timing problem solved.
+
+Two TFUEL supply snapshots, taken twenty-four hours apart at a consistent time. Subtract the known daily issuance. The residual is net absorption. Divide by issuance to get a percentage.
+
+That number gets smoothed two ways:
+
+- A 3-day centered average corrects for any small remaining timing drift in individual days
+- A 7-day trailing average gives the trend line you actually look at
+
+The chart shows daily bars (the noisy version, for transparency) plus a 7-day moving average line (the version I'd argue you should follow). If you want to see what's actually happening with TFUEL economics, follow the line, not the bars.
+
+## What this metric is, and what it isn't
+
+Absorption rate is a real-time signal of net TFUEL flow direction. If it's positive and rising, TFUEL is being consumed faster than it's accumulating in unused balances. If it's positive and falling, the gap between consumption and creation is narrowing. If it's near zero, almost all new TFUEL is just sitting there.
+
+That's what it tells you.
+
+What it doesn't tell you:
+
+- It doesn't separate burns from fees. Both are absorption, but they're different economically.
+- It doesn't show where the consumption is happening — settlement, EdgeCloud jobs, subchain settlement, all blur together.
+- It can't see specific transactions. Only the aggregate.
+- Short windows can still mislead. A single day's value is noise. A week's average is a signal. A month's average is a trend.
+
+This is a directional indicator, not a precise accounting tool. I would not use it to balance the books on a token's economics. I would use it to ask "is the direction of flow what you'd hope for if the utility thesis were correct?"
+
+For that question, I think it works.
+
+## The trade-offs in the current method
+
+A few of the design choices I made are worth being explicit about.
+
+**Why supply delta instead of gas sampling?** Gas sampling reads each transaction's gas use directly, which is more precise on paper. But it's noisier in practice — every protocol-level change shifts the gas economics, and individual transactions vary widely. Supply delta is less precise but more robust. It absorbs noise gracefully because it's measuring the aggregate, not the components.
+
+**Why a 3-day centered average for the daily values?** Because even with consistent snapshot timing, there's some small drift. Three days of centered smoothing corrects for that drift without eating real signal.
+
+**Why a 7-day trailing average for the trend line?** Long enough to dampen day-to-day noise, short enough to react to genuine changes within a couple of weeks. Weekly is the natural rhythm to look at this kind of data — daily is too noisy, monthly is too lagging.
+
+None of these choices are obviously right. They're choices, and other reasonable analysts would make different ones. I'd defend the current setup but I wouldn't claim it's the only valid one.
+
+## What the historical data is, and what it isn't
+
+This is the most honest part of the post.
+
+For a window of time before April 24, the snapshot bug was producing inputs that didn't represent consistent twenty-four-hour periods. The math built on top of those inputs is correspondingly affected.
+
+My intuition is that the errors were roughly random in direction — sometimes the snapshot drift made absorption look higher than it was, sometimes lower. If that's true, the rolling averages would have absorbed most of the noise, and the trend shape over weeks and months is probably approximately right.
+
+But I can't fully verify that. I don't have an independent source to check against. And there's at least a possibility that the snapshot timing had some systematic bias — for example, snapshots happening more often during high-traffic times of day — which would mean errors weren't symmetric and the bias didn't fully cancel out.
+
+The honest position is this: pre-April 24 data is approximately right, not exactly right. The trend shape is probably real. Specific daily values are probably off by a few percentage points in either direction.
+
+Three days were corrupt enough that they had to be removed entirely. Negative absorption rates or values exceeding 50% — clear artifacts, not signal. Once removed, those days are gone. There's no way to recover the correct values for them. The chart shows three small gaps where those days should be.
+
+I think gaps are the right thing to show. A gap tells the truth: "I don't know what the value was here." A smoothed-over interpolation would lie quietly. Most data dashboards do the second thing. I prefer the first.
+
+## What I learned, if anything
+
+The lesson, if there is one, is to be paranoid about your inputs from day one. Mistakes you don't catch immediately can become permanent gaps. By the time you discover a problem in your data pipeline, the data is already what it is.
+
+I'd build it differently if I started over now. I'd validate the snapshot timing the same week I built the metric, not weeks later. I'd log every input separately so I could reconstruct after the fact. I'd assume something would be wrong and design the system to make it findable.
+
+But I didn't. I built it the way you actually build things — quickly, on assumptions, fixing problems as they appeared. The metric is more reliable today because of all of it. The historical data is what it is.
+
+## What absorption rate might look like going forward
+
+If I had to guess what this number does over the next year, the question is mostly about EdgeCloud.
+
+If EdgeCloud usage scales — more inference jobs, more GPU-time billed, more TFUEL flowing through it — absorption should rise. The TFUEL spent on EdgeCloud compute is real consumption that didn't exist a year ago.
+
+If subchain activity grows broadly — gaming, AI agents, settlement traffic — absorption should rise for the same reason.
+
+If TFUEL price rises sharply, absorption might fall in the short term as people hoard rather than spend. Token holders are economic actors, and rational ones often delay consumption when the asset is appreciating.
+
+If issuance changes — through any kind of protocol-level adjustment — the math shifts and the historical baseline becomes harder to compare against.
+
+So absorption rate isn't a static metric. The same numerical value means different things at different times. That's another reason to follow the trend, not the snapshot.
+
+For now, I'll keep watching. The number tells me one thing well, even if it's not the whole picture.
+
+— Jacob
