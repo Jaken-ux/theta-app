@@ -25,6 +25,12 @@ Three steps:
 2. Confirm the file with `ffmpeg`
 3. Upload to Whisper via the Theta EdgeCloud playground
 
+The original plan was simpler: have Claude orchestrate the whole flow through Theta's MCP server, the same way I ran the multi-step text/image/vision pipeline a few days earlier. That would have meant one prompt — "transcribe this audio" — and Claude handles the upload, the inference call, and the result.
+
+It almost worked. Whisper itself is exposed through MCP and runs fine. But the upload step — `get_upload_url` for audio files — returned an error every time I tried it. So I fell back to the playground and uploaded the file manually through the browser. Same result, more clicks.
+
+When that upload path gets fixed (and it will), the entire pipeline collapses into a single prompt. Drop the file in chat, ask for the transcript, get it back. No browser tab, no manual uploads, no context-switching. That's the version of this experiment I actually wanted to write about. This is the prequel.
+
 The audio file: 65 minutes, ~50 MB after extraction. Standard mp3, nothing special.
 
 The first version of this experiment was a 10-minute pilot. That ran fine for the first 8 minutes, then the output broke down into incoherent text in the last 30 seconds. I assumed it was a context-window limit and considered splitting the full hour into segments.
