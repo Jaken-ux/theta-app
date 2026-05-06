@@ -11,6 +11,11 @@ import {
 } from "recharts";
 
 interface Stats {
+  drafts: {
+    slug: string;
+    title: string;
+    date: string;
+  }[];
   monitoredSubchains: {
     subchainId: string;
     firstSeen: string;
@@ -253,6 +258,47 @@ export default function AdminPage() {
           Refresh
         </button>
       </div>
+
+      {/* Drafts — every unpublished journal post, with preview links.
+          Visible only to anyone with the admin key. The /journal/[slug]
+          route gates draft access by the same admin cookie. */}
+      {stats.drafts && stats.drafts.length > 0 && (
+        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <p className="text-sm font-medium text-white">Journal Drafts</p>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] font-medium">
+              {stats.drafts.length} unpublished
+            </span>
+          </div>
+          <p className="text-xs text-[#7D8694] mb-4">
+            Hidden from /journal, sitemap, and search engines. Open the
+            preview link to view as admin.
+          </p>
+          <ul className="space-y-2">
+            {stats.drafts.map((d) => (
+              <li
+                key={d.slug}
+                className="flex items-start justify-between gap-4 py-2 border-b border-[#2A3548]/60 last:border-b-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-white truncate">{d.title}</p>
+                  <p className="text-xs text-[#7D8694] tabular-nums mt-0.5">
+                    {d.date} · /journal/{d.slug}
+                  </p>
+                </div>
+                <a
+                  href={`/journal/${d.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#2AB8E6] hover:text-white transition-colors whitespace-nowrap"
+                >
+                  Preview →
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Subchain monitor */}
       {stats.monitoredSubchains && stats.monitoredSubchains.length > 0 && (

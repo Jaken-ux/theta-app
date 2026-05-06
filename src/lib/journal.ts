@@ -81,6 +81,19 @@ export function getAllPosts(): JournalPostMeta[] {
 }
 
 /**
+ * Admin-only listing: every unpublished draft, newest first. Used by
+ * the /admin page to surface drafts so their preview URLs are easy
+ * to find. Should never be returned from a public endpoint.
+ */
+export function getAllDrafts(): JournalPostMeta[] {
+  return readAllFiles()
+    .map(parseFile)
+    .filter((post) => !post.published)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .map(toMeta);
+}
+
+/**
  * Loads a post by slug regardless of published status. The caller is
  * responsible for deciding whether to render it (e.g. checking the
  * admin cookie when post.published is false).

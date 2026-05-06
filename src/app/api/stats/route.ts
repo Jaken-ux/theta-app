@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPool } from "../../../lib/db";
 import { getMonitoredSubchains } from "../../../lib/metachain/monitor";
+import { getAllDrafts } from "../../../lib/journal";
 
 export const dynamic = "force-dynamic"; // never cache stats
 
@@ -94,6 +95,11 @@ export async function GET(request: Request) {
     ]);
 
     return NextResponse.json({
+      drafts: getAllDrafts().map((d) => ({
+        slug: d.slug,
+        title: d.title,
+        date: d.date,
+      })),
       monitoredSubchains: await getMonitoredSubchains().catch(() => []),
       edgecloud: {
         allTime: {
