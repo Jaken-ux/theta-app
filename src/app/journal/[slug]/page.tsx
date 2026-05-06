@@ -273,7 +273,10 @@ export default async function JournalEntry({
       </header>
 
       {post.featuredImage ? (
-        <div className="relative aspect-[16/9] mb-10 overflow-hidden rounded-lg border border-theta-border bg-theta-card">
+        <div
+          className="relative mb-10 overflow-hidden rounded-lg border border-theta-border bg-theta-card"
+          style={{ aspectRatio: post.heroAspect ?? "16 / 9" }}
+        >
           <Image
             src={post.featuredImage}
             alt=""

@@ -8,6 +8,13 @@ export interface JournalPostMeta {
   date: string;
   excerpt: string;
   featuredImage?: string;
+  /**
+   * Optional override for the article-page hero aspect ratio. Accepts
+   * any CSS aspect-ratio value (e.g. "16/9", "2228/1052", "1.5").
+   * Defaults to 16/9 — used when an image's native ratio differs and
+   * cropping would lose meaningful content.
+   */
+  heroAspect?: string;
   readTime?: string;
   tags?: string[];
   author?: string;
@@ -43,6 +50,8 @@ function parseFile(filename: string): JournalPost {
     excerpt: String(data.excerpt ?? ""),
     featuredImage:
       typeof data.featuredImage === "string" ? data.featuredImage : undefined,
+    heroAspect:
+      typeof data.heroAspect === "string" ? data.heroAspect : undefined,
     readTime: typeof data.readTime === "string" ? data.readTime : undefined,
     tags: Array.isArray(data.tags)
       ? data.tags.filter((t): t is string => typeof t === "string")
@@ -61,6 +70,7 @@ function toMeta(post: JournalPost): JournalPostMeta {
     date: post.date,
     excerpt: post.excerpt,
     featuredImage: post.featuredImage,
+    heroAspect: post.heroAspect,
     readTime: post.readTime,
     tags: post.tags,
     author: post.author,
