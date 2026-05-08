@@ -29,6 +29,15 @@ const nextConfig = {
         destination: "https://thetasimplified.com/:path*",
         statusCode: 301,
       },
+      // Journal post slug rename (2026-05-08): "four-numbers-theta-moving"
+      // → "four-numbers-theta-trajectory". Post was live for a few
+      // minutes under the old slug; the 301 catches anyone who already
+      // grabbed that URL or any crawler that started indexing it.
+      {
+        source: "/journal/four-numbers-theta-moving",
+        destination: "/journal/four-numbers-theta-trajectory",
+        statusCode: 301,
+      },
     ];
   },
 };
