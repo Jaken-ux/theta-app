@@ -6,18 +6,21 @@ import { motion, AnimatePresence } from "framer-motion";
 const TFUEL_REWARD_PER_BLOCK = 38;
 const BLOCKS_PER_YEAR = 5_256_000;
 
-// Theta Labs verified figures (Source: Theta Labs Medium, June 2024 Q&A)
-// Booster APY on locked TFUEL at 3-month lock:
-//   Low utilization: 14%   → Full utilization: 28% (doubles)
-// Lock multipliers: 3mo = 1.0×, 6mo = 1.25×, 12mo = 1.50×
-const BOOSTER_LOW_APY = 0.14;
-const BOOSTER_HIGH_APY = 0.28;
-const BOOSTER_BASE_BONUS_APY = 0.03; // +3% on base 500K staked TFUEL
+// Theta Labs verified figures (Source: Theta Labs Q&A, April 2024)
+// Booster APY on locked TFUEL is a fixed 14–28% range (low utilization
+// → full EdgeCloud utilization). The lock period does NOT multiply
+// the range — it shifts you to a window inside it:
+//   3 months  → lower half  ~14–21%
+//   6 months  → middle band ~17–24%
+//   12 months → upper half  ~21–28%
+// +3% APY applies separately on the base 500K staked TFUEL for any
+// Booster node, regardless of how much is locked or for how long.
+const BOOSTER_BASE_BONUS_APY = 0.03;
 
 const LOCK_OPTIONS = [
-  { months: 3, label: "3 months", multiplier: 1.0 },
-  { months: 6, label: "6 months", multiplier: 1.25 },
-  { months: 12, label: "12 months", multiplier: 1.5 },
+  { months: 3, label: "3 months", lowApy: 0.14, highApy: 0.21 },
+  { months: 6, label: "6 months", lowApy: 0.17, highApy: 0.24 },
+  { months: 12, label: "12 months", lowApy: 0.21, highApy: 0.28 },
 ] as const;
 
 interface Props {
@@ -59,12 +62,14 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
   const boosterBonusMonthly = boosterBonusYearly / 12;
 
   // ── Booster rewards on locked TFUEL (shown as range) ──────────────
+  // The lock-period window is a sub-range of the 14–28% published
+  // band — see LOCK_OPTIONS above.
   const lock = LOCK_OPTIONS[lockIdx];
-  const lowApy = BOOSTER_LOW_APY * lock.multiplier * 100;
-  const highApy = BOOSTER_HIGH_APY * lock.multiplier * 100;
+  const lowApy = lock.lowApy * 100;
+  const highApy = lock.highApy * 100;
 
-  const boosterLowYearly = lockedCapped * (lowApy / 100);
-  const boosterHighYearly = lockedCapped * (highApy / 100);
+  const boosterLowYearly = lockedCapped * lock.lowApy;
+  const boosterHighYearly = lockedCapped * lock.highApy;
   const boosterLowMonthly = boosterLowYearly / 12;
   const boosterHighMonthly = boosterHighYearly / 12;
 
@@ -75,6 +80,18 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
   const totalHighYearly = totalBase + boosterHighYearly;
   const totalLowMonthly = totalBaseMonthly + boosterLowMonthly;
   const totalHighMonthly = totalBaseMonthly + boosterHighMonthly;
+
+  // ── Effective combined APY on total capital ──────────────────────
+  // Base staking APY is computed on the 500K base; booster APY is
+  // computed on the locked amount only. Adding the two percentages
+  // directly is wrong — they apply to different capital bases. The
+  // honest number is the blended yield on the user's total capital:
+  //   blended = (base_rewards + booster_rewards) / (base + locked)
+  const totalCapital = stakedAmt + lockedCapped;
+  const combinedApyLow =
+    totalCapital > 0 ? (totalLowYearly / totalCapital) * 100 : 0;
+  const combinedApyHigh =
+    totalCapital > 0 ? (totalHighYearly / totalCapital) * 100 : 0;
 
   return (
     <section className="bg-theta-card border border-theta-border rounded-xl overflow-hidden">
@@ -182,7 +199,8 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                     ))}
                   </div>
                   <p className="text-[10px] text-[#7D8694] mt-1.5">
-                    Longer lock = higher multiplier (6mo +25%, 12mo +50% vs 3mo)
+                    Longer lock shifts you into the upper half of the
+                    14–28% range (3mo: 14–21%, 6mo: 17–24%, 12mo: 21–28%)
                   </p>
                 </div>
               )}
@@ -274,7 +292,8 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                         </p>
                       </div>
                       <p className="text-[10px] text-[#7D8694] mt-2">
-                        {lock.label} lock · range: low → full EdgeCloud utilization
+                        {lock.label} lock window inside Theta Labs&apos; published
+                        14–28% range · low → full EdgeCloud utilization
                       </p>
                     </div>
                   )}
@@ -314,10 +333,20 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                       </div>
                       <div className="bg-[#0A0F1C] rounded-lg p-2 mt-3">
                         <p className="text-lg font-semibold text-white tabular-nums">
-                          {(baseApy + 3 + lowApy).toFixed(0)}–{(baseApy + 3 + highApy).toFixed(0)}%
-                          <span className="text-xs font-normal text-[#7D8694] ml-1">combined APY</span>
+                          {combinedApyLow.toFixed(1)}–{combinedApyHigh.toFixed(1)}%
+                          <span className="text-xs font-normal text-[#7D8694] ml-1">
+                            effective combined APY
+                          </span>
+                        </p>
+                        <p className="text-[10px] text-[#7D8694] mt-1">
+                          on your total capital ({fmtTfuel(totalCapital)} TFUEL)
                         </p>
                       </div>
+                      <p className="text-[10px] text-[#7D8694] mt-2 leading-relaxed">
+                        Base staking APY applies to your 500K staked. Booster APY
+                        applies only to locked TFUEL beyond the 500K base. Combined
+                        APY blends both against your total capital.
+                      </p>
                       <p className="text-[10px] text-[#7D8694] mt-2">
                         {fmtUsd(totalLowYearly * tfuelPrice)} – {fmtUsd(totalHighYearly * tfuelPrice)}/yr at current TFUEL price
                       </p>
@@ -330,12 +359,13 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
               {showResults && (
                 <p className="text-[10px] text-[#5C6675] leading-relaxed">
                   Base staking rewards (~{baseApy.toFixed(0)}% APY) are fixed by the Theta
-                  protocol. Booster APY (14–28%) is the range published by Theta Labs —
-                  actual rewards depend on total TFUEL locked by all Booster nodes and
-                  EdgeCloud utilization. Figures shown are Theta Labs&apos; stated range,
-                  not a guarantee. The +3% bonus on staked TFUEL applies to Booster nodes
-                  only. Not financial advice. Source: Theta Labs Medium, June 2024 Q&amp;A.
-                  Verify current rates at{" "}
+                  protocol. Booster APY is a 14–28% range published by Theta Labs — actual
+                  rewards depend on EdgeCloud utilization. Lock period does not multiply
+                  the range; it shifts you to a window inside it (3mo lower half, 12mo
+                  upper half). The +3% bonus on staked TFUEL applies to Booster nodes
+                  only. Figures shown are Theta Labs&apos; stated range, not a guarantee.
+                  Not financial advice. Source: Theta Labs Q&amp;A, April 2024. Verify
+                  current rates at{" "}
                   <a
                     href="https://www.thetatoken.org"
                     target="_blank"
