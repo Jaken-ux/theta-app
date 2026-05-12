@@ -60,7 +60,10 @@ export default function JournalIndex() {
                 className="block group rounded-xl border border-theta-border bg-theta-card/40 hover:bg-theta-card hover:border-theta-teal/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-theta-teal/60"
               >
                 {p.featuredImage ? (
-                  <div className="relative aspect-[16/9] overflow-hidden bg-theta-card">
+                  <div
+                    className="relative overflow-hidden bg-theta-card"
+                    style={{ aspectRatio: p.heroAspect ?? "16 / 9" }}
+                  >
                     <Image
                       src={p.featuredImage}
                       alt=""
