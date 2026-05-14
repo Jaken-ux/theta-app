@@ -152,6 +152,33 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [polling, setPolling] = useState(false);
+  const [pollResult, setPollResult] = useState<string | null>(null);
+
+  async function pollDonationsNow() {
+    setPolling(true);
+    setPollResult(null);
+    try {
+      const res = await fetch(
+        `/api/admin/poll-donations?key=${encodeURIComponent(key)}`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setPollResult(`Fel: ${data.error ?? res.status}`);
+      } else {
+        setPollResult(
+          `Klart. Theta: ${data.thetaFound} tx · Ethereum: ${data.ethereumFound} tx · Nya rader: ${data.newRows}`
+        );
+        // Reload stats so any new donations appear in the list.
+        await loadStats(key);
+      }
+    } catch {
+      setPollResult("Kunde inte nå API:t");
+    } finally {
+      setPolling(false);
+    }
+  }
 
   async function loadStats(secret: string) {
     setLoading(true);
@@ -313,18 +340,29 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Recent donations — polled every 30 min by /api/cron/donations.
-          Empty state is informative because zero is the normal case. */}
+      {/* Donationer — pollas var 30:e min av /api/cron/donations.
+          "Polla nu"-knappen kör samma poll direkt via en admin-only
+          endpoint, så man slipper vänta på nästa cron-tick för att
+          verifiera att flödet fungerar. */}
       {stats.donations && (
         <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
           <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
-            <p className="text-sm font-medium text-white">Recent donations</p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-medium text-white">Donationer</p>
+              <button
+                onClick={pollDonationsNow}
+                disabled={polling}
+                className="text-xs px-3 py-1 bg-[#2AB8E6]/10 border border-[#2AB8E6]/30 text-[#2AB8E6] rounded hover:bg-[#2AB8E6]/20 transition-colors disabled:opacity-50"
+              >
+                {polling ? "Pollar..." : "Polla nu"}
+              </button>
+            </div>
             <div className="flex items-center gap-3 text-xs text-[#7D8694] tabular-nums">
               <span>
                 <span className="text-white font-semibold">
                   {stats.donations.totalCount}
                 </span>{" "}
-                tx all time
+                tx totalt
               </span>
               <span className="text-[#2A3548]">·</span>
               <span>
@@ -332,16 +370,21 @@ export default function AdminPage() {
                 <span className="text-white font-semibold">
                   {stats.donations.totalUsdLifetime.toFixed(2)}
                 </span>{" "}
-                lifetime
+                livstid
               </span>
             </div>
           </div>
-          <p className="text-xs text-[#7D8694] mb-4">
-            Polled every 30 min from Theta Explorer + Etherscan. Shows the 20 most recent.
+          <p className="text-xs text-[#7D8694] mb-2">
+            Pollas var 30:e min från Theta Explorer + Etherscan. Visar de 20 senaste.
           </p>
+          {pollResult && (
+            <p className="text-xs text-[#2AB8E6] mb-4 font-mono">{pollResult}</p>
+          )}
+          {!pollResult && <div className="mb-4" />}
           {stats.donations.recent.length === 0 ? (
             <p className="text-sm text-[#7D8694]">
-              No donations yet. Will appear here automatically once the first one lands.
+              Inga donationer än. Klicka &ldquo;Polla nu&rdquo; för att tvinga
+              en check, eller vänta på nästa cron-tick (var 30:e min).
             </p>
           ) : (
             <div className="space-y-2">
