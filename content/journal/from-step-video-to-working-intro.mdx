@@ -56,24 +56,10 @@ Same prompt, same seed, doubled the frame count. I wanted the style identical an
 
 Step Video gives you a clip. To make it a recurring weekly intro I needed three things on top: my logo placed over the clip, a fade-out to black so the cut into the rest of the video is clean, and versions sized for the platforms I publish to.
 
-Remotion handles all of that. One reusable Intro component takes width, height, and fps as props. Same component, three renders, three aspect ratios. The Step Video source file is the same across all three — Remotion reframes the same input differently for each canvas using `object-fit: cover`, so there are no black bars regardless of aspect-ratio mismatch. The logo entrance and fade-out are identical across all three.
-
-Vertical (9:16) for Instagram Reels, TikTok, YouTube Shorts:
-
-<video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
-  <source src="/videos/IntroPreview9x16.mp4" type="video/mp4" />
-</video>
-
-Horizontal (16:9) for YouTube and X:
+Remotion handles all of that. One reusable Intro component takes width, height, and fps as props — same source file in, different canvas dimensions out, using `object-fit: cover` so there are no black bars regardless of aspect-ratio mismatch. I rendered three versions for the formats I publish to (vertical for Reels/TikTok/Shorts, horizontal for YouTube/X, square as a reference). Here's the 16:9 cut:
 
 <video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
   <source src="/videos/IntroPreview16x9.mp4" type="video/mp4" />
-</video>
-
-Square (1:1):
-
-<video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
-  <source src="/videos/IntroPreview1x1.mp4" type="video/mp4" />
 </video>
 
 ## What I'm taking away
