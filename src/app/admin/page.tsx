@@ -340,10 +340,11 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Donationer — pollas var 30:e min av /api/cron/donations.
-          "Polla nu"-knappen kör samma poll direkt via en admin-only
-          endpoint, så man slipper vänta på nästa cron-tick för att
-          verifiera att flödet fungerar. */}
+      {/* Donationer — manuellt triggad via "Polla nu"-knappen. Inget
+          auto-cron på Hobby-tier (Vercel tillåter bara dagliga crons
+          där), så admin klickar för att hämta senaste från Theta
+          Explorer + Etherscan. /api/cron/donations finns kvar och kan
+          aktiveras igen om vi går upp till Pro. */}
       {stats.donations && (
         <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
           <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
@@ -375,7 +376,8 @@ export default function AdminPage() {
             </div>
           </div>
           <p className="text-xs text-[#7D8694] mb-2">
-            Pollas var 30:e min från Theta Explorer + Etherscan. Visar de 20 senaste.
+            Klicka &ldquo;Polla nu&rdquo; för att hämta senaste från Theta
+            Explorer + Etherscan. Visar de 20 senaste.
           </p>
           {pollResult && (
             <p className="text-xs text-[#2AB8E6] mb-4 font-mono">{pollResult}</p>
@@ -383,8 +385,8 @@ export default function AdminPage() {
           {!pollResult && <div className="mb-4" />}
           {stats.donations.recent.length === 0 ? (
             <p className="text-sm text-[#7D8694]">
-              Inga donationer än. Klicka &ldquo;Polla nu&rdquo; för att tvinga
-              en check, eller vänta på nästa cron-tick (var 30:e min).
+              Inga donationer än. Klicka &ldquo;Polla nu&rdquo; för att hämta
+              senaste från explorerna.
             </p>
           ) : (
             <div className="space-y-2">
