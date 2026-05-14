@@ -26,7 +26,7 @@ const links: NavLink[] = [
   { href: "/theta-explained", label: "Deep Dive" },
   { href: "/journal", label: "Journal" },
   { href: "/contact", label: "Contact" },
-  { href: "/support", label: "Support", separated: true },
+  { href: "/donate", label: "Donate", separated: true },
 ];
 
 function SparklesIcon() {

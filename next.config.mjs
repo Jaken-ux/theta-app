@@ -38,6 +38,16 @@ const nextConfig = {
         destination: "/journal/four-numbers-theta-trajectory",
         statusCode: 301,
       },
+      // Donations route renamed (2026-05-14): /support → /donate.
+      // "Support" was triggering tech-support email — visitors thought
+      // it meant customer help, not "support the work". /donate is
+      // unambiguous. The page was live ~30 minutes under /support;
+      // the 301 keeps any saved bookmark or shared link working.
+      {
+        source: "/support",
+        destination: "/donate",
+        statusCode: 301,
+      },
     ];
   },
 };

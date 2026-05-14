@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import DonationAddresses from "@/components/DonationAddresses";
 
 export const metadata: Metadata = {
-  title: "Support",
+  title: "Donate",
   description:
     "If Theta Simplified has helped you understand the network better, you can support the work with a small donation. The site stays free either way.",
-  alternates: { canonical: "https://thetasimplified.com/support" },
+  alternates: { canonical: "https://thetasimplified.com/donate" },
 };
 
 export default function SupportPage() {
