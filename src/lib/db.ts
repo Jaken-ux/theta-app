@@ -131,6 +131,32 @@ export async function getPool(): Promise<Pool> {
         PRIMARY KEY (topic, date)
       )
     `);
+
+    // Donations log. One row per incoming on-chain transaction to the
+    // public donation addresses listed on /donate. Cron job fills this
+    // every 30 min by polling Theta Explorer + Etherscan. UNIQUE on
+    // (chain, tx_hash) prevents duplicates if the cron runs back-to-back
+    // or if a poll catches the same tx in two consecutive windows.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS theta_donations (
+        id SERIAL PRIMARY KEY,
+        chain TEXT NOT NULL,
+        tx_hash TEXT NOT NULL,
+        from_address TEXT NOT NULL,
+        token_symbol TEXT NOT NULL,
+        amount_display DOUBLE PRECISION NOT NULL,
+        amount_raw TEXT,
+        usd_value_at_time DOUBLE PRECISION,
+        block_number BIGINT,
+        occurred_at TIMESTAMPTZ NOT NULL,
+        seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (chain, tx_hash)
+      )
+    `);
+    await pool
+      .query(`CREATE INDEX IF NOT EXISTS idx_donations_occurred_at ON theta_donations (occurred_at DESC)`)
+      .catch(() => {});
+
     for (const col of cols) {
       const name = col.split(' ')[0];
       await pool.query(`ALTER TABLE theta_activity_history ADD COLUMN IF NOT EXISTS ${name} ${col.split(' ').slice(1).join(' ')}`).catch(() => {});

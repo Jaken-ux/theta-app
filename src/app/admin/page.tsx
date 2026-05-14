@@ -25,6 +25,19 @@ interface Stats {
     dailyTxs: number;
     totalTxs: number;
   }[];
+  donations: {
+    recent: {
+      chain: "theta" | "ethereum";
+      txHash: string;
+      fromAddress: string;
+      tokenSymbol: string;
+      amountDisplay: number;
+      usdValueAtTime: number | null;
+      occurredAt: string;
+    }[];
+    totalCount: number;
+    totalUsdLifetime: number;
+  };
   edgecloud: {
     allTime: {
       users: number;
@@ -297,6 +310,107 @@ export default function AdminPage() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Recent donations — polled every 30 min by /api/cron/donations.
+          Empty state is informative because zero is the normal case. */}
+      {stats.donations && (
+        <div className="bg-[#151D2E] border border-[#2A3548] rounded-xl p-6">
+          <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+            <p className="text-sm font-medium text-white">Recent donations</p>
+            <div className="flex items-center gap-3 text-xs text-[#7D8694] tabular-nums">
+              <span>
+                <span className="text-white font-semibold">
+                  {stats.donations.totalCount}
+                </span>{" "}
+                tx all time
+              </span>
+              <span className="text-[#2A3548]">·</span>
+              <span>
+                ~$
+                <span className="text-white font-semibold">
+                  {stats.donations.totalUsdLifetime.toFixed(2)}
+                </span>{" "}
+                lifetime
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-[#7D8694] mb-4">
+            Polled every 30 min from Theta Explorer + Etherscan. Shows the 20 most recent.
+          </p>
+          {stats.donations.recent.length === 0 ? (
+            <p className="text-sm text-[#7D8694]">
+              No donations yet. Will appear here automatically once the first one lands.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {stats.donations.recent.map((d) => {
+                const chainBadgeClasses =
+                  d.chain === "theta"
+                    ? "bg-[#2AB8E6]/10 text-[#2AB8E6] border-[#2AB8E6]/30"
+                    : "bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/30";
+                const explorerUrl =
+                  d.chain === "theta"
+                    ? `https://explorer.thetatoken.org/txs/${d.txHash}`
+                    : `https://etherscan.io/tx/${d.txHash}`;
+                const amountStr =
+                  d.amountDisplay >= 1
+                    ? d.amountDisplay.toLocaleString(undefined, {
+                        maximumFractionDigits: 4,
+                      })
+                    : d.amountDisplay.toPrecision(3);
+                return (
+                  <div
+                    key={`${d.chain}-${d.txHash}`}
+                    className="flex items-center justify-between bg-[#0D1117] rounded-lg p-3 gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded border ${chainBadgeClasses} font-medium uppercase tracking-wide flex-shrink-0`}
+                      >
+                        {d.chain}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm text-white tabular-nums">
+                          <span className="text-emerald-400 font-semibold">
+                            +{amountStr}
+                          </span>{" "}
+                          <span className="text-[#B0B8C4]">{d.tokenSymbol}</span>
+                          {d.usdValueAtTime !== null && (
+                            <span className="text-[#7D8694]">
+                              {" "}
+                              · ~${d.usdValueAtTime.toFixed(2)}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-[10px] text-[#7D8694] font-mono truncate">
+                          from {d.fromAddress.slice(0, 10)}…
+                          {d.fromAddress.slice(-6)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <a
+                        href={explorerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#2AB8E6] hover:text-white transition-colors"
+                      >
+                        Tx →
+                      </a>
+                      <p className="text-[10px] text-[#7D8694] tabular-nums mt-0.5">
+                        {new Date(d.occurredAt).toLocaleString("sv-SE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

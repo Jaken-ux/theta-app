@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPool } from "../../../lib/db";
 import { getMonitoredSubchains } from "../../../lib/metachain/monitor";
 import { getAllDrafts } from "../../../lib/journal";
+import { getRecentDonations } from "../../../lib/donations";
 
 export const dynamic = "force-dynamic"; // never cache stats
 
@@ -94,6 +95,12 @@ export async function GET(request: Request) {
       ),
     ]);
 
+    const donations = await getRecentDonations(20).catch(() => ({
+      recent: [],
+      totalCount: 0,
+      totalUsdLifetime: 0,
+    }));
+
     return NextResponse.json({
       drafts: getAllDrafts().map((d) => ({
         slug: d.slug,
@@ -101,6 +108,7 @@ export async function GET(request: Request) {
         date: d.date,
       })),
       monitoredSubchains: await getMonitoredSubchains().catch(() => []),
+      donations,
       edgecloud: {
         allTime: {
           users: parseInt(edgecloudTotals.rows[0].users),
