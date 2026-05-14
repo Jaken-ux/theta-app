@@ -273,18 +273,35 @@ export async function pollDonations(): Promise<{
 }> {
   const pool = await getPool();
 
-  // First-run check: if the donations table is empty AND we already
-  // see some historical tx on either chain, assume this is the first
-  // poll after deploy and skip persisting the historical batch. Only
-  // tx that arrive AFTER this first run get tracked. Avoids the
-  // "every old tx looks brand new" problem on cold deploy.
-  const existing = await pool.query(`SELECT COUNT(*)::int AS n FROM theta_donations`);
-  const isFirstRun = existing.rows[0].n === 0;
+  // Cutoff timestamp set via the admin "Rensa historik"-button. Any
+  // tx with occurredAt <= cutoff is ignored entirely on this run —
+  // it predates the moment the admin declared the wallet "clean."
+  // null = no cutoff set yet (fresh install).
+  const cutoffRes = await pool.query(
+    `SELECT cutoff_at FROM theta_donations_meta WHERE id = 1`
+  );
+  const cutoffAt: Date | null = cutoffRes.rows[0]?.cutoff_at ?? null;
 
-  const [thetaEvents, ethereumEvents] = await Promise.all([
+  // First-run check: if the donations table is empty AND no cutoff
+  // is set AND we see historical tx on either chain, assume this is
+  // a fresh deploy and silently mark the historical batch as "seen"
+  // (no notification). Once a cutoff is in place the cutoff handles
+  // historical filtering — no need for cold-start logic anymore.
+  const existing = await pool.query(`SELECT COUNT(*)::int AS n FROM theta_donations`);
+  const isFirstRun = existing.rows[0].n === 0 && cutoffAt === null;
+
+  const [thetaEventsRaw, ethereumEventsRaw] = await Promise.all([
     fetchThetaIncoming(),
     fetchEthereumIncoming(),
   ]);
+
+  // Apply cutoff filter to both chains. Anything at or before the
+  // cutoff is dropped before it touches the DB, so the historical
+  // wallet noise can never sneak back in via a re-poll.
+  const applyCutoff = (events: DonationEvent[]) =>
+    cutoffAt ? events.filter((e) => e.occurredAt > cutoffAt) : events;
+  const thetaEvents = applyCutoff(thetaEventsRaw);
+  const ethereumEvents = applyCutoff(ethereumEventsRaw);
 
   if (isFirstRun && (thetaEvents.length > 0 || ethereumEvents.length > 0)) {
     // Mark all current tx as seen by inserting them with a synthetic
@@ -411,4 +428,24 @@ export async function getRecentDonations(limit = 20): Promise<{
     totalCount: totalsRes.rows[0].count,
     totalUsdLifetime: totalsRes.rows[0].total_usd,
   };
+}
+
+/**
+ * Wipe the donations table and set cutoff_at = NOW so all currently
+ * known tx (and any pre-existing tx the next poll might surface) are
+ * permanently excluded. Use when the wallet has been deliberately
+ * emptied and the admin wants to start fresh — every tx tracked from
+ * this point on is a real donation. Returns the deleted-row count
+ * for the admin "you cleared X rows" confirmation.
+ */
+export async function resetDonations(): Promise<{ deleted: number; cutoffAt: string }> {
+  const pool = await getPool();
+  const cutoff = new Date();
+  const delRes = await pool.query(`DELETE FROM theta_donations`);
+  await pool.query(
+    `INSERT INTO theta_donations_meta (id, cutoff_at) VALUES (1, $1)
+     ON CONFLICT (id) DO UPDATE SET cutoff_at = EXCLUDED.cutoff_at`,
+    [cutoff]
+  );
+  return { deleted: delRes.rowCount ?? 0, cutoffAt: cutoff.toISOString() };
 }

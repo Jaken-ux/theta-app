@@ -157,6 +157,22 @@ export async function getPool(): Promise<Pool> {
       .query(`CREATE INDEX IF NOT EXISTS idx_donations_occurred_at ON theta_donations (occurred_at DESC)`)
       .catch(() => {});
 
+    // Singleton row holding a "cutoff" timestamp. Anything occurring
+    // at or before the cutoff is treated as pre-donation noise and
+    // filtered out on both ingest and read. Set via the admin
+    // "Rensa historik"-button when the wallet is freshly zeroed and
+    // future tx should be the only thing tracked.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS theta_donations_meta (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        cutoff_at TIMESTAMPTZ,
+        CHECK (id = 1)
+      )
+    `);
+    await pool
+      .query(`INSERT INTO theta_donations_meta (id) VALUES (1) ON CONFLICT (id) DO NOTHING`)
+      .catch(() => {});
+
     for (const col of cols) {
       const name = col.split(' ')[0];
       await pool.query(`ALTER TABLE theta_activity_history ADD COLUMN IF NOT EXISTS ${name} ${col.split(' ').slice(1).join(' ')}`).catch(() => {});
