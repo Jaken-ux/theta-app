@@ -9,6 +9,12 @@ interface NavLink {
   label: string;
   /** Renders with teal-outlined CTA styling and a sparkles icon. */
   isCTA?: boolean;
+  /**
+   * Pushes the link visually away from the main nav cluster with
+   * extra left margin on desktop. Used for low-key utility links
+   * (e.g. /support) that should feel separate, not promotional.
+   */
+  separated?: boolean;
 }
 
 const links: NavLink[] = [
@@ -20,6 +26,7 @@ const links: NavLink[] = [
   { href: "/theta-explained", label: "Deep Dive" },
   { href: "/journal", label: "Journal" },
   { href: "/contact", label: "Contact" },
+  { href: "/support", label: "Support", separated: true },
 ];
 
 function SparklesIcon() {
@@ -90,7 +97,7 @@ export default function Nav() {
                   : pathname === link.href
                     ? "bg-theta-teal/10 text-theta-teal"
                     : "text-theta-muted hover:text-white"
-              }`}
+              } ${link.separated ? "ml-4 text-theta-muted/70" : ""}`}
             >
               {link.isCTA && <SparklesIcon />}
               <span>{link.label}</span>
