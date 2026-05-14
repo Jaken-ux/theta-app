@@ -222,6 +222,21 @@ const mdxComponents = {
       />
     );
   },
+  // Inline videos in journal MDX — same visual treatment as <img>.
+  // Defaults are spread first so any author-set prop (e.g. autoplay,
+  // loop, muted, poster, a custom className) wins. preload="metadata"
+  // keeps the page lightweight: only ~100 KB of headers per video
+  // until the visitor presses play.
+  video: (props: React.VideoHTMLAttributes<HTMLVideoElement>) => (
+    <video
+      controls
+      preload="metadata"
+      playsInline
+      className="my-7 w-full rounded-lg border border-theta-border"
+      style={{ width: "100%" }}
+      {...props}
+    />
+  ),
 };
 
 export default async function JournalEntry({

@@ -1,0 +1,87 @@
+---
+title: "From Step Video to a working intro"
+date: "2026-05-14"
+excerpt: "Two text-to-video jobs on Theta EdgeCloud, one Remotion composition, and an intro I can actually use. Including what the data points say — and what they don't."
+featuredImage: "/images/journal/stepvideo_long_cover.png"
+author: "Jacob"
+published: false
+tags:
+  - Theta EdgeCloud
+  - Step Video
+  - Remotion
+  - Builder Log
+---
+
+Theta EdgeCloud has had a text-to-video service called Step Video for a while. I'd never run it. This week I did — twice — and then turned the output into an intro I can use in my weekly videos.
+
+Step Video is straightforward: write a text prompt, get a short clip back. The model runs on EdgeCloud, same as the other inference services. Remotion is what I've been using to build the weekly videos themselves — programmatic video composition, React components that render to MP4. Step Video gives you raw clips. Remotion frames, times, and composes them.
+
+## The first test
+
+Started with a 3-second job — small, cheap, calibration only. The output is stylized abstract motion, which is what the prompt asked for.
+
+![First test output — 3 seconds, 72 frames](/images/journal/stepvideo_short_cover.png)
+
+- Frames: 72 (3 sec at 24 fps)
+- Duration: 15 min 42 sec
+- Cost: $0.20
+- File size: 72 KB
+- TDROP rebate: ~$0.01
+
+Worked. But 3 seconds is too short to function as an intro — there's no time for a logo to land before the clip ends.
+
+## Going longer
+
+Same prompt, same seed, doubled the frame count. I wanted the style identical and just more of it.
+
+<video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
+  <source src="/videos/stepvideo_long.mp4" type="video/mp4" />
+</video>
+
+- Frames: 144 (6 sec at 24 fps)
+- Duration: 70 min 4 sec
+- Cost: $0.20
+- File size: 233 KB
+- TDROP rebate: ~$0.01
+
+## Three observations I didn't expect
+
+**Same cost regardless of length.** Both jobs landed at $0.20 flat. Per second of video, the 3-second job cost $0.067; the 6-second job cost $0.033. Longer generations are noticeably better value per second of output. Generating one 12-second clip would be dramatically cheaper than four 3-second clips of the same length.
+
+**Time scaled non-linearly.** Doubling the frames didn't double the wait — it took roughly 4.5x as long (15:42 → 70:04). I don't know exactly why. Theta's API doesn't differentiate between "queued waiting for a node," "actively rendering," or "post-processing." It just reports "processing" until the job is done. Possible causes: nonlinear compute scaling with frame count, node availability fluctuating between the two runs, queue depth I couldn't observe. Two runs isn't enough data to separate any of those.
+
+**File size scaled to 3.2x, not 2x.** 233 KB vs 72 KB. Doubling frames produced 3.2x the bytes. Possible causes: higher bitrate on longer generations, more motion complexity in the output, different encoder settings. Same caveat as above — not enough data points to say.
+
+## Turning it into an intro
+
+Step Video gives you a clip. To make it a recurring weekly intro I needed three things on top: my logo placed over the clip, a fade-out to black so the cut into the rest of the video is clean, and versions sized for the platforms I publish to.
+
+Remotion handles all of that. One reusable Intro component takes width, height, and fps as props. Same component, three renders, three aspect ratios. The Step Video source file is the same across all three — Remotion reframes the same input differently for each canvas using `object-fit: cover`, so there are no black bars regardless of aspect-ratio mismatch. The logo entrance and fade-out are identical across all three.
+
+Vertical (9:16) for Instagram Reels, TikTok, YouTube Shorts:
+
+<video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
+  <source src="/videos/IntroPreview9x16.mp4" type="video/mp4" />
+</video>
+
+Horizontal (16:9) for YouTube and X:
+
+<video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
+  <source src="/videos/IntroPreview16x9.mp4" type="video/mp4" />
+</video>
+
+Square (1:1):
+
+<video controls preload="metadata" playsInline poster="/images/journal/stepvideo_long_cover.png">
+  <source src="/videos/IntroPreview1x1.mp4" type="video/mp4" />
+</video>
+
+## What I'm taking away
+
+I have an intro I can use in next week's video. Total Step Video cost: $0.40. Remotion was my own time.
+
+For anyone considering Step Video for similar work: the cost model rewards longer generations. Wait times aren't predictable from one run to the next yet, so don't plan anything time-sensitive around Step Video output. The output is good enough for stylized intros, b-roll, and abstract backgrounds. It is not good for anything requiring precise content — the model doesn't render text or logos reliably. Combining it with a post-processing layer like Remotion is how you get production-ready footage.
+
+Two data points isn't a benchmark. The non-linear time and size scaling might smooth out across more runs, or it might get worse. Right now this is what they were.
+
+— Jacob
