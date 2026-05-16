@@ -430,22 +430,3 @@ export async function getRecentDonations(limit = 20): Promise<{
   };
 }
 
-/**
- * Wipe the donations table and set cutoff_at = NOW so all currently
- * known tx (and any pre-existing tx the next poll might surface) are
- * permanently excluded. Use when the wallet has been deliberately
- * emptied and the admin wants to start fresh — every tx tracked from
- * this point on is a real donation. Returns the deleted-row count
- * for the admin "you cleared X rows" confirmation.
- */
-export async function resetDonations(): Promise<{ deleted: number; cutoffAt: string }> {
-  const pool = await getPool();
-  const cutoff = new Date();
-  const delRes = await pool.query(`DELETE FROM theta_donations`);
-  await pool.query(
-    `INSERT INTO theta_donations_meta (id, cutoff_at) VALUES (1, $1)
-     ON CONFLICT (id) DO UPDATE SET cutoff_at = EXCLUDED.cutoff_at`,
-    [cutoff]
-  );
-  return { deleted: delRes.rowCount ?? 0, cutoffAt: cutoff.toISOString() };
-}

@@ -180,35 +180,6 @@ export default function AdminPage() {
     }
   }
 
-  async function resetDonationsHistory() {
-    const currentCount = stats?.donations?.totalCount ?? 0;
-    const ok = window.confirm(
-      `Rensa hela donations-historiken? ${currentCount} transaktioner försvinner permanent och en cutoff sätts till nu — bara tx som landar EFTER detta ögonblick kommer att räknas.`
-    );
-    if (!ok) return;
-    setPolling(true);
-    setPollResult(null);
-    try {
-      const res = await fetch(
-        `/api/admin/reset-donations?key=${encodeURIComponent(key)}`,
-        { method: "POST" }
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        setPollResult(`Fel: ${data.error ?? res.status}`);
-      } else {
-        setPollResult(
-          `Rensat. ${data.deleted} rader borttagna. Cutoff satt till ${new Date(data.cutoffAt).toLocaleString("sv-SE")}.`
-        );
-        await loadStats(key);
-      }
-    } catch {
-      setPollResult("Kunde inte nå API:t");
-    } finally {
-      setPolling(false);
-    }
-  }
-
   async function loadStats(secret: string) {
     setLoading(true);
     setError("");
@@ -385,13 +356,6 @@ export default function AdminPage() {
                 className="text-xs px-3 py-1 bg-[#2AB8E6]/10 border border-[#2AB8E6]/30 text-[#2AB8E6] rounded hover:bg-[#2AB8E6]/20 transition-colors disabled:opacity-50"
               >
                 {polling ? "Pollar..." : "Polla nu"}
-              </button>
-              <button
-                onClick={resetDonationsHistory}
-                disabled={polling}
-                className="text-xs px-3 py-1 bg-red-400/10 border border-red-400/30 text-red-400 rounded hover:bg-red-400/20 transition-colors disabled:opacity-50"
-              >
-                Rensa historik
               </button>
             </div>
             <div className="flex items-center gap-3 text-xs text-[#7D8694] tabular-nums">
