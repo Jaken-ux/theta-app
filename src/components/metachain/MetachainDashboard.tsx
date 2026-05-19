@@ -209,6 +209,26 @@ function Sparkline({
   color: string;
 }) {
   if (data.length < 2) return null;
+
+  // Tight auto-scale: fit the Y range to this window's own min/max
+  // (plus a little padding) instead of letting Recharts anchor the
+  // area to 0. A 10-20pt weekly move then reads as a real slope
+  // across the 32px height, matching the "pts" badge. If the week
+  // was genuinely flat (<0.5pt) we keep it visually flat on purpose
+  // rather than fabricate a slope from noise.
+  const vals = data.map((d) => d.value);
+  let lo = Math.min(...vals);
+  let hi = Math.max(...vals);
+  if (hi - lo < 0.5) {
+    const mid = (hi + lo) / 2;
+    lo = mid - 1;
+    hi = mid + 1;
+  } else {
+    const pad = (hi - lo) * 0.15;
+    lo -= pad;
+    hi += pad;
+  }
+
   return (
     <div className="h-8 w-full mt-2">
       <ResponsiveContainer width="100%" height="100%">
@@ -219,6 +239,7 @@ function Sparkline({
               <stop offset="95%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
+          <YAxis hide domain={[lo, hi]} />
           <Area
             type="monotone"
             dataKey="value"
@@ -234,15 +255,24 @@ function Sparkline({
   );
 }
 
+// The badge and the sparkline MUST describe the same span or they
+// visually contradict each other. history is newest-first; the
+// reference point is ~7 entries back (or the oldest available if
+// history is shorter). Both the "pts" badge and the card sparkline
+// derive their window from this single function.
+const WEEK_WINDOW = 7;
+function weekWindowRefIdx(historyLen: number): number {
+  return Math.min(WEEK_WINDOW, historyLen - 1);
+}
+
 function WeeklyChange({ current, history }: { current: number; history: { score: number }[] }) {
   if (history.length < 2) return null;
-  // Compare current to ~7 days ago. history is newest-first, so index 7
-  // is the entry from a week back (or the oldest available if history is
-  // shorter). Previously we read history[length-1], which silently became
-  // a 28-day delta once the API started returning a month of data —
-  // outlier days at the far end of the window produced misleading
-  // "trends" that didn't reflect the past week.
-  const referenceIdx = Math.min(7, history.length - 1);
+  // Compare current to ~7 days ago. Previously we read
+  // history[length-1], which silently became a 28-day delta once the
+  // API started returning a month of data — outlier days at the far
+  // end of the window produced misleading "trends" that didn't
+  // reflect the past week.
+  const referenceIdx = weekWindowRefIdx(history.length);
   const reference = history[referenceIdx];
   const diff = current - reference.score;
   const isPositive = diff > 0;
@@ -1172,9 +1202,16 @@ export default function MetachainDashboard({
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {activeChains.map((chain) => {
             const hist = chainHistory?.[chain.chainId] ?? [];
-            const sparkData = [...hist]
-              .reverse()
-              .map((h) => ({ value: h.score }));
+            // Draw the exact window the badge measures: from the
+            // ~7-day-ago reference up to now, chronological. Pin the
+            // rightmost point to the live score the badge uses as
+            // "current" so the line's total drop equals the badge
+            // number (e.g. Passaways -17.8 → a ~17.8 downward slope).
+            const refIdx = weekWindowRefIdx(hist.length);
+            const windowed = hist.slice(0, refIdx + 1).reverse();
+            const sparkData = windowed.map((h, i) => ({
+              value: i === windowed.length - 1 ? chain.score : h.score,
+            }));
             const color = getChainColor(chain.chainId);
 
             return (
