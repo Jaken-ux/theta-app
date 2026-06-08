@@ -267,7 +267,7 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                     </div>
                     <p className="text-[10px] text-[#7D8694] mt-2">
                       {hasBooster
-                        ? "Protocol rewards + Booster bonus on 500K stake"
+                        ? "Protocol rewards (TFUEL) + Booster bonus on 500K stake (mixed tokens)"
                         : "Guaranteed by protocol"}
                     </p>
                   </div>
@@ -277,17 +277,19 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                     <div className="bg-[#0D1117] rounded-xl p-4 border border-theta-border">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
-                        <p className="text-xs font-medium text-[#8B5CF6]">Booster rewards</p>
+                        <p className="text-xs font-medium text-[#8B5CF6]">
+                          Booster rewards (TFUEL + TNT-20)
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-xs text-theta-muted">Monthly</span>
                           <div className="text-right">
                             <span className="text-xs text-white">
-                              {fmtTfuel(boosterLowMonthly)} – {fmtTfuel(boosterHighMonthly)} TFUEL
+                              {fmtTfuel(boosterLowMonthly)} – {fmtTfuel(boosterHighMonthly)} mixed
                             </span>
                             <span className="text-[10px] text-[#7D8694] ml-1.5">
-                              {fmtUsd(boosterLowMonthly * tfuelPrice)} – {fmtUsd(boosterHighMonthly * tfuelPrice)}
+                              {fmtUsd(boosterLowMonthly * tfuelPrice)} – {fmtUsd(boosterHighMonthly * tfuelPrice)} value
                             </span>
                           </div>
                         </div>
@@ -295,10 +297,10 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                           <span className="text-xs text-theta-muted">Annual</span>
                           <div className="text-right">
                             <span className="text-xs font-semibold text-[#8B5CF6]">
-                              {fmtTfuel(boosterLowYearly)} – {fmtTfuel(boosterHighYearly)} TFUEL
+                              {fmtTfuel(boosterLowYearly)} – {fmtTfuel(boosterHighYearly)} mixed
                             </span>
                             <span className="text-[10px] text-[#7D8694] ml-1.5">
-                              {fmtUsd(boosterLowYearly * tfuelPrice)} – {fmtUsd(boosterHighYearly * tfuelPrice)}
+                              {fmtUsd(boosterLowYearly * tfuelPrice)} – {fmtUsd(boosterHighYearly * tfuelPrice)} value
                             </span>
                           </div>
                         </div>
@@ -320,31 +322,27 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                     <div className="bg-[#0D1117] rounded-xl p-4 border border-[#2AB8E6]/30">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-2 h-2 rounded-full bg-[#2AB8E6]" />
-                        <p className="text-xs font-medium text-[#2AB8E6]">Combined total</p>
+                        <p className="text-xs font-medium text-[#2AB8E6]">
+                          Estimated rewards (TFUEL + tokens)
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-xs text-theta-muted">Monthly</span>
-                          <div className="text-right">
-                            <span className="text-xs text-white">
-                              {fmtTfuel(totalLowMonthly)} – {fmtTfuel(totalHighMonthly)}
-                            </span>
-                            <span className="text-[10px] text-[#7D8694] ml-1">TFUEL</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between border-t border-theta-border pt-2">
-                          <span className="text-xs text-theta-muted">Annual</span>
-                          <div className="text-right">
-                            <span className="text-xs font-semibold text-[#2AB8E6]">
-                              {fmtTfuel(totalLowYearly)} – {fmtTfuel(totalHighYearly)}
-                            </span>
-                            <span className="text-[10px] text-[#7D8694] ml-1">TFUEL</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between border-t border-theta-border pt-2">
-                          <span className="text-xs text-theta-muted">In USD</span>
+                          <span className="text-xs text-theta-muted">Monthly value</span>
                           <span className="text-xs text-white">
+                            {fmtUsd(totalLowMonthly * tfuelPrice)} – {fmtUsd(totalHighMonthly * tfuelPrice)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t border-theta-border pt-2">
+                          <span className="text-xs text-theta-muted">Annual value</span>
+                          <span className="text-xs font-semibold text-[#2AB8E6]">
                             {fmtUsd(totalLowYearly * tfuelPrice)} – {fmtUsd(totalHighYearly * tfuelPrice)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t border-theta-border pt-2">
+                          <span className="text-[10px] text-theta-muted">≈ TFUEL-equivalent / yr</span>
+                          <span className="text-[10px] text-[#7D8694]">
+                            {fmtTfuel(totalLowYearly)} – {fmtTfuel(totalHighYearly)}
                           </span>
                         </div>
                       </div>
@@ -364,11 +362,25 @@ export default function EliteEdgeCalculator({ tfuelPrice, tfuelStaked }: Props) 
                         applies only to locked TFUEL beyond the 500K base. Combined
                         APY blends both against your total capital.
                       </p>
-                      <p className="text-[10px] text-[#7D8694] mt-2">
-                        {fmtUsd(totalLowYearly * tfuelPrice)} – {fmtUsd(totalHighYearly * tfuelPrice)}/yr at current TFUEL price
-                      </p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Mixed-token rewards notice — only when Booster is active */}
+              {showResults && hasBooster && (
+                <div className="rounded-lg border border-[#F59E0B]/40 bg-[#F59E0B]/5 p-3.5">
+                  <p className="text-xs font-semibold text-[#FBBF24] mb-1.5">
+                    ⚠️ Important: Booster rewards are paid in a mix of tokens
+                  </p>
+                  <p className="text-[11px] text-[#B0B8C4] leading-relaxed">
+                    Booster rewards are distributed as a mix of TFUEL and TNT-20
+                    tokens including TDROP, Grove, and Lavita. Theta&apos;s
+                    published 14–28% APY reflects the combined value across all
+                    reward tokens, not pure TFUEL yield. Actual USD value depends
+                    on the current price of each token, which can vary
+                    significantly.
+                  </p>
                 </div>
               )}
 
