@@ -9,31 +9,30 @@
  * of each day's fresh issuance is offset by burns (gas, 25% of Edge
  * payments, etc.).
  *
- * Raw single-day values are noisy because daily snapshots are not taken
- * at exactly 24h intervals — cron timing drifts by a few hours from
- * day to day. That drift splits one day's real issuance across two
- * reported deltas, producing paired "too low" and "too high" days
- * (including apparent supply growth > 1,238,400, which is physically
- * impossible).
+ * Snapshot timing is now reliable. The original noise problem came from
+ * supply snapshots being taken whenever someone hit the site instead of
+ * at a fixed time, which split one real day's issuance across two
+ * reported deltas and produced paired "too low" / "too high" days. The
+ * cron was moved to a fixed 00:05 UTC tick on 2026-04-25, and no
+ * drift-pattern artifacts have appeared since.
  *
- * We correct for this with a 3-day centered rolling average:
- *   smoothed[N] = (raw[N-1] + raw[N] + raw[N+1]) / 3
+ * Daily bars therefore now show the raw single-day absorption with
+ * NO rolling smoothing — what you see is what we measured. Two safety
+ * rails remain:
  *
- * Snapshot drift creates paired errors (one day too small, the next
- * too large). A centered 3-day window has both neighbours of each
- * drift pair so both halves get corrected to the same plausible value.
- * A 2-day trailing window only corrected the second half of each pair,
- * leaving the first half biased. The tradeoff is a slightly larger
- * smoothing window — real daily variation is blurred across ~3 days
- * instead of ~2 — but in exchange the day-to-day wobble from imperfect
- * snapshot timing is largely gone.
+ *   1. KNOWN_ARTIFACT_DATES — specific pre-fix dates that are clamped
+ *      to 0 and marked as artifacts so historical bars still appear
+ *      but in a muted style.
+ *   2. Generic clamps — if a raw day is negative (supply growth >
+ *      one day's issuance, physically impossible) or above 100%
+ *      (more absorbed than issued, suspect of stale supply data),
+ *      it is also clamped to 0 and flagged as an artifact.
  *
- * The first and last day of the series have no pair to center on, so
- * we fall back to 2-day trailing for those edges.
- *
- * `isDataArtifact` now only flags days where the smoothed value is
- * still negative — extremely rare, indicates either 2+ consecutive
- * drift days or a genuine on-chain event (e.g. a large token unlock).
+ * The headline 7-day figure is a trailing average over clean
+ * (non-artifact) daily values. That single layer of smoothing is the
+ * only one applied — the per-bar 3-day centered average that previously
+ * lived here was removed when snapshot drift stopped producing
+ * artifacts (see commit history for context).
  */
 
 const BLOCKS_PER_DAY = Math.floor(86400 / 6); // 14,400
@@ -41,12 +40,9 @@ const TFUEL_PER_BLOCK = 86;
 export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
 
 /**
- * Days where the raw absorption value is known to reflect snapshot
- * timing drift, not real activity. These are excluded from smoothing
- * (their neighbours skip them when averaging) and excluded from the
- * 7-day trend. The bar still appears on the chart but is rendered as
- * a faded "data artifact" marker so historic viewers see why the day
- * is muted instead of being misled by a phantom spike.
+ * Pre-fix dates whose raw absorption was provably wrong. Listed so the
+ * historical chart can mute them rather than hide them. No new entries
+ * have been needed since the cron-timing fix on 2026-04-25.
  *
  *   2026-04-21 — pre-fix snapshot timing drift, raw absorption was
  *     -22.9% (physically impossible: supply growth exceeded daily
@@ -77,13 +73,13 @@ const KNOWN_ARTIFACT_DATES = new Set<string>([
 export interface DailyEntry {
   date: string;
   supplyChange: number;
-  /** Single-day raw absorption (no smoothing). Negative on drift days. */
+  /** Single-day raw absorption (issuance − supplyChange). May be negative on artifact days. */
   rawAbsorption: number;
-  /** 3-day centered smoothed absorption (2-day trailing at edges), clamped to >= 0. */
+  /** Raw absorption clamped to [0, DAILY_ISSUANCE] — 0 on artifact days. No smoothing. */
   absorption: number;
-  /** Smoothed rate as fraction 0–1. */
+  /** Rate as fraction 0–1. */
   absorptionRate: number;
-  /** True only if smoothed absorption is still negative (rare). */
+  /** True if this day was clamped: pre-flagged artifact date, raw < 0, or raw > issuance. */
   isDataArtifact: boolean;
 }
 
@@ -119,69 +115,38 @@ export function computeTfuelEconomics(
   // snapshot — which represents yesterday's completed activity.
   const todayUtc = new Date().toISOString().slice(0, 10);
 
-  // First pass: compute raw per-day values.
-  //
-  // IMPORTANT: the delta (supply[N+1] − supply[N]) represents activity
-  // that happened DURING day N (between the snapshot taken at start of
-  // day N and the one taken at start of day N+1). We therefore label
-  // each entry with the START date of the interval, not the end date.
-  // Previously we labelled with sorted[i].date which was off-by-one.
-  const raw: { date: string; supplyChange: number; rawAbsorption: number }[] = [];
+  // The delta (supply[N+1] − supply[N]) represents activity during day
+  // N (between the snapshot at start of day N and the one at start of
+  // day N+1). Each entry is labelled with the START date of that
+  // interval.
+  const entries: DailyEntry[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
     const entryDate = sorted[i].date;
     if (entryDate >= todayUtc) continue;
     const supplyChange = sorted[i + 1].supply - sorted[i].supply;
     const rawAbsorption = DAILY_ISSUANCE - supplyChange;
-    raw.push({ date: entryDate, supplyChange, rawAbsorption });
-  }
 
-  if (raw.length === 0) return base;
+    const isKnownArtifact = KNOWN_ARTIFACT_DATES.has(entryDate);
+    const outOfRange = rawAbsorption < 0 || rawAbsorption > DAILY_ISSUANCE;
+    const isDataArtifact = isKnownArtifact || outOfRange;
 
-  // Second pass: 3-day centered rolling average.
-  // Interior days: smoothed[N] = (raw[N-1] + raw[N] + raw[N+1]) / 3
-  // Edges (first/last day, no pair) fall back to 2-day trailing/leading.
-  // Known-artifact neighbours are excluded so their bad raw values do
-  // not bleed into surrounding days' smoothed values. The artifact day
-  // itself gets absorption=0 so the bar disappears, with isDataArtifact
-  // set so the chart renders the muted "data anomaly" treatment.
-  const entries: DailyEntry[] = raw.map((r, i) => {
-    const isKnownArtifact = KNOWN_ARTIFACT_DATES.has(r.date);
-
-    if (isKnownArtifact) {
-      return {
-        date: r.date,
-        supplyChange: r.supplyChange,
-        rawAbsorption: r.rawAbsorption,
-        absorption: 0,
-        absorptionRate: 0,
-        isDataArtifact: true,
-      };
-    }
-
-    const candidates: number[] = [r.rawAbsorption];
-    if (i > 0 && !KNOWN_ARTIFACT_DATES.has(raw[i - 1].date)) {
-      candidates.push(raw[i - 1].rawAbsorption);
-    }
-    if (i < raw.length - 1 && !KNOWN_ARTIFACT_DATES.has(raw[i + 1].date)) {
-      candidates.push(raw[i + 1].rawAbsorption);
-    }
-    const smoothedRaw =
-      candidates.reduce((sum, v) => sum + v, 0) / candidates.length;
-
-    const absorption = Math.max(0, smoothedRaw);
+    const absorption = isDataArtifact ? 0 : rawAbsorption;
     const absorptionRate = absorption / DAILY_ISSUANCE;
-    return {
-      date: r.date,
-      supplyChange: r.supplyChange,
-      rawAbsorption: r.rawAbsorption,
+
+    entries.push({
+      date: entryDate,
+      supplyChange,
+      rawAbsorption,
       absorption,
       absorptionRate,
-      isDataArtifact: smoothedRaw < 0,
-    };
-  });
+      isDataArtifact,
+    });
+  }
 
-  // 7-day averages — drift is already corrected by smoothing, so any
-  // remaining artifact days are excluded to keep the trend trustworthy.
+  if (entries.length === 0) return base;
+
+  // 7-day trailing average over clean days. This is the only smoothing
+  // applied anywhere in the pipeline; daily bars are raw.
   const clean = entries.filter((e) => !e.isDataArtifact);
   const recent7 = clean.slice(-7);
   const avgSupplyGrowth7d =

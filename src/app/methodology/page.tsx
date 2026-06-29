@@ -509,22 +509,25 @@ export default function MethodologyPage() {
               <p>supplyChange[N] = supply[N] − supply[N-1]</p>
               <p>rawAbsorption[N] = blockIssuance − supplyChange[N]</p>
               <p className="mt-2 text-[#7D8694]">
-                {/* eslint-disable-next-line */}{'// 3-day centered rolling average corrects snapshot timing drift'}
+                {/* eslint-disable-next-line */}{'// Daily bars are raw — no rolling smoothing.'}
+                <br />
+                {/* eslint-disable-next-line */}{'// Out-of-range values (or pre-flagged dates) are clamped to 0.'}
               </p>
               <p className="text-white">
-                smoothed[N] = (rawAbsorption[N-1] + rawAbsorption[N] + rawAbsorption[N+1]) / 3
+                absorption[N] = isArtifact(N) ? 0 : rawAbsorption[N]
               </p>
-              <p>absorption[N] = max(0, smoothed[N])</p>
               <p>absorptionRate[N] = absorption[N] / blockIssuance</p>
+              <p className="mt-2 text-[#7D8694]">
+                {/* eslint-disable-next-line */}{'// where isArtifact = pre-flagged date OR raw < 0 OR raw > blockIssuance'}
+              </p>
             </div>
 
             <p className="text-xs text-[#B0B8C4]">
-              The first and last day of the series have no neighbour on
-              one side and fall back to a 2-day trailing average. Days
-              that are pre-flagged as known artifacts (see below) are
-              skipped when their neighbours compute the average, so a
-              bad raw value can&apos;t bleed into surrounding days&apos;
-              smoothed result.
+              Daily snapshots are now taken on a fixed UTC schedule, so
+              the per-bar 3-day centered rolling average previously used
+              to mask snapshot-timing drift was removed on 2026-06-28.
+              The 7-day trailing trend line below remains the only
+              smoothing applied — and only to the headline, not the bars.
             </p>
 
             {/* Why absorption instead of burn */}
@@ -547,11 +550,10 @@ export default function MethodologyPage() {
             <p className="text-xs text-[#B0B8C4]">
               Supply data comes from Theta&apos;s{" "}
               <span className="font-mono">/api/supply/tfuel</span>{" "}
-              endpoint, stored daily in our database. Snapshot-timing
-              drift is corrected by the 3-day centered smoothing above,
-              not by the 7-day chart average. The displayed 7-day trend
-              line is computed from the smoothed values and explicitly
-              excludes any day flagged as an artifact, so a single bad
+              endpoint, stored daily by a fixed UTC cron. The displayed
+              7-day trend line is the trailing average of the daily
+              <span className="font-mono"> absorption</span> values,
+              excluding any day flagged as an artifact, so a single bad
               snapshot can&apos;t pull the trend down.
             </p>
           </div>
@@ -618,24 +620,22 @@ export default function MethodologyPage() {
             </li>
             <li>
               <span className="text-white">
-                Snapshot-timing drift is corrected by 3-day centered smoothing.
+                Daily bars are raw — no rolling smoothing.
               </span>{" "}
-              Daily snapshots are never taken at exactly the same time,
-              and the upstream supply endpoint updates on its own cadence.
-              That splits real issuance across multiple reported deltas —
-              one day shows too little growth, the next too much. We show
-              each bar as the average of three days (the day before, the
-              day itself, the day after). Drift errors come in pairs, so
-              having both neighbours in the window cancels them from both
-              sides. The first and last day of the series fall back to a
-              2-day trailing average since they have no neighbour on one
-              side. Days where the smoothed value is still negative
-              (rare) are flagged as artifacts; specific dates with
-              documented causes are also pre-flagged — see &quot;Known
-              data artifacts&quot; above. Artifact days are excluded
-              from the 7-day average. Going forward, we also store the
-              exact UTC timestamp of each supply snapshot so future
-              calculations can normalise by the actual interval length.
+              The cron that captures the supply snapshot now fires at a
+              fixed UTC time, so the drift problem that previously
+              produced paired &ldquo;too low&rdquo; / &ldquo;too high&rdquo;
+              days is solved at the source. The 3-day centered rolling
+              average that we used to apply to every bar was removed on
+              2026-06-28 — daily bars now show the value that was
+              actually measured. Two safety rails remain: days where
+              the raw value is below 0% or above 100% (physically
+              implausible) are clamped to 0 and flagged as artifacts,
+              and the pre-flagged historical dates above are also
+              clamped. Artifact days are excluded from the 7-day
+              trailing average — that 7-day average is now the only
+              layer of smoothing anywhere in the pipeline, and it
+              applies only to the headline trend line, not the bars.
             </li>
             <li>
               <span className="text-white">
@@ -651,10 +651,11 @@ export default function MethodologyPage() {
 
       {/* Last updated */}
       <p className="text-xs text-[#7D8694] border-t border-[#2A3548] pt-6">
-        Last updated: 2026-04-30 (absorption-rate methodology revised to
-        reflect 3-day centered smoothing, edge-fallback handling, and
-        known data artifacts). Baselines will be recalibrated after 30
-        days of data collection.
+        Last updated: 2026-06-28 (absorption-rate methodology simplified
+        — per-bar 3-day centered smoothing removed now that snapshot
+        timing is reliable; daily bars show raw values with pre-flagged
+        and out-of-range days clamped to 0). Baselines will be
+        recalibrated after 30 days of data collection.
       </p>
 
       {/* Disclaimer */}
