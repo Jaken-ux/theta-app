@@ -13,16 +13,26 @@
  * supply snapshots being taken whenever someone hit the site instead of
  * at a fixed time, which split one real day's issuance across two
  * reported deltas and produced paired "too low" / "too high" days. The
- * cron was moved to a fixed 00:05 UTC tick on 2026-04-25, and no
- * drift-pattern artifacts have appeared since.
+ * cron was moved to a fixed UTC schedule on 2026-04-25 and every
+ * snapshot since has been exactly 24.00h apart. No timing-drift
+ * artifacts have appeared since.
+ *
+ * Rare upstream artifacts still occur — Theta's supply endpoint
+ * occasionally returns an off value at a snapshot, producing a
+ * phantom absorption on one day that self-corrects a day or two
+ * later. These are neither timing drift nor real on-chain events;
+ * they are classified separately (see KNOWN_ARTIFACT_DATES) and
+ * kept as manually-curated exceptions rather than papered over with
+ * smoothing.
  *
  * Daily bars therefore now show the raw single-day absorption with
  * NO rolling smoothing — what you see is what we measured. Two safety
  * rails remain:
  *
- *   1. KNOWN_ARTIFACT_DATES — specific pre-fix dates that are clamped
- *      to 0 and marked as artifacts so historical bars still appear
- *      but in a muted style.
+ *   1. KNOWN_ARTIFACT_DATES — specific dates that are clamped to 0
+ *      and marked as artifacts so historical bars still appear but
+ *      in a muted style. Covers both pre-cron-fix timing artifacts
+ *      and post-fix upstream reporting glitches.
  *   2. Generic clamps — if a raw day is negative (supply growth >
  *      one day's issuance, physically impossible) or above 100%
  *      (more absorbed than issued, suspect of stale supply data),
@@ -40,9 +50,10 @@ const TFUEL_PER_BLOCK = 86;
 export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
 
 /**
- * Pre-fix dates whose raw absorption was provably wrong. Listed so the
- * historical chart can mute them rather than hide them. No new entries
- * have been needed since the cron-timing fix on 2026-04-25.
+ * Dates whose raw absorption was provably wrong. Listed so the
+ * historical chart can mute them rather than hide them.
+ *
+ * ── Pre-cron-fix (before 2026-04-25) ───────────────────────────────
  *
  *   2026-04-21 — pre-fix snapshot timing drift, raw absorption was
  *     -22.9% (physically impossible: supply growth exceeded daily
@@ -55,19 +66,45 @@ export const DAILY_ISSUANCE = BLOCKS_PER_DAY * TFUEL_PER_BLOCK; // 1,238,400
  *     to a tiny window of supply growth, producing a +78.5% phantom
  *     spike.
  *
+ * ── Post-cron-fix: upstream supply-endpoint artifacts ──────────────
+ *
+ * Cron timing has been rock-solid since Apr 25 (every snapshot at
+ * 00:33:53–54 UTC, exactly 24.00h apart). The following dates are
+ * NOT timing drift. They are cases where Theta's own supply endpoint
+ * returned an off value at one snapshot, producing a phantom "burn"
+ * that later self-corrects with a phantom "mint". The 3-day sum of
+ * supply growth across such episodes matches baseline within a few
+ * percent, which is what rules out a real on-chain event.
+ *
  *   2026-04-27 — raw supply delta of 1,306,523 TFUEL exceeded the
  *     fixed daily block issuance of 1,238,400, producing a raw
  *     absorption of -5.5%. Snapshot intervals on either side were
  *     within ~15 min of 24h, so this is not snapshot-timing drift.
- *     No on-chain unlock or treasury distribution has been identified
- *     for this date. Treated as API artifact (suspected stale or
- *     incorrect supply value at one of the snapshots) until a
- *     concrete cause is found.
+ *     No on-chain unlock or treasury distribution has been identified.
+ *     Treated as suspected supply-endpoint artifact.
+ *
+ *   2026-07-10, 2026-07-11, 2026-07-12 — paired reporting event.
+ *     Jul 10 supply growth was 988,417 (~110k below baseline);
+ *     Jul 11 was 910,302 (~190k below baseline); Jul 12 was
+ *     1,331,101 (~93k ABOVE physical maximum daily issuance,
+ *     producing a raw absorption of -7.5%). Raw values on Jul 10
+ *     and Jul 11 alone would show ~20% and ~26.5% absorption
+ *     against a stable ~10% baseline the surrounding week.
+ *     Summed across the three days, supply growth of 3,229,820
+ *     matches expected baseline (~3,300k) within 2%, ruling out a
+ *     real on-chain event. All three snapshots were captured at
+ *     00:33:53–54 UTC (perfect timing), so this is not snapshot
+ *     drift either. Classified as a supply-endpoint reporting
+ *     artifact — under-reported values on Jul 10-11 self-corrected
+ *     with an over-reported value on Jul 12.
  */
 const KNOWN_ARTIFACT_DATES = new Set<string>([
   "2026-04-21",
   "2026-04-24",
   "2026-04-27",
+  "2026-07-10",
+  "2026-07-11",
+  "2026-07-12",
 ]);
 
 export interface DailyEntry {
