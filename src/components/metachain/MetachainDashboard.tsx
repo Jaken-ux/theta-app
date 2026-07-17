@@ -797,12 +797,32 @@ export default function MetachainDashboard({
             {/* Absorption trend with range selector */}
             {trendData.length >= 2 && (() => {
               const rangeDays = absorptionRange === "7d" ? 7 : absorptionRange === "30d" ? 30 : 365;
-              const filtered = trendData.slice(-rangeDays);
-              const hasEnough = filtered.length >= 2;
               const dateFormat: Intl.DateTimeFormatOptions =
                 absorptionRange === "1y"
                   ? { month: "short" }
                   : { month: "short", day: "numeric" };
+
+              // Compute rolling 7d average over the FULL trend history
+              // (not just the visible window). Otherwise the leftmost
+              // day of the selected range would only have itself to
+              // average — which drops the line to 0 for artifact days
+              // at the edge instead of using the real prior 7 days.
+              // Artifact days are excluded from the window; counting
+              // their clamped-to-0 rate would drag the average down.
+              const trendWithAvg = trendData.map((d, i) => {
+                const windowStart = Math.max(0, i - 6);
+                const window = trendData
+                  .slice(windowStart, i + 1)
+                  .filter((w) => !w.isDataArtifact);
+                const avg7d =
+                  window.length > 0
+                    ? window.reduce((s, w) => s + w.rate, 0) / window.length
+                    : 0;
+                return { ...d, avg7d: Math.round(avg7d * 10) / 10 };
+              });
+
+              const filtered = trendWithAvg.slice(-rangeDays);
+              const hasEnough = filtered.length >= 2;
 
               const chartData = filtered.map((e) => ({
                 ...e,
@@ -837,28 +857,9 @@ export default function MetachainDashboard({
                       })}
                     </div>
                   </div>
-                  {hasEnough ? (() => {
-                    // Compute rolling 7d average for each data point.
-                    // Artifact days are excluded from the window — their rate
-                    // is clamped to 0 upstream, and counting that 0 would
-                    // drag the average toward zero on every day whose 7d
-                    // window includes an artifact. Mirrors the lib's own
-                    // avgAbsorptionRate7d in tfuel-economics.ts.
-                    const withAvg = chartData.map((d, i) => {
-                      const windowStart = Math.max(0, i - 6);
-                      const window = chartData
-                        .slice(windowStart, i + 1)
-                        .filter((w) => !w.isDataArtifact);
-                      const avg7d =
-                        window.length > 0
-                          ? window.reduce((s, w) => s + w.rate, 0) / window.length
-                          : 0;
-                      return { ...d, avg7d: Math.round(avg7d * 10) / 10 };
-                    });
-
-                    return (
-                      <ResponsiveContainer width="100%" height={140}>
-                        <ComposedChart data={withAvg} barCategoryGap="20%">
+                  {hasEnough ? (
+                    <ResponsiveContainer width="100%" height={140}>
+                        <ComposedChart data={chartData} barCategoryGap="20%">
                           <CartesianGrid strokeDasharray="3 3" stroke="#2A3548" vertical={false} />
                           <XAxis
                             dataKey="date"
@@ -885,10 +886,10 @@ export default function MetachainDashboard({
                                   <p className="text-[#7D8694] mb-1">{label}</p>
                                   {d.isDataArtifact ? (
                                     <p className="text-[#7D8694] font-medium">
-                                      Data artifact — snapshot timing drift,
-                                      not real activity. Excluded from
-                                      smoothing of neighbouring days and from
-                                      the 7-day average.
+                                      Data artifact — supply endpoint returned
+                                      an off value at this snapshot, or the
+                                      raw reading was physically impossible.
+                                      Excluded from the 7-day average.
                                     </p>
                                   ) : (
                                     <p className="text-[#F59E0B] font-medium">
@@ -903,7 +904,7 @@ export default function MetachainDashboard({
                             }}
                           />
                           <Bar dataKey="rate" radius={[3, 3, 0, 0]}>
-                            {withAvg.map((entry, i) => (
+                            {chartData.map((entry, i) => (
                               <Cell
                                 key={i}
                                 fill={entry.isDataArtifact ? "#7D8694" : "#F59E0B"}
@@ -921,14 +922,15 @@ export default function MetachainDashboard({
                           />
                         </ComposedChart>
                       </ResponsiveContainer>
-                    );
-                  })() : (
+                  ) : (
                     <div className="h-[120px] flex items-center justify-center text-sm text-[#5C6675]">
                       Building history… {trendData.length} of {rangeDays} days collected.
                     </div>
                   )}
                   <p className="text-[10px] text-[#5C6675] mt-2">
-                    Each bar is a 3-day centered average (corrects snapshot timing drift). Completed days only.
+                    Bars are the raw single-day absorption. Muted grey
+                    bars are flagged data artifacts (excluded from the
+                    7-day trend line). Completed days only.
                   </p>
                 </div>
               );
@@ -975,15 +977,14 @@ export default function MetachainDashboard({
               <p className="mb-3">
                 Block rewards are the <em>only</em> source of new TFUEL —
                 Edge Network jobs move existing tokens, they do not mint new
-                ones. So supply can never truly grow more than 1.24M in a day.
-                But snapshot timing drifts a few hours day-to-day, which
-                splits one day&apos;s real issuance across two reported
-                deltas. To correct this we show each bar as a{" "}
-                <strong className="text-white">3-day centered rolling average</strong>
-                {" "}— each day uses info from the day before and the day
-                after, so drift errors (which come in pairs) are cancelled
-                on both sides. That kills impossible &quot;0%&quot; artifact
-                days while keeping real daily variation visible.
+                ones. So supply can never truly grow more than 1.24M in a
+                day. Each bar shows the <strong className="text-white">raw
+                single-day measurement</strong> from that day&apos;s supply
+                snapshot. On rare days when Theta&apos;s supply endpoint
+                returns an off value — producing a physically impossible
+                reading (negative absorption or above 100%) — that day is
+                muted and excluded from the 7-day trend line. Everything
+                else you see is what was actually measured.
               </p>
               <p className="mb-2">
                 <strong className="text-white">
