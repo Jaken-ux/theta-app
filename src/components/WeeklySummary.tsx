@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { MetricCaveat } from "./MetricCaveat";
 
 interface Metric {
   current: number | null;
@@ -288,6 +289,12 @@ export default function WeeklySummary() {
             delay={0.25}
             series={m.stakingNodes.series}
           />
+        </div>
+
+        {/* Metric-integrity notice — the Metachain Index card above is
+            currently inflated by concentrated bridge activity. */}
+        <div className="mt-4">
+          <MetricCaveat variant="short" />
         </div>
       </div>
     </motion.section>

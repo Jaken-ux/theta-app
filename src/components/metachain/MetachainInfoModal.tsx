@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { MetricCaveat } from "../MetricCaveat";
 
 export function InfoButton({ onClick }: { onClick: () => void }) {
   return (
@@ -66,6 +67,9 @@ export default function MetachainInfoModal({
                   the entire Theta ecosystem — not just the main chain. It combines data from
                   7 sources into one composite score.
                 </p>
+
+                {/* Metric-integrity notice for Ecosystem Growth inflation */}
+                <MetricCaveat variant="long" />
 
                 {/* What it measures */}
                 <div>

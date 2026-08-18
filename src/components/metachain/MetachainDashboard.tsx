@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import SimplifyThis from "../SimplifyThis";
 import LearnMore from "../LearnMore";
+import { MetricCaveat } from "../MetricCaveat";
 import MetachainInfoModal, { InfoButton } from "./MetachainInfoModal";
 import {
   AreaChart,
@@ -593,6 +594,9 @@ export default function MetachainDashboard({
         </div>
       </motion.div>
 
+      {/* Metric-integrity notice for Ecosystem Growth inflation */}
+      <MetricCaveat variant="short" />
+
       {/* ── Transaction Coverage ────────────────────────── */}
       <motion.div
         className="bg-[#151D2E]/80 border border-[#2A3548]/80 rounded-2xl p-5 sm:p-6"
@@ -1123,10 +1127,17 @@ export default function MetachainDashboard({
         <h3 className="text-base font-semibold text-white mb-1">
           Chain Breakdown
         </h3>
-        <p className="text-sm text-[#B0B8C4] mb-2">
+        <p className="text-sm text-[#B0B8C4] mb-3">
           Each chain is scored independently. The bar chart shows how they
           compare — the composite score above is their weighted average.
         </p>
+
+        {/* Longer caveat — placed here so the reader sees it before the
+            visually-dominant Ecosystem Growth bar. */}
+        <div className="mb-3">
+          <MetricCaveat variant="long" />
+        </div>
+
         <SimplifyThis>
           <p className="mb-2">Each bar represents one chain in the Theta ecosystem. Longer bar = more activity on that chain.</p>
           <p className="mb-2">The <strong className="text-white">Main Chain</strong> is where staking and token transfers happen. The other chains are &quot;subchains&quot; — think of them as specialized departments: Lavita handles health AI, TPulse tracks EdgeCloud jobs, Passaways and Grove are gaming platforms.</p>
