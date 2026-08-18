@@ -422,6 +422,13 @@ export default function MetachainDashboard({
                     <span className="text-2xl text-[#B0B8C4] mb-3">/{tier.ceiling}</span>
                   </div>
 
+                  {/* Metric-integrity notice — sits between the score and
+                      the tier label so the reader sees the caveat BEFORE
+                      any confident tier narrative. */}
+                  <div className="mt-4 mb-3">
+                    <MetricCaveat variant="short" />
+                  </div>
+
                   <div className="flex items-center gap-2 mt-1 mb-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tier.color }} />
                     <span className="text-sm font-medium" style={{ color: tier.color }}>{tier.name}</span>
@@ -449,8 +456,14 @@ export default function MetachainDashboard({
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#B0B8C4] leading-relaxed mb-2">
+                  {/* Description muted + pointer while caveat is active — tier
+                      copy itself unchanged; just softened so it doesn't
+                      contradict the notice sitting above. */}
+                  <p className="text-xs text-[#7D8694] leading-relaxed mb-2">
                     {tier.description}
+                    <span className="ml-1.5 italic text-[#5C6675]">
+                      (see metric note above)
+                    </span>
                   </p>
 
                   {/* Tier roadmap dots */}
@@ -593,9 +606,6 @@ export default function MetachainDashboard({
           </div>
         </div>
       </motion.div>
-
-      {/* Metric-integrity notice for Ecosystem Growth inflation */}
-      <MetricCaveat variant="short" />
 
       {/* ── Transaction Coverage ────────────────────────── */}
       <motion.div
