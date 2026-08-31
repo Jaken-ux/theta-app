@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { fetchAllChains, getRegisteredChains } from "./registry";
 import { fetchTotalMetachainTxs } from "./total-txs";
 import { computeTfuelEconomics } from "../tfuel-economics";
+import { ensureBridgeLogSchema } from "./bridge-log";
 import { getPool } from "../db";
 import type { Pool } from "pg";
 
@@ -112,6 +113,8 @@ export const fetchMetachainData = unstable_cache(
 async function fetchMetachainDataFresh() {
   const pool = await getPool();
   await ensureSchema(pool);
+  // v2 Ecosystem Growth cache tables — same-connection init, idempotent.
+  await ensureBridgeLogSchema(pool);
 
   // Fetch live data from all adapters
   const result = await fetchAllChains();

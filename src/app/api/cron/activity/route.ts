@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 import { fetchNetworkStats, fetchActivitySnapshot } from "../../../../lib/theta-api";
 import { getPool } from "../../../../lib/db";
 import { checkForNewSubchains } from "../../../../lib/metachain/monitor";
+import { runParticipantsMaintenance } from "../../../../lib/metachain/participants";
+
+/**
+ * Hobby tier serverless timeout = 10s hard cap (not configurable
+ * upward). The participants runner is invoked only if the existing
+ * cron work completes with headroom left; see PARTICIPANTS_ELAPSED_SKIP_MS
+ * below.
+ */
+const PARTICIPANTS_ELAPSED_SKIP_MS = 7_000;
 
 function computeIndex(snap: {
   estimatedDailyTxs: number;
@@ -70,6 +79,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const cronStartedAt = Date.now();
+
   try {
     const [stats, subchainAvailable, tdrop] = await Promise.all([
       fetchNetworkStats(),
@@ -131,12 +142,38 @@ export async function GET(request: Request) {
       console.error("[subchain-monitor] Check failed:", e);
     }
 
+    // v2 Ecosystem Growth: incrementally update bridge-tx log
+    // (top-up + backfill chunk). Failures don't fail the cron —
+    // participants tally falls back to whatever the log contains.
+    //
+    // Skip guard: on Hobby's 10s hard cap we must not spend our
+    // remaining budget on backfill if the existing cron work already
+    // ate most of it. Backfill is cosmetic — score is correct from
+    // Day 1 because the bot's reverted txs contribute 0 successful
+    // participants. Skipping a day just extends backfill by one day.
+    let participantsRan = false;
+    const elapsed = Date.now() - cronStartedAt;
+    if (elapsed <= PARTICIPANTS_ELAPSED_SKIP_MS) {
+      try {
+        await runParticipantsMaintenance(pool);
+        participantsRan = true;
+      } catch (e) {
+        console.error("[participants] Maintenance failed:", e);
+      }
+    } else {
+      console.warn(
+        `[participants] Skipped — existing cron used ${elapsed}ms, above ${PARTICIPANTS_ELAPSED_SKIP_MS}ms guard`
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       date: today,
       score,
       subchainApiAvailable: subchainAvailable,
       newSubchains: newSubchains.length > 0 ? newSubchains : undefined,
+      participantsRan,
+      cronElapsedMs: Date.now() - cronStartedAt,
     });
   } catch (error) {
     console.error("Cron activity fetch failed:", error);

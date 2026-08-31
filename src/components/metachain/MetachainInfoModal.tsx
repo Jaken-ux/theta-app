@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { MetricCaveat } from "../MetricCaveat";
+import { ECOSYSTEM_GROWTH_V2_START } from "../../lib/metachain/adapters/proxy-indicators";
 
 export function InfoButton({ onClick }: { onClick: () => void }) {
   return (
@@ -183,6 +184,16 @@ export default function MetachainInfoModal({
                     </p>
                     <p><span className="text-[#E879F9]">Ecosystem Growth</span> — ChainRegistrar + Token Bank contracts</p>
                   </div>
+                  <p className="text-[11px] text-[#7D8694] mt-3 leading-relaxed">
+                    <span className="text-[#F59E0B] font-medium">v2 change ({ECOSYSTEM_GROWTH_V2_START}):</span> the
+                    Ecosystem Growth cross-chain and collateral inputs were redefined
+                    from cumulative on-chain tx volume to a rolling 30-day count of
+                    unique addresses with at least 5 successful (non-reverted) txs.
+                    This makes the score robust to single-address spam. The 90-day
+                    trend chart shows a dashed boundary line at that date — pre-v2
+                    and post-v2 numbers don&apos;t measure the same thing and
+                    shouldn&apos;t be compared as a continuous series.
+                  </p>
                 </div>
 
                 {/* What it does NOT measure */}

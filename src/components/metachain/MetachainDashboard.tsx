@@ -7,6 +7,7 @@ import SimplifyThis from "../SimplifyThis";
 import LearnMore from "../LearnMore";
 import { MetricCaveat } from "../MetricCaveat";
 import MetachainInfoModal, { InfoButton } from "./MetachainInfoModal";
+import { ECOSYSTEM_GROWTH_V2_START } from "../../lib/metachain/adapters/proxy-indicators";
 import {
   AreaChart,
   Area,
@@ -20,6 +21,7 @@ import {
   Cell,
   ComposedChart,
   Line,
+  ReferenceLine,
 } from "recharts";
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -382,6 +384,15 @@ export default function MetachainDashboard({
     coverage: h.coveragePct ?? 100,
   }));
 
+  // Label to draw the metric-v2 boundary line at, in the same
+  // "Aug 31"-style format the X-axis uses. Only render the line if
+  // that date is actually present in the history window.
+  const v2BoundaryLabel = new Date(ECOSYSTEM_GROWTH_V2_START).toLocaleDateString(
+    "en-US",
+    { month: "short", day: "numeric" }
+  );
+  const showV2Boundary = chartData.some((d) => d.date === v2BoundaryLabel);
+
   const activeChains = current.chains.filter((c) => !c.excludeFromComposite);
   const excludedChains = current.chains.filter((c) => c.excludeFromComposite);
 
@@ -596,6 +607,20 @@ export default function MetachainDashboard({
                     strokeWidth={2}
                     fill="url(#metachainGradient)"
                   />
+                  {showV2Boundary && (
+                    <ReferenceLine
+                      x={v2BoundaryLabel}
+                      stroke="#F59E0B"
+                      strokeDasharray="4 3"
+                      strokeWidth={1.5}
+                      label={{
+                        value: "metric changed",
+                        position: "top",
+                        fill: "#F59E0B",
+                        fontSize: 9,
+                      }}
+                    />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -1277,21 +1302,60 @@ export default function MetachainDashboard({
 
                 <div className="mt-2 space-y-1 text-xs text-[#B0B8C4]">
                   {chain.chainId === "proxy-indicators" ? (
-                    <>
-                      <p>Subchains: {chain.metrics.custom?.subchainCount ?? "—"}</p>
-                      <p>Cross-chain txs: {fmtNum(chain.metrics.custom?.crossChainTxs ?? 0)}</p>
-                      <p>Registrar txs: {fmtNum(chain.metrics.custom?.collateralActivity ?? 0)}</p>
-                      {chain.metrics.custom?.hasMomentum === 1 && (
-                        <div className="mt-2 pt-2 border-t border-[#2A3548]">
-                          <p className="text-[10px] text-[#7D8694] mb-1">7-day momentum</p>
-                          <div className="space-y-0.5">
-                            <MomentumRow label="Subchains" delta={chain.metrics.custom.subchainDelta ?? 0} />
-                            <MomentumRow label="Cross-chain" delta={chain.metrics.custom.crossChainDelta ?? 0} suffix=" txs" />
-                            <MomentumRow label="Registrar" delta={chain.metrics.custom.collateralDelta ?? 0} suffix=" txs" />
-                          </div>
-                        </div>
-                      )}
-                    </>
+                    (() => {
+                      const c = chain.metrics.custom ?? {};
+                      const isV2 = c.metricVersion === 2;
+                      const backfillComplete = c.backfillComplete === 1;
+                      const daysCovered = Number(c.backfillDaysCovered ?? 0);
+                      if (isV2) {
+                        return (
+                          <>
+                            <p>Subchains: {c.subchainCount ?? "—"}</p>
+                            <p>
+                              Cross-chain participants:{" "}
+                              <span className="text-white">
+                                {fmtNum(Number(c.crossChainParticipants ?? 0))}
+                              </span>
+                              <span className="text-[10px] text-[#7D8694] ml-1">
+                                (30d, ≥5 successful txs)
+                              </span>
+                            </p>
+                            {Number(c.crossChainReverted ?? 0) > 0 && (
+                              <p className="text-[10px] text-[#7D8694] pl-3">
+                                + {fmtNum(Number(c.crossChainReverted))} reverted txs excluded
+                              </p>
+                            )}
+                            <p>
+                              Collateral participants:{" "}
+                              <span className="text-white">
+                                {fmtNum(Number(c.collateralParticipants ?? 0))}
+                              </span>
+                              <span className="text-[10px] text-[#7D8694] ml-1">
+                                (30d, ≥5 successful txs)
+                              </span>
+                            </p>
+                            {Number(c.collateralReverted ?? 0) > 0 && (
+                              <p className="text-[10px] text-[#7D8694] pl-3">
+                                + {fmtNum(Number(c.collateralReverted))} reverted txs excluded
+                              </p>
+                            )}
+                            {!backfillComplete && (
+                              <p className="mt-1 text-[10px] text-[#F59E0B]">
+                                Backfill in progress — {daysCovered}/30 days covered
+                              </p>
+                            )}
+                          </>
+                        );
+                      }
+                      // Fall-through for pre-v2 cached data (transitional).
+                      return (
+                        <>
+                          <p>Subchains: {c.subchainCount ?? "—"}</p>
+                          <p>Cross-chain txs: {fmtNum(Number(c.crossChainTxs ?? 0))}</p>
+                          <p>Registrar txs: {fmtNum(Number(c.collateralActivity ?? 0))}</p>
+                        </>
+                      );
+                    })()
                   ) : (
                     <>
                       <p>Txs/24h: {fmtNum(chain.metrics.txCount24h)}</p>
