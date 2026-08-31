@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { MetricCaveat } from "../MetricCaveat";
-import { ECOSYSTEM_GROWTH_V2_START } from "../../lib/metachain/adapters/proxy-indicators";
+import { ECOSYSTEM_GROWTH_V2_START } from "../../lib/metachain/v2-config";
 
 export function InfoButton({ onClick }: { onClick: () => void }) {
   return (

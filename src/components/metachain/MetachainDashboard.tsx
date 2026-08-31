@@ -7,7 +7,7 @@ import SimplifyThis from "../SimplifyThis";
 import LearnMore from "../LearnMore";
 import { MetricCaveat } from "../MetricCaveat";
 import MetachainInfoModal, { InfoButton } from "./MetachainInfoModal";
-import { ECOSYSTEM_GROWTH_V2_START } from "../../lib/metachain/adapters/proxy-indicators";
+import { ECOSYSTEM_GROWTH_V2_START } from "../../lib/metachain/v2-config";
 import {
   AreaChart,
   Area,
@@ -181,25 +181,6 @@ function getMetachainTier(score: number) {
   }
   const last = METACHAIN_TIERS[METACHAIN_TIERS.length - 1];
   return { tier: last, progress: 100, tierIndex: METACHAIN_TIERS.length - 1 };
-}
-
-/* ── Momentum Row ──────────────────────────────────────────── */
-
-function MomentumRow({ label, delta, suffix = "" }: { label: string; delta: number; suffix?: string }) {
-  const isPositive = delta > 0;
-  const isZero = delta === 0;
-  return (
-    <p className="text-[10px] flex items-center gap-1.5">
-      <span className="text-[#7D8694] w-16">{label}</span>
-      <span
-        className={`font-medium ${
-          isZero ? "text-[#7D8694]" : isPositive ? "text-[#10B981]" : "text-[#EF4444]"
-        }`}
-      >
-        {isZero ? "—" : `${isPositive ? "+" : ""}${delta.toLocaleString()}${suffix}`}
-      </span>
-    </p>
-  );
 }
 
 /* ── Sparkline ─────────────────────────────────────────────── */

@@ -21,7 +21,6 @@ import type { Pool } from "pg";
 import {
   ALL_BRIDGE_CONTRACTS,
   ensureBridgeLogSchema,
-  V2,
   windowCutoffTs,
 } from "./bridge-log";
 

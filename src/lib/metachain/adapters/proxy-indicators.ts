@@ -9,6 +9,7 @@ import {
   readBackfillStatus,
   V2,
 } from "../bridge-log";
+import { ECOSYSTEM_GROWTH_V2_START as V2_START } from "../v2-config";
 
 /**
  * Proxy Indicators adapter — signals of subchain ecosystem growth
@@ -47,11 +48,11 @@ const ETH_RPC = "https://eth-rpc-api.thetatoken.org/rpc";
 const CHAIN_REGISTRAR = COLLATERAL_CONTRACT;
 
 /**
- * Deploy date of the v2 metric. Chart renders a boundary line here
- * so viewers can see when the metric definition changed. Set at
- * commit time — update if the actual deploy happens on a later day.
+ * Deploy date of the v2 metric. Re-exported from v2-config.ts so
+ * both server and client can reach it (see comment in v2-config.ts
+ * about why the constant lives in a leaf file).
  */
-export const ECOSYSTEM_GROWTH_V2_START = "2026-08-31";
+export const ECOSYSTEM_GROWTH_V2_START = V2_START;
 
 async function ethCall(to: string, data: string): Promise<string> {
   const res = await fetch(ETH_RPC, {
