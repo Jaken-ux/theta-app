@@ -17,40 +17,33 @@ behovet uppstår, inte tomma.)
 
 ### TFUEL absorption chart — datum-konvention
 
-**Varje stapel märks med det datum då mätningen BLEV KOMPLETT**, inte med
-intervallets startdatum.
+**Chart-stapel märks med det UTC-dygn då burnen hände. Direct mapping,
+ingen off-by-one.**
 
-Konkret: stapeln som visas som "Oct 1" på dashboarden är den burn som mättes
-fram till Oct 1:s supply-snapshot — vilket motsvarar vad DB:ns UTC-beräkning
-internt kallar `Sep 30` (dagen vars supply växte under intervallet som
-avslutades Oct 1 00:05 UTC).
+Snapshot-cron läser supply vid ~00:05 UTC varje dygn och skriver en row med
+`date` = snapshot-dagen till `theta_activity_history`. Verifierat 2026-10-02:
+row `date=2026-10-01` har `tfuel_supply_snapshot_at=2026-10-01 00:05:24 UTC`.
 
-Detta är **medvetet UX-val** — användaren ser gårdagens färdigmätta data
-under gårdagens datum, inte två dagar gammalt.
+I `src/lib/tfuel-economics.ts:155-180` labelas chart-entry med **START-datum
+för intervallet** (`entry.date = sorted[i].date`). Chartet renderar det direkt
+via `new Date(entry.date).toLocaleDateString("en-US", {month, day})` —
+`MetachainDashboard.tsx:735`.
 
-**Regler som följer:**
+Mekanik för chart "Oct 1" (= 23.95% på live-sajten 2026-10-02):
+- `supply(10-01 00:05) = 7,483,480,361`
+- `supply(10-02 00:05) = 7,484,422,119`
+- växt under 10-01 UTC-dygnet = 941,758 TFUEL
+- raw abs = 1,238,400 − 941,758 = 296,642 (23.95%)
 
-- **Rätta ALDRIG labels i chartet.** Off-by-one-matchningen är avsiktlig,
-  inte en bugg.
-- **Vid rapportering till Jacob — i analys, video-slides, post-utkast — använd
-  CHARTETS datum, inte raw UTC-dagar.** Allt han publicerar ska matcha det
-  läsare ser på dashboarden.
-- **Vid DB-pulls:** översätt till chart-datum innan presentation. Raw dag N i
-  DB ↔ chart dag N+1. Säg uttryckligen vilken konvention som används om det
-  finns risk för missförstånd.
+**Regel:** DB-datum = chart-datum = det UTC-dygn burnen hände. Ingen
+översättning behövs vid rapportering, slides eller post-utkast.
 
-Mapping-exempel:
+### TFUEL absorption chart — senaste stapel
 
-| DB-rad (raw UTC) | Chart-stapel | Vad det mäter |
-|---|---|---|
-| `2026-09-30` | **"Oct 1"** | Burn under 09-30 → 10-01 intervallet |
-| `2026-09-29` | **"Sep 30"** | Burn under 09-29 → 09-30 intervallet |
-
-### TFUEL absorption chart — "Oct 1 saknas"-läget
-
-Chartets senaste KOMPLETTA stapel är alltid gårdagens UTC. En stapel visas
-först när supply-snapshots finns på BÅDA sidor av det intervall den
-representerar. Idag renderas inte dagens stapel.
+Senast visade stapel = gårdagens UTC-dygn. Entries med `entry.date >= todayUtc`
+filtras bort i `tfuel-economics.ts:162`. Idag renderas inte dagens stapel —
+även om snapshot för dagens 00:05 UTC finns, saknas nästa dygns snapshot som
+behövs för att beräkna växt.
 
 ### Daily bars är ALLTID råa — ingen smoothing
 
@@ -72,6 +65,21 @@ borttagandet, inte en nuvarande beräkning.
   manuellt om du inte har specifik anledning.
 
 ## Kända fällor (felbank)
+
+### Konventioner codifieras från koden, inte från sammanfattning
+
+**2026-10-02** — Datum-konventionen för TFUEL absorption chart skrevs
+tidigare samma dag från en konversations-sammanfattning som påstod off-by-one
+(chart "Oct 1" ↔ DB raw "Sep 30"). Det var fel. Koden i
+`src/lib/tfuel-economics.ts:155-180` labelar entry med START-datum för
+intervallet och chartet renderar det direkt — ingen översättning. Verifierat
+via DB-pull: `tfuel_supply_snapshot_at` för row `date=2026-10-01` är
+`2026-10-01 00:05:24 UTC`, så row-date = snapshot-tid, och chart-stapel "Oct
+1" visar växt mellan 10-01 och 10-02 snapshots = burn under 10-01 UTC.
+
+**Lärdom:** En konvention codifieras aldrig från minne eller sammanfattning.
+Läs den definierande koden, kör en DB-query mot en timestamp-kolumn, visa
+evidensen innan påståendet skrivs ned.
 
 ### Lita inte på minnet om live-HTML — curla och verifiera
 
